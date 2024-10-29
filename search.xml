@@ -4,6 +4,35 @@
   
     
     <entry>
+      <title>【2024御网杯】线下半决赛Misc</title>
+      <link href="/articles/48434.html"/>
+      <url>/articles/48434.html</url>
+      
+        <content type="html"><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>本文章编写为2024御网杯高职组线下半决赛WriteUp，线下半决赛抽签号为B12，一点之前一直是第一，赛后听到很多大佬说没工具，大部分自己都是线上的工具，线下没网。但是，线下也有相应的解法，问题不大。</p><h1 id="Misc"><a href="#Misc" class="headerlink" title="Misc"></a>Misc</h1><h2 id="simple-analysis"><a href="#simple-analysis" class="headerlink" title="simple_analysis"></a>simple_analysis</h2><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030002427801.png"></p><p>这道题看上去好像什么都没有，但是其实在Windows 11的记事本打开会看到特殊字符：</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030002534395.png"></p><p>直接0宽度隐写秒了，签到题难度。工具地址：<a href="https://330k.github.io/misc_tools/unicode_steganography.html">https://330k.github.io/misc_tools/unicode_steganography.html</a></p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030002636476.png"></p><blockquote><p>但是此时问题出现了，我们常用的0宽都是线上在线使用的，怎么办呢？</p></blockquote><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030002844543.png"></p><p>您看这是什么呢？<a href="https://gitcode.com/open-source-toolkit/fe9fb/overview">https://gitcode.com/open-source-toolkit/fe9fb/overview</a></p><h2 id="kitty"><a href="#kitty" class="headerlink" title="kitty"></a>kitty</h2><p>附件是一个xlsx文件</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030003113503.png" alt="="></p><p>但是打开提示报错</p><p>我们尝试使用010 Editor看看</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030003859832.png"></p><p>发现是压缩包，文件头为我们熟悉的50 4B 03 04 14 00</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030004157177.png"></p><p>继续解压，得到了kitty.xml</p><p>为了避免上当受骗，我们还是来看下010</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030004237087.png"></p><p>果然，小骗子！！</p><p>从文件头看出来，这是一个PNG文件</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030004338416.png"></p><p>但是文件末尾有一个文件附加，但是文件头不太对。这里肯定不是50 4B 03 04 14 00，虽然flag已经出来了，但是如果是作为这道题的出题人，这题其实应该算是非预期解了。</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030004502021.png"></p><p>先改个后缀名吧</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030004552928.png"></p><p>感觉这里应该是直接文件附加了</p><p>但是50 4B 03 04后面就直接是0000了，所以我觉得这里应该是考察ZIP修复的，但是没想到flag就直接在后面摆着。</p><h2 id="aixin"><a href="#aixin" class="headerlink" title="aixin"></a>aixin</h2><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030004745970.png"></p><p>一个pyc文件，比赛过程中我看我前面还有侧边的小兄弟们都在费劲巴拉的去用Pyinstaller啥的去反编译pyc。</p><p>但是我想说的是，，预期解虽然是这样，，但是有没有可能，，非预期解更快啊？</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030004926683.png"></p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Mx12ItE2XjqgYEBDADA0WGEhXQI2W2I4JNIiWEJEA05So2nrlQIU</span><br></pre></td></tr></table></figure><p>你猜猜这是什么呢？</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030005137356.png"></p><p>非预期秒了，没难度。</p><p>ROT13改16，Base64，Reverse，纯套题。</p><p>什么？你跟我说你本地没有赛博厨子？？👩🏻‍🍳要不开心了！这玩意就是个开源的，你本地开个http_server都能给打开。</p><h2 id="直播流量"><a href="#直播流量" class="headerlink" title="直播流量"></a>直播流量</h2><p>我记得这是哪里的原题来着</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030005532929.png"></p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030010117435.png"></p><p>OBS流量信息</p><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030010426110.png"></p><p>过滤所有Video data</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_ws.col.info == &quot;Video Data&quot;</span><br></pre></td></tr></table></figure><p><img src="/../img/%E3%80%902024%E5%BE%A1%E7%BD%91%E6%9D%AF%E3%80%91%E7%BA%BF%E4%B8%8B%E5%8D%8A%E5%86%B3%E8%B5%9BMisc/image-20241030010553012.png"></p><p>导出特定数据</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tcpflow -T %T_%A%C%c.rtmp -r rtmp.pcapng</span><br></pre></td></tr></table></figure><blockquote><p>这里%T_%A%C%c.rtmp可不是乱起名字，是因为</p><ul><li><code>%T</code>：表示时间戳（timestamp），通常是捕获的时间。</li><li><code>%A</code>：表示源地址（source address）。</li><li><code>%C</code>：表示目的地址（destination address）的端口号（如果适用）。</li><li><code>%c</code>：表示会话编号（session number），用于区分同一时间内的不同会话。</li><li><code>.rtmp</code>：是文件扩展名，表示输出文件是RTMP流。</li></ul></blockquote><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./rtmp2flv.py *.rtmp</span><br></pre></td></tr></table></figure><p>接下来我们就可以得到flv文件</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ffmpeg -i *.flv -vf &quot;fps=1&quot; frame%04d.png</span><br></pre></td></tr></table></figure><p>使用ffmpeg截取帧，fps代表帧大小</p><p>盲水印解出flag即可。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 竞赛 </category>
+          
+          <category> CTF </category>
+          
+          <category> 2024御网杯 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 2024御网杯 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>【强网杯】第六届强网杯青少年线下赛AWDP复盘</title>
       <link href="/articles/57061.html"/>
       <url>/articles/57061.html</url>
