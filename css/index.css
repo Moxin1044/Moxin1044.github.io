@@ -4142,13 +4142,6 @@ figure.highlight pre .javascript .function {
   background-position: bottom;
   background-size: cover;
 }
-#footer:before {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-color: var(--mark-bg);
-  content: '';
-}
 #footer > * {
   position: relative;
   color: var(--light-grey);
@@ -4252,13 +4245,6 @@ figure.highlight pre .javascript .function {
   -o-transition: all 0.5s;
   -ms-transition: all 0.5s;
   transition: all 0.5s;
-}
-#page-header:not(.not-top-img):before {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-color: var(--mark-bg);
-  content: '';
 }
 #page-header.full_page {
   height: 100vh;
@@ -5612,6 +5598,16 @@ figure.highlight pre .javascript .function {
 }
 .medium-zoom-overlay {
   z-index: 99999 !important;
+}
+.mermaid-wrap {
+  margin: 0 0 20px;
+  text-align: center;
+}
+.mermaid-wrap > svg {
+  height: 100%;
+}
+pre > code.mermaid {
+  display: none;
 }
 .utterances,
 .fb-comments iframe {

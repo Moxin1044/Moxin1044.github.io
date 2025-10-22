@@ -1,0 +1,430 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Mermaid流程图使用方法 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="说明当前博客已经 启用 Mermaid 图表功能，可以直接在 Markdown 中绘制流程图、时序图、状态图、甘特图等可视化内容。  ✅ Mermaid 是一个支持用纯文本描述流程的图表语言，非常适合在 Hexo + Obsidian 环境中做技术笔记和架构图展示。  基本语法示例流程图 graph TD;   A--&gt;B;   A--&gt;C;   B--&gt;D;   C--&gt;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mermaid流程图使用方法">
+<meta property="og:url" content="https://moxin1044.github.io/posts/ddad/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="说明当前博客已经 启用 Mermaid 图表功能，可以直接在 Markdown 中绘制流程图、时序图、状态图、甘特图等可视化内容。  ✅ Mermaid 是一个支持用纯文本描述流程的图表语言，非常适合在 Hexo + Obsidian 环境中做技术笔记和架构图展示。  基本语法示例流程图 graph TD;   A--&gt;B;   A--&gt;C;   B--&gt;D;   C--&gt;">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://q1.qlogo.cn/g?b=qq&nk=1044631097&s=640">
+<meta property="article:published_time" content="2025-10-22T13:36:07.000Z">
+<meta property="article:modified_time" content="2025-10-22T15:09:13.440Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="Butterfly">
+<meta property="article:tag" content="Hexo">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://q1.qlogo.cn/g?b=qq&nk=1044631097&s=640"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Mermaid流程图使用方法",
+  "url": "https://moxin1044.github.io/posts/ddad/",
+  "image": "https://q1.qlogo.cn/g?b=qq&nk=1044631097&s=640",
+  "datePublished": "2025-10-22T13:36:07.000Z",
+  "dateModified": "2025-10-22T15:09:13.440Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&nk=1044631097&s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/ddad/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Mermaid流程图使用方法',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 8.0.0"></head><body><div id="web_bg" style="background-image: url(/images/mountains-5903352.jpg);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">1</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background: transparent;"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">Mermaid流程图使用方法</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Mermaid流程图使用方法</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-10-22T13:36:07.000Z" title="发表于 2025-10-22 21:36:07">2025-10-22</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-10-22T15:09:13.440Z" title="更新于 2025-10-22 23:09:13">2025-10-22</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Hexo%E4%BD%BF%E7%94%A8/">Hexo使用</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h1><p>当前博客已经 <strong>启用 Mermaid 图表功能</strong>，可以直接在 Markdown 中绘制流程图、时序图、状态图、甘特图等可视化内容。</p>
+<blockquote>
+<p>✅ Mermaid 是一个支持用纯文本描述流程的图表语言，非常适合在 Hexo + Obsidian 环境中做技术笔记和架构图展示。</p>
+</blockquote>
+<h1 id="基本语法示例"><a href="#基本语法示例" class="headerlink" title="基本语法示例"></a>基本语法示例</h1><h2 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h2><p><img src="../../attachments/Pasted%20image%2020251022225532.png" alt=""></p>
+<pre><code class="highlight mermaid">graph TD;
+  A--&gt;B;
+  A--&gt;C;
+  B--&gt;D;
+  C--&gt;D;</code></pre>
+<p><img src="../../attachments/Pasted%20image%2020251022225548.png" alt=""></p>
+<pre><code class="highlight mermaid">flowchart TD
+    A[开始] --&gt; B&#123;条件判断&#125;
+    B --&gt;|是| C[执行操作1]
+    B --&gt;|否| D[执行操作2]
+    C --&gt; E[结束]
+    D --&gt; E</code></pre>
+<h2 id="时序图"><a href="#时序图" class="headerlink" title="时序图"></a>时序图</h2><p><img src="../../attachments/Pasted%20image%2020251022225700.png" alt=""></p>
+<pre><code class="highlight mermaid">sequenceDiagram
+    participant Alice
+    participant Bob
+    Alice-&gt;&gt;Bob: 你好，Bob！
+    Bob--&gt;&gt;Alice: 你好，Alice！</code></pre>
+<h2 id="状态图"><a href="#状态图" class="headerlink" title="状态图"></a>状态图</h2><p><img src="../../attachments/Pasted%20image%2020251022225712.png" alt=""><br><pre><code class="highlight mermaid">stateDiagram-v2
+    [*] --&gt; 初始化
+    初始化 --&gt; 运行中
+    运行中 --&gt; 完成
+    完成 --&gt; [*]</code></pre></p>
+<h2 id="饼图"><a href="#饼图" class="headerlink" title="饼图"></a>饼图</h2><p><img src="../../attachments/Pasted%20image%2020251022225936.png" alt=""></p>
+<pre><code class="highlight mermaid">pie title 我最喜爱的编程语言
+    &quot;Python&quot; : 45
+    &quot;JavaScript&quot; : 25
+    &quot;Java&quot; : 15
+    &quot;C++&quot; : 10
+    &quot;其他&quot; : 5</code></pre>
+<h2 id="象限图"><a href="#象限图" class="headerlink" title="象限图"></a>象限图</h2><p><img src="../../attachments/Pasted%20image%2020251022230103.png" alt=""></p>
+<pre><code class="highlight mermaid">quadrantChart
+title 促销活动效果分析
+x-axis &quot;低覆盖宣传&quot; --&gt; &quot;高覆盖宣传&quot;
+y-axis &quot;低参与度&quot; --&gt; &quot;高参与度&quot;
+quadrant-1 &quot;明星活动：保持投入&quot;
+quadrant-2 &quot;潜力活动：需加大曝光&quot;
+quadrant-3 &quot;待优化活动：重新评估&quot;
+quadrant-4 &quot;高效活动：可稳健扩张&quot;
+&quot;活动A&quot;: [0.75, 0.85]
+&quot;活动B&quot;: [0.45, 0.70]
+&quot;活动C&quot;: [0.25, 0.40]
+&quot;活动D&quot;: [0.80, 0.35]</code></pre>
+<h2 id="甘特图"><a href="#甘特图" class="headerlink" title="甘特图"></a>甘特图</h2><p><img src="../../attachments/Pasted%20image%2020251022230312.png" alt=""><br><strong>关键语法解读：</strong></p>
+<ul>
+<li><code>dateFormat</code>：定义日期格式。</li>
+<li><code>section</code>**​：将任务分组，如“需求阶段”、“开发阶段”。</li>
+<li>​<strong>任务定义</strong>​：格式为 <code>任务名称 : [状态, ] 别名, 开始时间, 持续时间</code>。<ul>
+<li><strong>状态</strong>​：<code>done</code>（已完成），<code>active</code>（进行中），<code>crit</code>（关键任务）。​</li>
+<li><strong>别名</strong>​：任务的标识符，可用于后续任务引用，如 <code>after des1</code>表示该任务在 <code>des1</code>之后开始。</li>
+<li><strong>时间</strong>​：可以是绝对日期（<code>2024-12-01</code>），也可以是相对时间（<code>after 某任务, 3d</code>）。<pre><code class="highlight mermaid">gantt
+    title 项目开发时间线
+    dateFormat  YYYY-MM-DD
+    section 需求阶段
+        需求分析       :done,    des1, 2024-12-01, 2024-12-07
+        需求评审       :active,  des2, after des1, 3d
+    section 开发阶段
+        技术方案设计   :         des3, after des2, 5d
+        编码实现       :         des4, after des3, 10d
+    section 测试阶段
+        功能测试       :         des5, after des4, 7d
+        上线部署       :         des6, after des5, 2d</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="类图"><a href="#类图" class="headerlink" title="类图"></a>类图</h2><p><img src="../../attachments/Pasted%20image%2020251022230347.png" alt=""></p>
+<p><strong>关键语法解读：</strong>​</p>
+<ul>
+<li>​<strong>定义类</strong>​：使用 <code>class</code>关键字。类成员可用 <code>{}</code>包裹。</li>
+<li><strong>成员可见性</strong>​：<code>+</code>表示公有（Public），<code>-</code>表示私有（Private），<code>#</code>表示受保护（Protected）。</li>
+<li>​<strong>类关系</strong>​：<ul>
+<li>​<strong>继承</strong>​：<code>&lt;|--</code>（如 <code>Dog</code>继承自 <code>Animal</code>）。</li>
+<li>​<strong>组合</strong>​：<code>*--</code>（强的拥有关系，部分与整体共存亡）。</li>
+<li><strong>聚合</strong>​：<code>o--</code>（弱的拥有关系，部分可独立于整体）。</li>
+<li><strong>关联</strong>​：<code>--&gt;</code>（一个类知道另一个类）。</li>
+</ul>
+</li>
+</ul>
+<pre><code class="highlight mermaid">classDiagram
+    class Animal &#123;
+        +String name
+        +int age
+        +eat()
+        +sleep()
+    &#125;
+    class Dog &#123;
+        +String breed
+        +bark()
+    &#125;
+    class Cat &#123;
+        +String color
+        +meow()
+    &#125;
+    Animal &lt;|-- Dog
+    Animal &lt;|-- Cat</code></pre>
+<h2 id="实体关系（ER图）"><a href="#实体关系（ER图）" class="headerlink" title="实体关系（ER图）"></a>实体关系（ER图）</h2><p><img src="../../attachments/Pasted%20image%2020251022230750.png" alt=""></p>
+<p><strong>关键语法解读：</strong>​</p>
+<ul>
+<li>​<strong>定义实体和属性</strong>​：实体名称通常首字母大写。属性可以在实体下方的 <code>{}</code>块中定义，<code>PK</code>表示主键（Primary Key）。</li>
+<li><p>​<strong>关系语法</strong>​：<code>实体A 基数A--基数B 实体B : &quot;关系描述&quot;</code>。</p>
+<ul>
+<li><p>​<strong>基数符号</strong>​：表示实体间的数量关系。</p>
+<ul>
+<li><code>||</code>表示“一且只有一个”（恰好一个）。</li>
+<li><code>o|</code>表示“零或一个”。</li>
+<li><code>}o</code>表示“零或多个”。</li>
+<li><code>}|</code>表示“一或多个”。</li>
+</ul>
+</li>
+<li><p>例如，<code>CUSTOMER ||--o{ ORDER : &quot;places&quot;</code>表示一个客户（CUSTOMER）可以下多个订单（ORDER）（“零或多个”），而一个订单只属于一个客户（“恰好一个”）。</p>
+</li>
+</ul>
+</li>
+</ul>
+<pre><code class="highlight mermaid">erDiagram
+    CUSTOMER ||--o&#123; ORDER : &quot;places&quot;
+    ORDER ||--|&#123; ORDER_ITEM : &quot;contains&quot;
+    PRODUCT ||--|&#123; ORDER_ITEM : &quot;included_in&quot;
+
+    CUSTOMER &#123;
+        string customer_id PK
+        string name
+        string email
+    &#125;
+    ORDER &#123;
+        string order_id PK
+        string customer_id FK
+        date order_date
+    &#125;
+    PRODUCT &#123;
+        string product_id PK
+        string product_name
+        decimal price
+    &#125;
+    ORDER_ITEM &#123;
+        string order_id FK
+        string product_id FK
+        int quantity
+    &#125;</code></pre></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/ddad/">https://moxin1044.github.io/posts/ddad/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Butterfly/">Butterfly</a><a class="post-meta__tags" href="/tags/Hexo/">Hexo</a></div><div class="post-share"><div class="social-share" data-image="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">1</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%AF%B4%E6%98%8E"><span class="toc-number">1.</span> <span class="toc-text">说明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E8%AF%AD%E6%B3%95%E7%A4%BA%E4%BE%8B"><span class="toc-number">2.</span> <span class="toc-text">基本语法示例</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="toc-number">2.1.</span> <span class="toc-text">流程图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%97%B6%E5%BA%8F%E5%9B%BE"><span class="toc-number">2.2.</span> <span class="toc-text">时序图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8A%B6%E6%80%81%E5%9B%BE"><span class="toc-number">2.3.</span> <span class="toc-text">状态图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A5%BC%E5%9B%BE"><span class="toc-number">2.4.</span> <span class="toc-text">饼图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B1%A1%E9%99%90%E5%9B%BE"><span class="toc-number">2.5.</span> <span class="toc-text">象限图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%98%E7%89%B9%E5%9B%BE"><span class="toc-number">2.6.</span> <span class="toc-text">甘特图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B1%BB%E5%9B%BE"><span class="toc-number">2.7.</span> <span class="toc-text">类图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E4%BD%93%E5%85%B3%E7%B3%BB%EF%BC%88ER%E5%9B%BE%EF%BC%89"><span class="toc-number">2.8.</span> <span class="toc-text">实体关系（ER图）</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/posts/ddad/" title="Mermaid流程图使用方法">Mermaid流程图使用方法</a><time datetime="2025-10-22T13:36:07.000Z" title="发表于 2025-10-22 21:36:07">2025-10-22</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2020 - 2025 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.0.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
