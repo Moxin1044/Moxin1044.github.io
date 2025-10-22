@@ -164,38 +164,38 @@
 <blockquote>
 <p>✅ Mermaid 是一个支持用纯文本描述流程的图表语言，非常适合在 Hexo + Obsidian 环境中做技术笔记和架构图展示。</p>
 </blockquote>
-<h1 id="基本语法示例"><a href="#基本语法示例" class="headerlink" title="基本语法示例"></a>基本语法示例</h1><h2 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h2><p><img src="../attachments/Pasted%20image%2020251022225532.png" alt=""></p>
+<h1 id="基本语法示例"><a href="#基本语法示例" class="headerlink" title="基本语法示例"></a>基本语法示例</h1><h2 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h2><p><img src="../../attachments/Pasted%20image%2020251022225532.png" alt=""></p>
 <pre><code class="highlight mermaid">graph TD;
   A--&gt;B;
   A--&gt;C;
   B--&gt;D;
   C--&gt;D;</code></pre>
-<p><img src="../attachments/Pasted%20image%2020251022225548.png" alt=""></p>
+<p><img src="../../attachments/Pasted%20image%2020251022225548.png" alt=""></p>
 <pre><code class="highlight mermaid">flowchart TD
     A[开始] --&gt; B{条件判断}
     B --&gt;|是| C[执行操作1]
     B --&gt;|否| D[执行操作2]
     C --&gt; E[结束]
     D --&gt; E</code></pre>
-<h2 id="时序图"><a href="#时序图" class="headerlink" title="时序图"></a>时序图</h2><p><img src="../attachments/Pasted%20image%2020251022225700.png" alt=""></p>
+<h2 id="时序图"><a href="#时序图" class="headerlink" title="时序图"></a>时序图</h2><p><img src="../../attachments/Pasted%20image%2020251022225700.png" alt=""></p>
 <pre><code class="highlight mermaid">sequenceDiagram
     participant Alice
     participant Bob
     Alice-&gt;&gt;Bob: 你好，Bob！
     Bob--&gt;&gt;Alice: 你好，Alice！</code></pre>
-<h2 id="状态图"><a href="#状态图" class="headerlink" title="状态图"></a>状态图</h2><p><img src="../attachments/Pasted%20image%2020251022225712.png" alt=""><br></p><pre><code class="highlight mermaid">stateDiagram-v2
+<h2 id="状态图"><a href="#状态图" class="headerlink" title="状态图"></a>状态图</h2><p><img src="../../attachments/Pasted%20image%2020251022225712.png" alt=""><br></p><pre><code class="highlight mermaid">stateDiagram-v2
     [*] --&gt; 初始化
     初始化 --&gt; 运行中
     运行中 --&gt; 完成
     完成 --&gt; [*]</code></pre><p></p>
-<h2 id="饼图"><a href="#饼图" class="headerlink" title="饼图"></a>饼图</h2><p><img src="../attachments/Pasted%20image%2020251022225936.png" alt=""></p>
+<h2 id="饼图"><a href="#饼图" class="headerlink" title="饼图"></a>饼图</h2><p><img src="../../attachments/Pasted%20image%2020251022225936.png" alt=""></p>
 <pre><code class="highlight mermaid">pie title 我最喜爱的编程语言
     "Python" : 45
     "JavaScript" : 25
     "Java" : 15
     "C++" : 10
     "其他" : 5</code></pre>
-<h2 id="象限图"><a href="#象限图" class="headerlink" title="象限图"></a>象限图</h2><p><img src="../attachments/Pasted%20image%2020251022230103.png" alt=""></p>
+<h2 id="象限图"><a href="#象限图" class="headerlink" title="象限图"></a>象限图</h2><p><img src="../../attachments/Pasted%20image%2020251022230103.png" alt=""></p>
 <pre><code class="highlight mermaid">quadrantChart
 title 促销活动效果分析
 x-axis "低覆盖宣传" --&gt; "高覆盖宣传"
@@ -208,7 +208,7 @@ quadrant-4 "高效活动：可稳健扩张"
 "活动B": [0.45, 0.70]
 "活动C": [0.25, 0.40]
 "活动D": [0.80, 0.35]</code></pre>
-<h2 id="甘特图"><a href="#甘特图" class="headerlink" title="甘特图"></a>甘特图</h2><p><img src="../attachments/Pasted%20image%2020251022230312.png" alt=""><br><strong>关键语法解读：</strong></p>
+<h2 id="甘特图"><a href="#甘特图" class="headerlink" title="甘特图"></a>甘特图</h2><p><img src="../../attachments/Pasted%20image%2020251022230312.png" alt=""><br><strong>关键语法解读：</strong></p>
 <ul>
 <li><code>dateFormat</code>：定义日期格式。</li>
 <li><code>section</code>**​：将任务分组，如“需求阶段”、“开发阶段”。</li>
@@ -231,7 +231,7 @@ quadrant-4 "高效活动：可稳健扩张"
 </ul>
 </li>
 </ul>
-<h2 id="类图"><a href="#类图" class="headerlink" title="类图"></a>类图</h2><p><img src="../attachments/Pasted%20image%2020251022230347.png" alt=""></p>
+<h2 id="类图"><a href="#类图" class="headerlink" title="类图"></a>类图</h2><p><img src="../../attachments/Pasted%20image%2020251022230347.png" alt=""></p>
 <p><strong>关键语法解读：</strong>​</p>
 <ul>
 <li>​<strong>定义类</strong>​：使用 <code>class</code>关键字。类成员可用 <code>{}</code>包裹。</li>
@@ -261,7 +261,7 @@ quadrant-4 "高效活动：可稳健扩张"
     }
     Animal &lt;|-- Dog
     Animal &lt;|-- Cat</code></pre>
-<h2 id="实体关系（ER图）"><a href="#实体关系（ER图）" class="headerlink" title="实体关系（ER图）"></a>实体关系（ER图）</h2><p><img src="../attachments/Pasted%20image%2020251022230750.png" alt=""></p>
+<h2 id="实体关系（ER图）"><a href="#实体关系（ER图）" class="headerlink" title="实体关系（ER图）"></a>实体关系（ER图）</h2><p><img src="../../attachments/Pasted%20image%2020251022230750.png" alt=""></p>
 <p><strong>关键语法解读：</strong>​</p>
 <ul>
 <li>​<strong>定义实体和属性</strong>​：实体名称通常首字母大写。属性可以在实体下方的 <code>{}</code>块中定义，<code>PK</code>表示主键（Primary Key）。</li>
