@@ -1,0 +1,343 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>【DC系列靶场】DC:05 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="前言 名称：DC：5  环境部署 虚拟化：VMware Workstation 网卡：NAT  攻击机 IP 192.168.8.131 Kali Linux 25.3  靶机 DC-5 IP 192.168.8.158  渗透流程主机发现 端口扫描 Web渗透 发现contact下有个类似留言板的功能  随便提交一组数据，发现底部的日期变了，很奇怪。  测试一下这里的表单字段 我们主要看长度的区">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【DC系列靶场】DC:05">
+<meta property="og:url" content="https://moxin1044.github.io/posts/37d4/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="前言 名称：DC：5  环境部署 虚拟化：VMware Workstation 网卡：NAT  攻击机 IP 192.168.8.131 Kali Linux 25.3  靶机 DC-5 IP 192.168.8.158  渗透流程主机发现 端口扫描 Web渗透 发现contact下有个类似留言板的功能  随便提交一组数据，发现底部的日期变了，很奇怪。  测试一下这里的表单字段 我们主要看长度的区">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/image-20260401232822951.png">
+<meta property="article:published_time" content="2026-04-01T14:05:18.000Z">
+<meta property="article:modified_time" content="2026-04-01T17:01:15.619Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="DC靶场">
+<meta property="article:tag" content="vulnhub">
+<meta property="article:tag" content="渗透测试">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/image-20260401232822951.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "【DC系列靶场】DC:05",
+  "url": "https://moxin1044.github.io/posts/37d4/",
+  "image": "https://moxin1044.github.io/attachments/image-20260401232822951.png",
+  "datePublished": "2026-04-01T14:05:18.000Z",
+  "dateModified": "2026-04-01T17:01:15.619Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/37d4/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '【DC系列靶场】DC:05',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><meta name="generator" content="Hexo 8.0.0"></head><body><div id="web_bg" style="background: linear-gradient(to right, rgb(252, 70, 107), rgb(63, 94, 251));;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">74</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">34</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">28</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/../attachments/image-20260401232822951.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">【DC系列靶场】DC:05</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">【DC系列靶场】DC:05</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-04-01T14:05:18.000Z" title="发表于 2026-04-01 22:05:18">2026-04-01</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-04-01T17:01:15.619Z" title="更新于 2026-04-02 01:01:15">2026-04-02</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/vulnhub/">vulnhub</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/vulnhub/DC%E9%9D%B6%E5%9C%BA/">DC靶场</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/../attachments/image-20260401232822951.png);"></div><article class="container post-content" id="article-container"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><ul>
+<li><strong>名称</strong>：DC：5</li>
+</ul>
+<h1 id="环境部署"><a href="#环境部署" class="headerlink" title="环境部署"></a>环境部署</h1><ul>
+<li>虚拟化：VMware Workstation</li>
+<li>网卡：NAT</li>
+</ul>
+<h2 id="攻击机"><a href="#攻击机" class="headerlink" title="攻击机"></a>攻击机</h2><ul>
+<li>IP 192.168.8.131</li>
+<li>Kali Linux 25.3</li>
+</ul>
+<h2 id="靶机"><a href="#靶机" class="headerlink" title="靶机"></a>靶机</h2><ul>
+<li>DC-5</li>
+<li>IP 192.168.8.158</li>
+</ul>
+<h1 id="渗透流程"><a href="#渗透流程" class="headerlink" title="渗透流程"></a>渗透流程</h1><h2 id="主机发现"><a href="#主机发现" class="headerlink" title="主机发现"></a>主机发现</h2><p><img src="../../attachments/image-20260401230254685.png" alt=""></p>
+<h2 id="端口扫描"><a href="#端口扫描" class="headerlink" title="端口扫描"></a>端口扫描</h2><p><img src="../../attachments/image-20260401230348105.png" alt=""></p>
+<h2 id="Web渗透"><a href="#Web渗透" class="headerlink" title="Web渗透"></a>Web渗透</h2><p><img src="../../attachments/image-20260401230640892.png" alt=""></p>
+<p>发现contact下有个类似留言板的功能</p>
+<p><img src="../../attachments/image-20260401230721728.png" alt=""></p>
+<p>随便提交一组数据，发现底部的日期变了，很奇怪。</p>
+<p><img src="../../attachments/image-20260401230936239.png" alt=""></p>
+<p>测试一下这里的表单字段</p>
+<p>我们主要看长度的区别</p>
+<p>发现file的时候，长度为992</p>
+<p><img src="../../attachments/image-20260401231028925.png" alt=""></p>
+<p><img src="../../attachments/image-20260401231039555.png" alt=""></p>
+<p>响应里没有footer了</p>
+<p><img src="../../attachments/image-20260401231138194.png" alt=""></p>
+<p>如果传入file=/etc/passwd呢，发现可以正常读取/etc/passwd</p>
+<p>我们也可以读取到访问日志，通过日志去打</p>
+<p><img src="../../attachments/image-20260401231230203.png" alt=""></p>
+<p>利用UA传一句话</p>
+<p><img src="../../attachments/image-20260401231401683.png" alt=""></p>
+<p><img src="../../attachments/image-20260401231441780.png" alt=""></p>
+<p>AntSword可以连接</p>
+<p><img src="../../attachments/image-20260401231536893.png" alt=""></p>
+<p>反弹shell</p>
+<p><img src="../../attachments/image-20260401232116708.png" alt=""></p>
+<p><img src="../../attachments/image-20260401232104301.png" alt=""></p>
+<p><img src="../../attachments/image-20260401232130598.png" alt=""></p>
+<p>进交互</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c <span class="string">'import pty; pty.spawn("/bin/bash")'</span></span><br></pre></td></tr></tbody></table></figure>
+<p>查询提权</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find / -perm -u=s -<span class="built_in">type</span> f 2&gt;/dev/null</span><br></pre></td></tr></tbody></table></figure>
+<p><img src="../../attachments/image-20260401232400916.png" alt=""></p>
+<h2 id="利用-bin-screen-4-5-0"><a href="#利用-bin-screen-4-5-0" class="headerlink" title="利用 /bin/screen-4.5.0"></a>利用 /bin/screen-4.5.0</h2><p>（GNU Screen 4.5.0 Local Privilege Escalation）</p>
+<p>这个漏洞（CVE-2017-5618）利用了 screen 在处理日志文件时的权限检查问题，可以通过覆盖 ld.so.preload 来加载恶意共享库，从而获得 root shell。</p>
+<p><img src="../../attachments/image-20260401232520787.png" alt=""></p>
+<p>传输出来，开监听传文件</p>
+<p><img src="../../attachments/image-20260401232603163.png" alt=""></p>
+<p>到有权限的目录，下载加权限</p>
+<p><img src="../../attachments/image-20260401232727387.png" alt=""></p>
+<p>执行后拿到root权限</p>
+<p><img src="../../attachments/image-20260401232749756.png" alt=""></p>
+<p><img src="../../attachments/image-20260401232822951.png" alt=""></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/37d4/">https://moxin1044.github.io/posts/37d4/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a><a class="post-meta__tags" href="/tags/DC%E9%9D%B6%E5%9C%BA/">DC靶场</a><a class="post-meta__tags" href="/tags/vulnhub/">vulnhub</a></div><div class="post-share"><div class="social-share" data-image="/../attachments/image-20260401232822951.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/posts/f215/" title="【DC系列靶场】DC:08"><img class="cover" src="/../attachments/image-20260402010056218.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">【DC系列靶场】DC:08</div></div><div class="info-2"><div class="info-item-1">前言 名称：DC：8  环境部署 虚拟化：VMware Workstation 网卡：NAT  攻击机 IP 192.168.8.131 Kali Linux 25.3  靶机 DC-8 IP 192.168.8.161  渗透流程主机发现 端口扫描 Web渗透  Drupal 7.67 检索一下漏洞  随便点一个文章先看看   这地方还真有SQL注入  order by 1是正常的 by 就报错了 并且其实这里给出来了完整的语句 1SELECT title FROM node WHERE nid = 1 order by 2;  当ID小于3的时候，输出的内容是程序控制的   为-1或者大于3的时候就可以拿到内容 1http://192.168.8.161/?nid=-1 UNION SELECT database() 获取数据库名称  1?nid=-1 UNION SELECT GROUP_CONCAT(table_name SEPARATOR '~') FROM information_schema.tables WHERE table_schema=&amp;...</div></div></div></a><a class="pagination-related" href="/posts/f715/" title="【DC系列靶场】DC:04"><img class="cover" src="/../attachments/image-20260331220114964.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">【DC系列靶场】DC:04</div></div><div class="info-2"><div class="info-item-1">前言 名称：DC：4  环境部署 虚拟化：VMware Workstation 网卡：NAT  攻击机 IP 192.168.8.131 Kali Linux 25.3  靶机 DC-4 IP 192.168.8.154  渗透流程主机发现  发现该设备的IP下，包含22、80两个端口。  80端口的网页，是一个用户登录的界面。  看上去只有一个index.php有点作用了  Burp尝试爆破密码  找到密码happy，用户名是admin    实际上是post执行命令了 抓一下现在的数据包，发送到”重发器“     发现三个用户  其中jim用户下目录下，有一个backup文件夹  找到了一个旧密码的bak文件  发现是个密码字典，那么这里应该是想要我们爆破密码的  保存一下 1hydra ssh://192.168.8.154:22 -L user.txt -P /usr/share/wordlists/dc4-old-password.bak -vV -t 64 -f 爆破  找到密码  登录成功 当然直接在网页命令执行的位置去反弹shell也可以  这里提示我有一个邮件 ...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/posts/f4d5/" title="【DC系列靶场】DC:01"><img class="cover" src="/../attachments/image-20260330191556362.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-30</div><div class="info-item-2">【DC系列靶场】DC:01</div></div><div class="info-2"><div class="info-item-1">前言 名称：DC：1 发布日期：2019年2月28日  作者：DCAU  系列：DC 网页：http://www.five86.com/dc-1.html  下载地址：https://download.vulnhub.com/dc/DC-1.zip   环境部署 虚拟化：VMware Workstation 网卡：桥接  攻击机 IP 192.168.1.7 Kali Linux 25.3  靶机 DC-1 IP 192.168.1.6  经过环境准备首先，拿到题目环境后导入虚拟机。导入完成后，开机。  后续操作如无新增项，如虚拟机的额外设置，则不再赘述此内容。  主机发现尝试扫描一下同网段的机器  由于是dhcp的，我们怀疑是192.168.1.6或1.8  应该是1.6了  访问192.168.1.6 发现是Drupal  使用searchsploit去查找漏洞，发现相关漏洞还是比较多的  1pip install droopescan --break  发现版本为7.22-7.26  打开msfconsole  考虑到题目是2019年左右的，尝试使用2018年稍微新点且经过...</div></div></div></a><a class="pagination-related" href="/posts/f595/" title="【DC系列靶场】DC:02"><img class="cover" src="/../attachments/image-20260330211322477.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-30</div><div class="info-item-2">【DC系列靶场】DC:02</div></div><div class="info-2"><div class="info-item-1">前言 名称：DC：2 发布日期：2019年3月22日  作者：DCAU  系列：DC 网页：http://www.five86.com/dc-2.html  下载地址：https://download.vulnhub.com/dc/DC-2.zip   环境部署 虚拟化：VMware Workstation 网卡：桥接  攻击机 IP 192.168.1.7 Kali Linux 25.3  靶机 DC-2 IP 192.168.1.9  渗透流程主机发现 端口探测  看下网页里的flag1   你常用的字典可能不管用，所以，也许你只需要用“cewl”这个词。 密码越多越好，但有时你就是无法全部记住。 以某个身份登录以查看下一个标志。 如果你找不到，请以其他身份登录。  密码爆破 Cewl（发音为“cool”）是 Kali Linux 中一款非常实用的 自定义单词列表生成器（Custom Word List generator）。 它用 Ruby 语言编写，主要功能是通过爬虫（spider） 抓取指定网站的页面内容（最多爬取指定深度），从网页文本中提取独特的单词和短语，生成针对性...</div></div></div></a><a class="pagination-related" href="/posts/3554/" title="【DC系列靶场】DC:03"><img class="cover" src="/../attachments/image-20260330230355193.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-30</div><div class="info-item-2">【DC系列靶场】DC:03</div></div><div class="info-2"><div class="info-item-1">前言 名称：DC：3 发布日期：2019年4月25日  作者：DCAU  系列：DC 网页：http://www.five8.6.com/dc-3.html  下载地址：https://download.vulnhub.com/dc/DC-3-2.zip   环境部署 虚拟化：VMware Workstation 网卡：桥接  攻击机 IP 192.168.1.7 Kali Linux 25.3  靶机 DC-3 IP 192.168.1.10  渗透流程主机发现    这一次，只有一个标志，一个入口点，没有线索。 要获得标志，您显然必须获得 root 权限。 如何成为 root 取决于你自己 - 显然，还有系统。 祝你好运 - 我希望你喜欢这个小挑战。:-)  目录扫描1dirsearch -u http://192.168.1.10/     Joomla程序，有针对性漏洞扫描工具。 1sudo apt install joomscan 1joomscan --url http://192.168.1.10  版本为：Joomla 3.7.0 针对性查找漏洞   验证： 1h...</div></div></div></a><a class="pagination-related" href="/posts/f715/" title="【DC系列靶场】DC:04"><img class="cover" src="/../attachments/image-20260331220114964.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-30</div><div class="info-item-2">【DC系列靶场】DC:04</div></div><div class="info-2"><div class="info-item-1">前言 名称：DC：4  环境部署 虚拟化：VMware Workstation 网卡：NAT  攻击机 IP 192.168.8.131 Kali Linux 25.3  靶机 DC-4 IP 192.168.8.154  渗透流程主机发现  发现该设备的IP下，包含22、80两个端口。  80端口的网页，是一个用户登录的界面。  看上去只有一个index.php有点作用了  Burp尝试爆破密码  找到密码happy，用户名是admin    实际上是post执行命令了 抓一下现在的数据包，发送到”重发器“     发现三个用户  其中jim用户下目录下，有一个backup文件夹  找到了一个旧密码的bak文件  发现是个密码字典，那么这里应该是想要我们爆破密码的  保存一下 1hydra ssh://192.168.8.154:22 -L user.txt -P /usr/share/wordlists/dc4-old-password.bak -vV -t 64 -f 爆破  找到密码  登录成功 当然直接在网页命令执行的位置去反弹shell也可以  这里提示我有一个邮件 ...</div></div></div></a><a class="pagination-related" href="/posts/f215/" title="【DC系列靶场】DC:08"><img class="cover" src="/../attachments/image-20260402010056218.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">【DC系列靶场】DC:08</div></div><div class="info-2"><div class="info-item-1">前言 名称：DC：8  环境部署 虚拟化：VMware Workstation 网卡：NAT  攻击机 IP 192.168.8.131 Kali Linux 25.3  靶机 DC-8 IP 192.168.8.161  渗透流程主机发现 端口扫描 Web渗透  Drupal 7.67 检索一下漏洞  随便点一个文章先看看   这地方还真有SQL注入  order by 1是正常的 by 就报错了 并且其实这里给出来了完整的语句 1SELECT title FROM node WHERE nid = 1 order by 2;  当ID小于3的时候，输出的内容是程序控制的   为-1或者大于3的时候就可以拿到内容 1http://192.168.8.161/?nid=-1 UNION SELECT database() 获取数据库名称  1?nid=-1 UNION SELECT GROUP_CONCAT(table_name SEPARATOR '~') FROM information_schema.tables WHERE table_schema=&amp;...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">74</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">34</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">28</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83%E9%83%A8%E7%BD%B2"><span class="toc-number">2.</span> <span class="toc-text">环境部署</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%94%BB%E5%87%BB%E6%9C%BA"><span class="toc-number">2.1.</span> <span class="toc-text">攻击机</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9D%B6%E6%9C%BA"><span class="toc-number">2.2.</span> <span class="toc-text">靶机</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B8%97%E9%80%8F%E6%B5%81%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">渗透流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BB%E6%9C%BA%E5%8F%91%E7%8E%B0"><span class="toc-number">3.1.</span> <span class="toc-text">主机发现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AB%AF%E5%8F%A3%E6%89%AB%E6%8F%8F"><span class="toc-number">3.2.</span> <span class="toc-text">端口扫描</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Web%E6%B8%97%E9%80%8F"><span class="toc-number">3.3.</span> <span class="toc-text">Web渗透</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%A9%E7%94%A8-bin-screen-4-5-0"><span class="toc-number">3.4.</span> <span class="toc-text">利用 /bin/screen-4.5.0</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/f215/" title="【DC系列靶场】DC:08"><img src="/../attachments/image-20260402010056218.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【DC系列靶场】DC:08"></a><div class="content"><a class="title" href="/posts/f215/" title="【DC系列靶场】DC:08">【DC系列靶场】DC:08</a><time datetime="2026-04-01T14:05:19.000Z" title="发表于 2026-04-01 22:05:19">2026-04-01</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/37d4/" title="【DC系列靶场】DC:05"><img src="/../attachments/image-20260401232822951.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【DC系列靶场】DC:05"></a><div class="content"><a class="title" href="/posts/37d4/" title="【DC系列靶场】DC:05">【DC系列靶场】DC:05</a><time datetime="2026-04-01T14:05:18.000Z" title="发表于 2026-04-01 22:05:18">2026-04-01</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/f715/" title="【DC系列靶场】DC:04"><img src="/../attachments/image-20260331220114964.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【DC系列靶场】DC:04"></a><div class="content"><a class="title" href="/posts/f715/" title="【DC系列靶场】DC:04">【DC系列靶场】DC:04</a><time datetime="2026-03-30T14:05:18.000Z" title="发表于 2026-03-30 22:05:18">2026-03-30</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/3554/" title="【DC系列靶场】DC:03"><img src="/../attachments/image-20260330230355193.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【DC系列靶场】DC:03"></a><div class="content"><a class="title" href="/posts/3554/" title="【DC系列靶场】DC:03">【DC系列靶场】DC:03</a><time datetime="2026-03-30T14:05:17.000Z" title="发表于 2026-03-30 22:05:17">2026-03-30</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/f595/" title="【DC系列靶场】DC:02"><img src="/../attachments/image-20260330211322477.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【DC系列靶场】DC:02"></a><div class="content"><a class="title" href="/posts/f595/" title="【DC系列靶场】DC:02">【DC系列靶场】DC:02</a><time datetime="2026-03-30T13:03:48.000Z" title="发表于 2026-03-30 21:03:48">2026-03-30</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.0.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
