@@ -1,0 +1,376 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>【ArchLinux】如何制服国产免驱网卡 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="前言很多国产 USB 无线网卡，比如某些标注“免驱”这类的网卡，通常在 Windows 上能够即插即用或者有适配的驱动，但是在 Linux 下会遇到一些坑。前些日子我给我的一个迷你主机装了一个 ArchLinux，但是机器的网卡不是很好，换了一个但暂时没有适配的信号天线，所以找了一下之前的无线网卡临时用下，发现了一款标注“免驱”的网卡，试了一试。 本文以 COMFAST CF-922AC（MT76">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【ArchLinux】如何制服国产免驱网卡">
+<meta property="og:url" content="https://moxin1044.github.io/posts/ac10/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="前言很多国产 USB 无线网卡，比如某些标注“免驱”这类的网卡，通常在 Windows 上能够即插即用或者有适配的驱动，但是在 Linux 下会遇到一些坑。前些日子我给我的一个迷你主机装了一个 ArchLinux，但是机器的网卡不是很好，换了一个但暂时没有适配的信号天线，所以找了一下之前的无线网卡临时用下，发现了一款标注“免驱”的网卡，试了一试。 本文以 COMFAST CF-922AC（MT76">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/image-20260501231151650.png">
+<meta property="article:published_time" content="2026-05-01T14:45:02.000Z">
+<meta property="article:modified_time" content="2026-05-01T15:12:42.747Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="ArchLinux">
+<meta property="article:tag" content="运维">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/image-20260501231151650.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "【ArchLinux】如何制服国产免驱网卡",
+  "url": "https://moxin1044.github.io/posts/ac10/",
+  "image": "https://moxin1044.github.io/attachments/image-20260501231151650.png",
+  "datePublished": "2026-05-01T14:45:02.000Z",
+  "dateModified": "2026-05-01T15:12:42.747Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/ac10/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '【ArchLinux】如何制服国产免驱网卡',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><meta name="generator" content="Hexo 8.0.0"></head><body><div id="web_bg" style="background: linear-gradient(to right, rgb(252, 70, 107), rgb(63, 94, 251));;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">78</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">38</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">32</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/../attachments/image-20260501231151650.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">【ArchLinux】如何制服国产免驱网卡</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">【ArchLinux】如何制服国产免驱网卡</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-05-01T14:45:02.000Z" title="发表于 2026-05-01 22:45:02">2026-05-01</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-05-01T15:12:42.747Z" title="更新于 2026-05-01 23:12:42">2026-05-01</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Linux/">Linux</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Linux/ArchLinux/">ArchLinux</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Linux/ArchLinux/%E7%BD%91%E7%BB%9C/">网络</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/../attachments/image-20260501231151650.png);"></div><article class="container post-content" id="article-container"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>很多国产 USB 无线网卡，比如某些标注“免驱”这类的网卡，通常在 Windows 上能够即插即用或者有适配的驱动，但是在 Linux 下会遇到一些坑。前些日子我给我的一个迷你主机装了一个 ArchLinux，但是机器的网卡不是很好，换了一个但暂时没有适配的信号天线，所以找了一下之前的无线网卡临时用下，发现了一款标注“免驱”的网卡，试了一试。</p>
+<p>本文以 <strong>COMFAST CF-922AC（MT7612U 芯片）</strong> 为例，完整记录从识别设备、切换网卡模式、加载内核驱动、到 iwctl 正常联网的全过程，理论适配所有同方案联发科 / 瑞昱国产免驱 USB 无线网卡。</p>
+<h1 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h1><p>插上能被 <code>lsusb</code> 识别（也有可能不出具体型号），<strong>但 iwctl、系统网络设置里完全看不到无线网卡</strong>。</p>
+<p><img src="../../attachments/image-20260501231151650.png" alt="image-20260501231151650"></p>
+<h2 id="识别设备与模式切换"><a href="#识别设备与模式切换" class="headerlink" title="识别设备与模式切换"></a>识别设备与模式切换</h2><p>注意看这个 </p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Bus 001 Device 010: ID 0e8d:2870 MediaTek Inc. Љ</span><br></pre></td></tr></tbody></table></figure>
+<p>不是上面的RTL8812AU</p>
+<p>你会发现只能得到这是个联发科的设备</p>
+<p><img src="../../attachments/image-20260501231156219.png" alt=""></p>
+<p>查看网卡的时候没这个网卡</p>
+<p>（我的wlan0是板载，wlan2是那个RTL8812AU）</p>
+<p>此时设备其实处于默认的 <strong>Mass Storage 模式</strong>（存储模式），主要给Windows展示为一个优盘，让系统安装优盘内的驱动（其实要我说…这纯纯浪费存储芯片，当然这存储芯片也成便宜了），因此 Linux 无法识别为网络设备。</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> pacman -S usb_modeswitch</span><br></pre></td></tr></tbody></table></figure>
+<p>安装USB模式切换工具</p>
+<p><img src="../../attachments/image-20260501231201365.png" alt=""></p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> <span class="built_in">mkdir</span> -p /etc/usb_modeswitch.d</span><br></pre></td></tr></tbody></table></figure>
+<p>创建配置文件</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">'TargetVendor=0x0e8d</span></span><br><span class="line"><span class="string">TargetProduct=0x2870</span></span><br><span class="line"><span class="string">MessageContent="5553424312345678000000000000061b000000020000000000000000000000"'</span> | <span class="built_in">sudo</span> <span class="built_in">tee</span> /etc/usb_modeswitch.d/0e8d:2870</span><br></pre></td></tr></tbody></table></figure>
+<p><code>MessageContent</code>用十六进制表示的二进制数据，用来让某些 USB 设备从“存储模式”切换到“工作模式”（比如网卡/调制解调器模式）</p>
+<p>这串数据是一个 <strong>USB Mass Storage Bulk-Only Transport (BOT) 命令块（CBW）</strong>，很多 3G/4G/USB 网卡都会用这种方式切换模式。</p>
+<p>本质就是：</p>
+<blockquote>
+<p>一个伪装成 SCSI “弹出设备”的命令，用来让 USB 设备退出 U 盘模式，切换到功能模式（比如网卡/调制解调器）</p>
+</blockquote>
+<h3 id="分段解析"><a href="#分段解析" class="headerlink" title="分段解析"></a>分段解析</h3><p>把它按字节拆开：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">55 53 42 43</span><br><span class="line">12 34 56 78</span><br><span class="line">00 00 00 00</span><br><span class="line">00 00 06 1b</span><br><span class="line">00</span><br><span class="line">00</span><br><span class="line">00 00 00 00 00 00 00 00 00 00 00 00</span><br></pre></td></tr></tbody></table></figure>
+<p>解释如下：</p>
+<h4 id="前4字节：签名"><a href="#前4字节：签名" class="headerlink" title="前4字节：签名"></a>前4字节：签名</h4><figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">55 53 42 43</span><br></pre></td></tr></tbody></table></figure>
+<p>ASCII = <code>"USBC"</code></p>
+<p>表示这是一个 <strong>USB Command Block Wrapper (CBW)</strong></p>
+<hr>
+<h4 id="接下来4字节：Tag"><a href="#接下来4字节：Tag" class="headerlink" title="接下来4字节：Tag"></a>接下来4字节：Tag</h4><figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">12 34 56 78</span><br></pre></td></tr></tbody></table></figure>
+<p>一个随便的标识符，用来匹配请求和响应</p>
+<hr>
+<h4 id="数据长度"><a href="#数据长度" class="headerlink" title="数据长度"></a>数据长度</h4><figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">00 00 00 00</span><br></pre></td></tr></tbody></table></figure>
+<p>表示这个命令 <strong>不期望返回数据</strong></p>
+<hr>
+<h4 id="标志-LUN-命令长度"><a href="#标志-LUN-命令长度" class="headerlink" title="标志 + LUN + 命令长度"></a>标志 + LUN + 命令长度</h4><figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">00</span><br><span class="line">00</span><br><span class="line">06</span><br></pre></td></tr></tbody></table></figure>
+<ul>
+<li>方向：0（主机→设备）</li>
+<li>LUN：0</li>
+<li>命令长度：6 字节</li>
+</ul>
+<hr>
+<h4 id="核心命令"><a href="#核心命令" class="headerlink" title="核心命令"></a>核心命令</h4><figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1b 00 00 00 02 00</span><br></pre></td></tr></tbody></table></figure>
+<p>这里是一个 <strong>SCSI 命令</strong></p>
+<p><code>1b</code> = SCSI START STOP UNIT 命令</p>
+<p>后面的参数：</p>
+<ul>
+<li><code>02</code>  关键参数（Load/Eject/Start）</li>
+</ul>
+<p>这个组合通常表示：</p>
+<blockquote>
+<p><strong>触发设备模式切换（Eject / 切换模式）</strong></p>
+</blockquote>
+<p>很多 USB 设备（特别是联发科 / 华为 / 中兴设备）：</p>
+<ul>
+<li>插上时先当 U 盘（内置驱动）</li>
+<li>需要发送这个命令</li>
+<li>才会变成真正的设备（比如 LTE 网卡）</li>
+</ul>
+<p><strong>注意</strong></p>
+<p>如果没成功，可能需要手动执行一下：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> usb_modeswitch -v 0x0e8d -p 0x2870 -M <span class="string">'5553424312345678000000000000061b000000020000000000000000000000'</span></span><br></pre></td></tr></tbody></table></figure>
+<p>但是我反正没执行就可以了</p>
+<p><img src="../../attachments/image-20260501231211208.png" alt=""></p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> modprobe mt76</span><br></pre></td></tr></tbody></table></figure>
+<p>加载驱动</p>
+<p>啊。。如果不对，那就是</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> modprobe mt76x2u</span><br></pre></td></tr></tbody></table></figure>
+<p>使用 iwctl 管理 WiFi，重启服务识别新网卡接口：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl restart iwd</span><br></pre></td></tr></tbody></table></figure>
+<p><img src="../../attachments/image-20260501231214718.png" alt="image-20260501231214718"></p>
+<p><img src="../../attachments/image-20260501231216902.png" alt="image-20260501231216902"></p>
+<h1 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h1><p>1.切换后仍无网卡</p>
+<ul>
+<li>检查是否安装 <code>linux-firmware</code> 固件包</li>
+<li>重新插拔网卡，再执行一次 modeswitch 切换</li>
+</ul>
+<p>2.重启电脑后网卡又变回 U 盘模式</p>
+<ul>
+<li>可配置 <code>udev</code> 规则，开机自动触发模式切换，无需手动输命令</li>
+</ul>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> <span class="built_in">tee</span> /etc/udev/rules.d/99-mt7612u.rules &lt;&lt; <span class="string">'EOF'</span></span><br><span class="line"><span class="comment"># MT7612U 自动切换为 WiFi 模式</span></span><br><span class="line">SUBSYSTEM==<span class="string">"usb"</span>, ATTR{idVendor}==<span class="string">"0e8d"</span>, ATTR{idProduct}==<span class="string">"2870"</span>, RUN+=<span class="string">"/usr/bin/usb_modeswitch -v 0x0e8d -p 0x2870 -M '5553424312345678000000000000061b000000020000000000000000000000'"</span></span><br><span class="line">EOF</span><br></pre></td></tr></tbody></table></figure>
+<p>重新加载 udev 规则：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> udevadm control --reload-rules</span><br><span class="line"><span class="built_in">sudo</span> udevadm trigger</span><br></pre></td></tr></tbody></table></figure>
+<p>3.同时有多张 USB 无线网卡</p>
+<ul>
+<li>内核会自动生成 <code>wlan0</code>、<code>wlan1</code> 多接口，iwctl 可分别管理</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/ac10/">https://moxin1044.github.io/posts/ac10/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/ArchLinux/">ArchLinux</a><a class="post-meta__tags" href="/tags/%E8%BF%90%E7%BB%B4/">运维</a></div><div class="post-share"><div class="social-share" data-image="/../attachments/image-20260501231151650.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/posts/b51c/" title="【漏洞复现】CVE-2010-1870-S2-005 远程代码执行漏洞"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">【漏洞复现】CVE-2010-1870-S2-005 远程代码执行漏洞</div></div><div class="info-2"><div class="info-item-1">题目环境Dockerfile123456789101112131415161718192021FROM tomcat:8.5-jre8RUN apt-get update &amp;&amp; apt-get install -y curl netcat &amp;&amp; rm -rf /var/lib/apt/lists/*COPY S2-005.war /usr/local/tomcat/webapps/ROOT.warRUN echo '#!/bin/bash\n\if [ -n "$FLAG" ]; then\n\    echo "$FLAG" &gt; /flag\n\    chmod 444 /flag\n\    echo "[+] Flag written to /flag"\n\else\n\    echo "[-] FLAG environment variable is empty!" &gt; /flag\n\fi\n\exec catalina.sh ru...</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">78</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">38</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">32</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C"><span class="toc-number">2.</span> <span class="toc-text">实验</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%86%E5%88%AB%E8%AE%BE%E5%A4%87%E4%B8%8E%E6%A8%A1%E5%BC%8F%E5%88%87%E6%8D%A2"><span class="toc-number">2.1.</span> <span class="toc-text">识别设备与模式切换</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E6%AE%B5%E8%A7%A3%E6%9E%90"><span class="toc-number">2.1.1.</span> <span class="toc-text">分段解析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%89%8D4%E5%AD%97%E8%8A%82%EF%BC%9A%E7%AD%BE%E5%90%8D"><span class="toc-number">2.1.1.1.</span> <span class="toc-text">前4字节：签名</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8E%A5%E4%B8%8B%E6%9D%A54%E5%AD%97%E8%8A%82%EF%BC%9ATag"><span class="toc-number">2.1.1.2.</span> <span class="toc-text">接下来4字节：Tag</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E9%95%BF%E5%BA%A6"><span class="toc-number">2.1.1.3.</span> <span class="toc-text">数据长度</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A0%87%E5%BF%97-LUN-%E5%91%BD%E4%BB%A4%E9%95%BF%E5%BA%A6"><span class="toc-number">2.1.1.4.</span> <span class="toc-text">标志 + LUN + 命令长度</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E5%91%BD%E4%BB%A4"><span class="toc-number">2.1.1.5.</span> <span class="toc-text">核心命令</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A1%A5%E5%85%85"><span class="toc-number">3.</span> <span class="toc-text">补充</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/ac10/" title="【ArchLinux】如何制服国产免驱网卡"><img src="/../attachments/image-20260501231151650.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【ArchLinux】如何制服国产免驱网卡"></a><div class="content"><a class="title" href="/posts/ac10/" title="【ArchLinux】如何制服国产免驱网卡">【ArchLinux】如何制服国产免驱网卡</a><time datetime="2026-05-01T14:45:02.000Z" title="发表于 2026-05-01 22:45:02">2026-05-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/posts/b51c/" title="【漏洞复现】CVE-2010-1870-S2-005 远程代码执行漏洞">【漏洞复现】CVE-2010-1870-S2-005 远程代码执行漏洞</a><time datetime="2026-04-05T01:41:12.000Z" title="发表于 2026-04-05 09:41:12">2026-04-05</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/3694/" title="【DC系列靶场】DC:06"><img src="/../attachments/image-20260403162046124.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【DC系列靶场】DC:06"></a><div class="content"><a class="title" href="/posts/3694/" title="【DC系列靶场】DC:06">【DC系列靶场】DC:06</a><time datetime="2026-04-01T14:05:20.000Z" title="发表于 2026-04-01 22:05:20">2026-04-01</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/f215/" title="【DC系列靶场】DC:08"><img src="/../attachments/image-20260402010056218.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【DC系列靶场】DC:08"></a><div class="content"><a class="title" href="/posts/f215/" title="【DC系列靶场】DC:08">【DC系列靶场】DC:08</a><time datetime="2026-04-01T14:05:19.000Z" title="发表于 2026-04-01 22:05:19">2026-04-01</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/37d4/" title="【DC系列靶场】DC:05"><img src="/../attachments/image-20260401232822951.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【DC系列靶场】DC:05"></a><div class="content"><a class="title" href="/posts/37d4/" title="【DC系列靶场】DC:05">【DC系列靶场】DC:05</a><time datetime="2026-04-01T14:05:18.000Z" title="发表于 2026-04-01 22:05:18">2026-04-01</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.0.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
