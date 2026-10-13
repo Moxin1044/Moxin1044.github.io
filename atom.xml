@@ -10,13 +10,14 @@
   <rights>All rights reserved 2026, 末心</rights>
   <subtitle>一个关于技术的小站，分享自己的技术思考和经验。</subtitle>
   <title>末心的小博客</title>
-  <updated>2026-10-13T19:42:17.472Z</updated>
+  <updated>2026-10-13T19:48:56.573Z</updated>
   <entry>
     <author>
       <name>末心</name>
     </author>
-    <category term="漏洞复现" scheme="https://moxin1044.github.io/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/"/>
-    <category term="网络安全" scheme="https://moxin1044.github.io/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/"/>
+    <category term="漏洞" scheme="https://moxin1044.github.io/categories/%E6%BC%8F%E6%B4%9E/"/>
+    <category term="Web" scheme="https://moxin1044.github.io/categories/%E6%BC%8F%E6%B4%9E/Web/"/>
+    <category term="分析复现" scheme="https://moxin1044.github.io/categories/%E6%BC%8F%E6%B4%9E/Web/%E5%88%86%E6%9E%90%E5%A4%8D%E7%8E%B0/"/>
     <category term="漏洞复现" scheme="https://moxin1044.github.io/tags/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/"/>
     <category term="Gitea" scheme="https://moxin1044.github.io/tags/Gitea/"/>
     <category term="RCE" scheme="https://moxin1044.github.io/tags/RCE/"/>
@@ -32,7 +33,7 @@
       <![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js"]]>
     </summary>
     <title>【漏洞复现】CVE-2026-60004 Gitea diffpatch 接口 Git 钩子注入致远程命令执行</title>
-    <updated>2026-10-13T19:42:17.472Z</updated>
+    <updated>2026-10-13T19:48:56.573Z</updated>
   </entry>
   <entry>
     <author>
