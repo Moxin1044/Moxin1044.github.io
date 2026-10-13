@@ -10,7 +10,7 @@
   <rights>All rights reserved 2026, 末心</rights>
   <subtitle>一个关于技术的小站，分享自己的技术思考和经验。</subtitle>
   <title>末心的小博客</title>
-  <updated>2026-10-13T21:25:18.604Z</updated>
+  <updated>2026-10-13T21:29:49.664Z</updated>
   <entry>
     <author>
       <name>末心</name>
@@ -29,8 +29,8 @@
     <link href="https://moxin1044.github.io/posts/879d/"/>
     <published>2026-10-13T21:25:08.000Z</published>
     <summary>从 ZIP 文件头讲到香农熵：为什么压缩能让文件变小，为什么随机数据压不动，为什么套娃压缩不管用。含 300KB 级实测数据、LZ77 演示与四张图。</summary>
-    <title>ZIP 为什么能让文件变小？</title>
-    <updated>2026-10-13T21:25:18.604Z</updated>
+    <title>ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限</title>
+    <updated>2026-10-13T21:29:49.664Z</updated>
   </entry>
   <entry>
     <author>
