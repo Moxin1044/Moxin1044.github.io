@@ -1,0 +1,596 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>一个初中生也能读懂的复杂度 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="用妹妹在书包里找作业本这件事，讲清时间复杂度和空间复杂度——含 C++/Python 双版本代码、公式推导与三张配图，初中生也能读懂。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一个初中生也能读懂的复杂度">
+<meta property="og:url" content="https://moxin1044.github.io/posts/6751/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="用妹妹在书包里找作业本这件事，讲清时间复杂度和空间复杂度——含 C++/Python 双版本代码、公式推导与三张配图，初中生也能读懂。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/fig1_%E5%A4%8D%E6%9D%82%E5%BA%A6%E9%98%B6%E6%A2%AF.png">
+<meta property="article:published_time" content="2026-10-13T20:58:06.000Z">
+<meta property="article:modified_time" content="2026-10-13T20:58:06.827Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="复杂度">
+<meta property="article:tag" content="大O">
+<meta property="article:tag" content="数据结构">
+<meta property="article:tag" content="算法">
+<meta property="article:tag" content="费曼学习法">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/fig1_%E5%A4%8D%E6%9D%82%E5%BA%A6%E9%98%B6%E6%A2%AF.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "一个初中生也能读懂的复杂度",
+  "url": "https://moxin1044.github.io/posts/6751/",
+  "image": "https://moxin1044.github.io/attachments/fig1_%E5%A4%8D%E6%9D%82%E5%BA%A6%E9%98%B6%E6%A2%AF.png",
+  "datePublished": "2026-10-13T20:58:06.000Z",
+  "dateModified": "2026-10-13T20:58:06.827Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/6751/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":true,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: true,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '一个初中生也能读懂的复杂度',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="末心的小博客" type="application/atom+xml">
+</head><body><div id="web_bg" style="background-image: url(https://bing.biturl.top/?resolution=1920&amp;format=image&amp;index=0&amp;mkt=zh-CN);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">82</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">50</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">35</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/attachments/fig1_%E5%A4%8D%E6%9D%82%E5%BA%A6%E9%98%B6%E6%A2%AF.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">一个初中生也能读懂的复杂度</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">一个初中生也能读懂的复杂度</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-10-13T20:58:06.000Z" title="发表于 2026-10-14 04:58:06">2026-10-14</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-10-13T20:58:06.827Z" title="更新于 2026-10-14 04:58:06">2026-10-14</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BC%96%E7%A8%8B/%E6%A6%82%E8%AE%BA/">概论</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">4.4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>14分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/attachments/fig1_%E5%A4%8D%E6%9D%82%E5%BA%A6%E9%98%B6%E6%A2%AF.png);"></div><article class="container post-content" id="article-container"><h1 id="一个初中生也能读懂的「时间复杂度与空间复杂度」"><a href="#一个初中生也能读懂的「时间复杂度与空间复杂度」" class="headerlink" title="一个初中生也能读懂的「时间复杂度与空间复杂度」"></a>一个初中生也能读懂的「时间复杂度与空间复杂度」</h1><blockquote>
+<p>（我以费曼视角和你聊，基于公开言论推断，非本人观点。）</p>
+</blockquote>
+<hr>
+<h2 id="一、先别管名字，来数一数"><a href="#一、先别管名字，来数一数" class="headerlink" title="一、先别管名字，来数一数"></a>一、先别管名字，来数一数</h2><p>假设你妹妹让你帮她在书包里找一本作业本。</p>
+<p>书包里有 <strong>3 本</strong>本子的时候，你抓两下就找到了，用了 2 秒。<br>书包里有 <strong>30 本</strong>本子的时候，你要翻一会儿，用了 20 秒。<br>书包里有 <strong>300 本</strong>本子的时候——你翻了两个小时。</p>
+<p>现在我问你一个问题：<strong>“找本子”这件事，到底”有多快”？</strong></p>
+<p>你可能会说：”2 秒。”</p>
+<p>错。<strong>2 秒是书包里有 3 本时的答案。</strong> 本子变成 300 本，答案就变成了两个小时。</p>
+<p>所以真正的答案不是”几秒”，而是——</p>
+<blockquote>
+<p><strong>本子每多一倍，我要多用多少时间？</strong></p>
+</blockquote>
+<p>这就是”复杂度”这个词真正在问的东西。<strong>它不问你跑得多快。它问你：东西变多了，你变慢的速度有多快。</strong></p>
+<p>我觉得这是理解复杂度的<strong>唯一</strong>入口。如果你记住了 <code>O(n²)</code> 这四个字符，但不知道它在问这个，那你只是在背咒语——<strong>飞机不会因为机场修得像飞机场就降落</strong>。</p>
+<hr>
+<h2 id="二、大-O：一种”只留主干”的写法"><a href="#二、大-O：一种”只留主干”的写法" class="headerlink" title="二、大 O：一种”只留主干”的写法"></a>二、大 O：一种”只留主干”的写法</h2><p>我妹妹真正找本子的动作是这样的：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">翻开第 1 本 → 不是</span><br><span class="line">翻开第 2 本 → 不是</span><br><span class="line">翻开第 3 本 → 不是</span><br><span class="line">...</span><br><span class="line">翻开第 n 本 → 找到了</span><br></pre></td></tr></tbody></table></figure>
+<p>一共翻了 <strong>n</strong> 次。（n 就是本子的数量。）</p>
+<p>如果每翻一本要花 <strong>0.1 秒</strong>，还要先花 <strong>2 秒</strong>拉开书包拉链，那总时间是：</p>
+<script type="math/tex; mode=display">T(n) = 0.1n + 2</script><p>现在把 n 取几个数：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>n（本子数）</th>
+<th>0.1n</th>
+<th>+2</th>
+<th>总时间</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>1</td>
+<td>2</td>
+<td>3</td>
+</tr>
+<tr>
+<td>100</td>
+<td>10</td>
+<td>2</td>
+<td>12</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>100</td>
+<td>2</td>
+<td>102</td>
+</tr>
+<tr>
+<td>10000</td>
+<td>1000</td>
+<td>2</td>
+<td>1002</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>看最后一列：n 从 100 涨到 10000（100 倍），总时间从 12 涨到 1002——<strong>涨了大约 83 倍。</strong></p>
+<p>再看 <code>0.1n</code> 这一项：12 里它占 10，1002 里它占 1000。<strong>它一直是主角。</strong> 而那个 <code>+2</code>（拉链的时间）在 n 很小的时候还有点存在感，n 一大就完全不算数了。</p>
+<p><strong>这就是大 O 的全部秘密：</strong></p>
+<blockquote>
+<p>当 n 变得很大很大时，只留下<strong>涨得最凶</strong>的那一项，把前面的系数和后面加的小尾巴都扔掉。</p>
+</blockquote>
+<p>写成数学语言，就是：</p>
+<script type="math/tex; mode=display">0.1n + 2 \;\longrightarrow\; O(n)</script><p>更严谨一点，大 O 的定义是：<strong>存在</strong>两个正常数 $c$ 和 $n_0$，使得对<strong>所有</strong> $n \ge n_0$ 都有</p>
+<script type="math/tex; mode=display">T(n) \le c \cdot f(n)</script><p>这时我们就写 $T(n) = O(f(n))$。翻译成人话：</p>
+<blockquote>
+<p><strong>“从某个 n 开始，它的增长速度不会超过 f(n) 的某个倍数。”</strong></p>
+</blockquote>
+<p>注意这里我用了”增长”和”不超过”——<strong>大 O 说的是一根上限，不是一个精确值。</strong> 它天生就是个偷懒的写法。而这个偷懒是第一流的：因为当 n 足够大时，你根本不需要知道精确值，你只需要知道<strong>它在怎么涨</strong>。</p>
+<hr>
+<h2 id="三、五种涨法（图一）"><a href="#三、五种涨法（图一）" class="headerlink" title="三、五种涨法（图一）"></a>三、五种涨法（图一）</h2><p>把最常见的那几种”涨法”画出来，你会一眼看懂为什么计算机老师总在念叨它们：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_复杂度阶梯.png" alt="图一：复杂度阶梯"></p>
+<p><strong>图一</strong>：横轴是数据量 n，纵轴是要做的操作次数。注意红色那条 <code>O(n²)</code>——它一开始很谦虚，到后面直接冲上天。</p>
+<p>我用找本子来翻译这五条：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>记号</th>
+<th>名字</th>
+<th>找本子的版本</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$O(1)$</td>
+<td>常数</td>
+<td>本子就在你手上，不用找</td>
+</tr>
+<tr>
+<td>$O(\log n)$</td>
+<td>对数</td>
+<td>每次翻到中间，直接砍掉一半</td>
+</tr>
+<tr>
+<td>$O(n)$</td>
+<td>线性</td>
+<td>一本一本翻</td>
+</tr>
+<tr>
+<td>$O(n\log n)$</td>
+<td>线性对数</td>
+<td>先分成小堆再整理（好排序的做法）</td>
+</tr>
+<tr>
+<td>$O(n^2)$</td>
+<td>平方</td>
+<td>每两本都要互相比一遍</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>这里有个特别容易搞混的点，我要说清楚：</strong> 你一定会听到有人说”$O(n)$ 比 $O(n^2)$ 快”。这句<strong>不完全对</strong>。</p>
+<p>它准确的版本是：<strong>当 n 足够大的时候，$O(n)$ 才一定比 $O(n^2)$ 快。</strong> n 小的时候，一条 <code>O(n²)</code> 的代码完全可能跑赢一条 <code>O(n)</code> 的代码——如果它每条指令写得更精简的话。</p>
+<p>看<strong>图二</strong>你就明白了。同一份代码，n=8 的时候两条线几乎贴在一起，你根本看不出谁好谁坏；n=60 的时候，一个上一个冲天。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig2_小n与大n.png" alt="图二：n 小时看不出来"></p>
+<blockquote>
+<p><strong>这是我见过的、最值得记住的一件事：如果数据不够大，你测出来的快慢可能是假的。</strong></p>
+</blockquote>
+<p>我做物理的人对这个太敏感了——实验做得不对，数据会骗你，而且它会骗得很自然，让你觉得你懂了。</p>
+<hr>
+<h2 id="四、例子一：找人（-O-n-对上-O-log-n-）"><a href="#四、例子一：找人（-O-n-对上-O-log-n-）" class="headerlink" title="四、例子一：找人（$O(n)$ 对上 $O(\log n)$）"></a>四、例子一：找人（$O(n)$ 对上 $O(\log n)$）</h2><p>现在上代码。<strong>同一件事，我们写两种做法。</strong></p>
+<h3 id="做法-A：一本一本翻（-O-n-）"><a href="#做法-A：一本一本翻（-O-n-）" class="headerlink" title="做法 A：一本一本翻（$O(n)$）"></a>做法 A：一本一本翻（$O(n)$）</h3><figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Python</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">线性查找</span>(<span class="params">名单, 目标</span>):</span><br><span class="line">    <span class="keyword">for</span> 名字 <span class="keyword">in</span> 名单:        <span class="comment"># 从头看到尾</span></span><br><span class="line">        <span class="keyword">if</span> 名字 == 目标:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">False</span></span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++ —— 同一件事</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">linear_search</span><span class="params">(<span class="type">const</span> vector&lt;string&gt;&amp; names, <span class="type">const</span> string&amp; target)</span> </span>{</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; n : names)   <span class="comment">// 从头看到尾</span></span><br><span class="line">        <span class="keyword">if</span> (n == target) <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>最坏情况下要看 n 次。所以：</p>
+<script type="math/tex; mode=display">T(n) = O(n)</script><h3 id="做法-B：每次砍掉一半（-O-log-n-）"><a href="#做法-B：每次砍掉一半（-O-log-n-）" class="headerlink" title="做法 B：每次砍掉一半（$O(\log n)$）"></a>做法 B：每次砍掉一半（$O(\log n)$）</h3><p><strong>但是</strong>——如果名单是<strong>排好序</strong>的（比如按拼音排好），你就能干一件聪明得离谱的事：</p>
+<p>先翻<strong>中间</strong>那本。</p>
+<ul>
+<li>如果中间这本的拼音<strong>在你找的名字前面</strong> → 那你要找的肯定在<strong>后半边</strong>，前边一半整块扔掉。</li>
+<li>如果<strong>在后面</strong> → 后边一半扔掉。</li>
+</ul>
+<p>每翻一次，<strong>名单就少一半。</strong></p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Python</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">二分查找</span>(<span class="params">有序名单, 目标</span>):</span><br><span class="line">    左, 右 = <span class="number">0</span>, <span class="built_in">len</span>(有序名单) - <span class="number">1</span></span><br><span class="line">    <span class="keyword">while</span> 左 &lt;= 右:</span><br><span class="line">        中 = (左 + 右) // <span class="number">2</span></span><br><span class="line">        <span class="keyword">if</span> 有序名单[中] == 目标:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="keyword">elif</span> 有序名单[中] &lt; 目标:</span><br><span class="line">            左 = 中 + <span class="number">1</span>        <span class="comment"># 扔掉左半边</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            右 = 中 - <span class="number">1</span>        <span class="comment"># 扔掉右半边</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">False</span></span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++ —— 同一件事</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">binary_search_sorted</span><span class="params">(<span class="type">const</span> vector&lt;string&gt;&amp; a, <span class="type">const</span> string&amp; target)</span> </span>{</span><br><span class="line">    <span class="type">int</span> lo = <span class="number">0</span>, hi = (<span class="type">int</span>)a.<span class="built_in">size</span>() - <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">while</span> (lo &lt;= hi) {</span><br><span class="line">        <span class="type">int</span> mid = lo + (hi - lo) / <span class="number">2</span>;   <span class="comment">// 这么写是为了防止 lo+hi 溢出</span></span><br><span class="line">        <span class="keyword">if</span> (a[mid] == target)      <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (a[mid] &lt; target)  lo = mid + <span class="number">1</span>;  <span class="comment">// 扔掉左半边</span></span><br><span class="line">        <span class="keyword">else</span>                       hi = mid - <span class="number">1</span>;  <span class="comment">// 扔掉右半边</span></span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>为什么是 $\log$？我们来推一下。n 本本子，每次砍一半：</p>
+<script type="math/tex; mode=display">n \to \frac{n}{2} \to \frac{n}{4} \to \dots \to 1</script><p>砍了几次？设砍了 k 次：</p>
+<script type="math/tex; mode=display">\frac{n}{2^k} = 1 \;\Longrightarrow\; 2^k = n \;\Longrightarrow\; k = \log_2 n</script><p>所以：</p>
+<script type="math/tex; mode=display">T(n) = O(\log n)</script><p><strong>这两个差多远？我给你算个实在数。</strong> 一本 100 万条的名单：</p>
+<ul>
+<li>做法 A：最坏要找 <strong>1,000,000</strong> 次。</li>
+<li>做法 B：$\log_2 1000000 \approx 20$ 次。</li>
+</ul>
+<p><strong>20 次。</strong></p>
+<p>我第一次算这个的时候是有点恼怒的。你想，你妹妹找本子找两个小时，你只消翻 20 下。就这么个”每次都从中间下手”的笨办法，把人家的两个小时变成了 20 下。这不是什么高深技巧，这是<strong>换了个问法</strong>：不问”下一个在哪儿”，问”它可能在左半边还是右半边”。</p>
+<p><strong>这就是我一直在说的事——不懂的东西你没法简单地说出来。等你真能简单地说出来了，你会发现它本来就很朴素。</strong></p>
+<p>（顺便：C++ 标准库的 <code>std::binary_search</code>、Python 的 <code>bisect</code> 模块，干的就是这件事。别人已经写好了，你直接叫即可。）</p>
+<hr>
+<h2 id="五、例子二：两两都比较（-O-n-2-）——-以及它为什么可怕"><a href="#五、例子二：两两都比较（-O-n-2-）——-以及它为什么可怕" class="headerlink" title="五、例子二：两两都比较（$O(n^2)$）—— 以及它为什么可怕"></a>五、例子二：两两都比较（$O(n^2)$）—— 以及它为什么可怕</h2><p>给你一个名单，问你：<strong>谁和谁同名？</strong></p>
+<p>最笨的做法，是让每个人跟其他每个人都比一遍：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Python</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">找重名</span>(<span class="params">名单</span>):</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(名单)):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(名单)):     <span class="comment"># 注意这个内层循环</span></span><br><span class="line">            <span class="keyword">if</span> i != j <span class="keyword">and</span> 名单[i] == 名单[j]:</span><br><span class="line">                <span class="keyword">return</span> (名单[i], 名单[j])</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">None</span></span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++ —— 同一件事</span></span><br><span class="line"><span class="function">pair&lt;string,string&gt; <span class="title">find_duplicate</span><span class="params">(<span class="type">const</span> vector&lt;string&gt;&amp; a)</span> </span>{</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; a.<span class="built_in">size</span>(); ++i)</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">size_t</span> j = <span class="number">0</span>; j &lt; a.<span class="built_in">size</span>(); ++j)</span><br><span class="line">            <span class="keyword">if</span> (i != j &amp;&amp; a[i] == a[j])</span><br><span class="line">                <span class="keyword">return</span> {a[i], a[j]};</span><br><span class="line">    <span class="keyword">return</span> {};</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p><strong>为什么会变成 n²？</strong> 因为这是<strong>两层</strong>循环：外层跑 n 次，每跑一次内层又跑 n 次。乘起来：</p>
+<script type="math/tex; mode=display">T(n) = n \times n = n^2 = O(n^2)</script><p>看<strong>图二</strong>右边那条红色曲线——那就是它。</p>
+<p><strong>为什么我说它可怕？</strong> 拿数字说话：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>n（人数）</th>
+<th>n²（比较次数）</th>
+<th>假设每次比较 1 微秒</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100</td>
+<td>10,000</td>
+<td>0.01 秒（没感觉）</td>
+</tr>
+<tr>
+<td>1,000</td>
+<td>1,000,000</td>
+<td>1 秒（还行）</td>
+</tr>
+<tr>
+<td>10,000</td>
+<td>100,000,000</td>
+<td>100 秒（你开始眨眼）</td>
+</tr>
+<tr>
+<td>100,000</td>
+<td>10,000,000,000</td>
+<td><strong>2.8 小时</strong>（你可以睡一觉）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>注意这个感觉</strong>：n 变 1000 倍，时间变 <strong>1,000,000 倍</strong>。这就是平方的恐怖之处——它不是慢，它是<strong>慢得越来越离谱</strong>。</p>
+<p>所以我让你记住一句话：</p>
+<blockquote>
+<p><strong>一个 $O(n^2)$ 的算法能不能用，不取决于你的电脑有多好，取决于 n 会不会长大。</strong></p>
+</blockquote>
+<p>电脑快 4 倍，你只能扛住 n 翻一倍。而现实里的数据，往往不止翻一倍。</p>
+<hr>
+<h2 id="六、例子三：排序——为什么好的排序是-n-log-n"><a href="#六、例子三：排序——为什么好的排序是-n-log-n" class="headerlink" title="六、例子三：排序——为什么好的排序是 $n\log n$"></a>六、例子三：排序——为什么好的排序是 $n\log n$</h2><p>排序的朴素做法是：每次从剩下的里面挑一个最小的放前面（选择排序）。挑一个要扫一遍，扫 n 次：</p>
+<script type="math/tex; mode=display">T(n) = O(n^2)</script><p>而聪明做法（归并排序、快速排序）的核心思想是：<strong>先把问题切一半，解决两个小问题，再拼起来。</strong></p>
+<script type="math/tex; mode=display">T(n) = 2\,T\!\left(\frac{n}{2}\right) + O(n)</script><p>这个式子的意思是一行一行读出来：</p>
+<ul>
+<li>$T(n)$：排 n 个数要花的时间；</li>
+<li>右边：<strong>分成两个 n/2 的问题</strong>（两个 $T(n/2)$），</li>
+<li>再<strong>花 O(n) 把它们拼回一起</strong>。</li>
+</ul>
+<p>解这个式子（一层层展开，得到 $\log n$ 层，每层总共 O(n)）：</p>
+<script type="math/tex; mode=display">T(n) = O(n \log n)</script><p>对比一下（还是 100 万条）：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>算法</th>
+<th>操作次数</th>
+<th>大致倍数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$O(n^2)$ 选择排序</td>
+<td>$10^{12}$</td>
+<td>1</td>
+</tr>
+<tr>
+<td>$O(n\log n)$ 归并排序</td>
+<td>$2 \times 10^{7}$</td>
+<td><strong>约 1/50000</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>这就是为什么全世界的库函数里，排序都不是”挑最小”那种笨办法。</strong> 这不是学术洁癖，这是 5 万倍。</p>
+<hr>
+<h2 id="七、空间复杂度：不光要能跑，还要占得住"><a href="#七、空间复杂度：不光要能跑，还要占得住" class="headerlink" title="七、空间复杂度：不光要能跑，还要占得住"></a>七、空间复杂度：不光要能跑，还要占得住</h2><p>到这里我们一直在数<strong>时间</strong>。但还有另一半故事：<strong>它要占多大地方。</strong></p>
+<p>这个不难理解。你去搬东西：</p>
+<ul>
+<li><strong>时间</strong>=你跑了几趟；</li>
+<li><strong>空间</strong>=你要多大的仓库。</li>
+</ul>
+<p><strong>空间复杂度</strong>问的是同一类问题：</p>
+<blockquote>
+<p><strong>数据量 n 变大，占用的内存会涨多快？</strong></p>
+</blockquote>
+<p>看这段代码：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 空间 O(1)：不管 n 多大，只多用一个格子</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">求和_循环</span>(<span class="params">列表</span>):</span><br><span class="line">    总数 = <span class="number">0</span>                      <span class="comment"># 一个变量</span></span><br><span class="line">    <span class="keyword">for</span> x <span class="keyword">in</span> 列表:</span><br><span class="line">        总数 += x</span><br><span class="line">    <span class="keyword">return</span> 总数</span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++ —— 同样是 O(1)</span></span><br><span class="line"><span class="function"><span class="type">long</span> <span class="type">long</span> <span class="title">sum_loop</span><span class="params">(<span class="type">const</span> vector&lt;<span class="type">int</span>&gt;&amp; v)</span> </span>{</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> total = <span class="number">0</span>;          <span class="comment">// 一个变量</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> x : v) total += x;</span><br><span class="line">    <span class="keyword">return</span> total;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>再看这个：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 空间 O(n)：每次递归都新开一份</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">求和_递归</span>(<span class="params">列表</span>):</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> 列表:                 <span class="comment"># 基线情形</span></span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">    <span class="keyword">return</span> 列表[<span class="number">0</span>] + 求和_递归(列表[<span class="number">1</span>:])</span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++ —— 同样是 O(n)</span></span><br><span class="line"><span class="function"><span class="type">long</span> <span class="type">long</span> <span class="title">sum_rec</span><span class="params">(<span class="type">const</span> vector&lt;<span class="type">int</span>&gt;&amp; v, <span class="type">size_t</span> i = <span class="number">0</span>)</span> </span>{</span><br><span class="line">    <span class="keyword">if</span> (i == v.<span class="built_in">size</span>()) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">return</span> v[i] + <span class="built_in">sum_rec</span>(v, i + <span class="number">1</span>);   <span class="comment">// 每一层都还没返回</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p><strong>为什么递归是 O(n) 空间？</strong> 因为计算机执行递归，就像你打电话找人，<strong>每一层的人都在线上等着</strong>，谁都没挂。第 1 层调用第 2 层，第 2 层调用第 3 层……到第 n 层时，前面 n 层<strong>全都在内存里挂着</strong>。看<strong>图三</strong>右边，那摞起来的柱子就是这个意思。</p>
+<blockquote>
+<p><strong>一个我必须说实话的地方</strong>：这段 Python 里 <code>列表[1:]</code> 还会<strong>额外复制一份新列表</strong>，所以它其实更浪费——真正的工程写法会用下标 <code>i</code> 往前挪（像上面那段 C++ 那样），避免复制。这是个很好的教训：<strong>代码怎么写，直接决定复杂度。</strong> 我一开始举这个例子就是为了让你看见它。</p>
+</blockquote>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig3_空间与取舍.png" alt="图三：空间与取舍"></p>
+<hr>
+<h2 id="八、★-最有用的那一招：空间换时间"><a href="#八、★-最有用的那一招：空间换时间" class="headerlink" title="八、★ 最有用的那一招：空间换时间"></a>八、★ 最有用的那一招：空间换时间</h2><p>如果你今天只带走一件事，带走这个。</p>
+<p>回到第五节那个”两两比较找重名”。有没有办法不找死？</p>
+<p><strong>有。开个登记本。</strong></p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 空间 O(n)，时间 O(n)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">找重名_快</span>(<span class="params">名单</span>):</span><br><span class="line">    登记本 = <span class="built_in">set</span>()                 <span class="comment"># 用一点额外空间</span></span><br><span class="line">    <span class="keyword">for</span> 名字 <span class="keyword">in</span> 名单:</span><br><span class="line">        <span class="keyword">if</span> 名字 <span class="keyword">in</span> 登记本:          <span class="comment"># 查登记本几乎是瞬间</span></span><br><span class="line">            <span class="keyword">return</span> 名字</span><br><span class="line">        登记本.add(名字)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">None</span></span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++ —— 同一件事</span></span><br><span class="line"><span class="function">optional&lt;string&gt; <span class="title">find_dup_fast</span><span class="params">(<span class="type">const</span> vector&lt;string&gt;&amp; a)</span> </span>{</span><br><span class="line">    unordered_set&lt;string&gt; seen;    <span class="comment">// 用一点额外空间</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; n : a) {</span><br><span class="line">        <span class="keyword">if</span> (seen.<span class="built_in">count</span>(n)) <span class="keyword">return</span> n;</span><br><span class="line">        seen.<span class="built_in">insert</span>(n);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nullopt</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p><strong>我们干了什么？</strong> 我们<strong>多花了一点内存</strong>（那个”登记本”），换来时间从 $O(n^2)$ 变成 $O(n)$。</p>
+<p>n=100 时：从 10,000 次比较，变成 100 次。<strong>图三</strong>左边那两根柱子就是这个对比。</p>
+<p><strong>代价是</strong>：多占 O(n) 的内存来存登记本。</p>
+<blockquote>
+<p><strong>这不是作弊，这是交易。</strong> 时间和空间是一对可以互换的东西，你几乎总是在拿一个换另一个。整个计算机科学里一半的工程技巧，本质上就是在做这笔买卖。</p>
+</blockquote>
+<hr>
+<h2 id="九、别骗自己：三个常见的自欺"><a href="#九、别骗自己：三个常见的自欺" class="headerlink" title="九、别骗自己：三个常见的自欺"></a>九、别骗自己：三个常见的自欺</h2><p>这一段是我最想说的。因为<strong>复杂度这东西，特别容易让人假装懂了</strong>。</p>
+<p><strong>① “我测过了，它很快。”</strong></p>
+<p>看<strong>图二</strong>。n=8 的时候，$O(n^2)$ 和 $O(n)$ 的线是重合的。你用 8 个数据测，然后下结论说”我的代码没问题”——这在物理里叫<strong>实验设计错误</strong>。你没测错，你只是<strong>测了一个不说明任何问题的东西</strong>。</p>
+<p><strong>② “我用了最新的库，所以肯定快。”</strong></p>
+<p>用了复杂算法库里最快的函数，不代表你的<strong>那段代码</strong>变快了。工具是形式，你的算法才是实质。<strong>去掉工具的名字，看你的代码在做什么</strong>——这才是真的。</p>
+<p><strong>③ “大 O 越大就越慢。”</strong></p>
+<p>不对，是”<strong>n 够大以后</strong>越慢”。$O(n^2)$ 的 C++ 代码，跑赢一个 $O(n)$ 的 Python 代码——太正常了。大 O 比较的是<strong>自己和自己</strong>在不同 n 下的表现，不是两门语言打架。</p>
+<hr>
+<h2 id="十、我不知道的部分（以及它为什么不丢人）"><a href="#十、我不知道的部分（以及它为什么不丢人）" class="headerlink" title="十、我不知道的部分（以及它为什么不丢人）"></a>十、我不知道的部分（以及它为什么不丢人）</h2><p>我不想让这篇文章显得比它实际的样子更完整。有几个地方我要说清楚：</p>
+<ul>
+<li><strong>大 O 只是”上限”</strong>，它不管你平时的实际快慢。现实中还有”平均复杂度””最坏复杂度”的区别。快速排序最坏是 $O(n^2)$，但你天天在用它——因为它<strong>平均</strong>是 $O(n\log n)$，而且常数很小。<strong>“理论最坏”和”实际天天”完全是两回事。</strong></li>
+<li><strong>常数真的会被忽略吗？</strong> 数学上会。工程上不会。一个常数是 1000 的 $O(n)$ 算法，在 n 小于某个数之前，跑不过一个常数是 1 的 $O(n^2)$。所以真实的程序里要”两个都写，小了用笨的、大了用聪明的”——这个技巧叫混合策略，Python 和 C++ 的排序里都藏着它。</li>
+<li><strong>内存的”快”不止一层。</strong> 你的 CPU 里有一层层的缓存（缓存比内存快几百倍）。两个复杂度<strong>一样</strong>的算法，谁把数据摆得更近，谁就真快。这部分（cache-oblivious、内存局部性）我不知道得足够深，就不装懂了。</li>
+<li><strong>我这篇文章里的所有时间估算</strong>（比如”1 微秒一次比较”）都是为了让你有感觉的<strong>随手假设</strong>，不是实测数据。真要看真实数字，你得自己在你的机器上跑一遍——<strong>而且要用足够大的 n</strong>。</li>
+</ul>
+<p>最后一条我不知道，但我认为它比前面所有我知道的都重要：</p>
+<blockquote>
+<p><strong>“我不知道”不是终点。它是你唯一能站上去的地板。</strong></p>
+</blockquote>
+<hr>
+<h2 id="十一、一句话，带走就行"><a href="#十一、一句话，带走就行" class="headerlink" title="十一、一句话，带走就行"></a>十一、一句话，带走就行</h2><p>如果你明天全忘了，只记得一句话，我希望是这句：</p>
+<blockquote>
+<p><strong>复杂度不是问你多快，是问「东西变多了，你会怎么变慢」。</strong></p>
+</blockquote>
+<p>再用一句话配上一个动作：</p>
+<blockquote>
+<p>$O(1) &lt; O(\log n) &lt; O(n) &lt; O(n\log n) &lt; O(n^2)$</p>
+<p><strong>但顺序里那个”&lt;”要加前缀：「n 足够大时」。</strong></p>
+</blockquote>
+<hr>
+<h2 id="十二、自己试（别光看，看没用）"><a href="#十二、自己试（别光看，看没用）" class="headerlink" title="十二、自己试（别光看，看没用）"></a>十二、自己试（别光看，看没用）</h2><p>我最后想说：<strong>这篇文章你读完，你什么都没学会。</strong></p>
+<p>不是因为难，是因为<strong>读</strong>不是学。要学，你得自己动手。给你三个练习，每个都只要几十行：</p>
+<ol>
+<li><strong>亲手做个实验</strong>：把第四节的两个查找函数各写一遍，n 取 1000、10000、100000，<strong>真的计时</strong>，把结果画成表格。<br><em>你会看到你的电脑”骗”了你多少次。</em></li>
+<li><strong>把 $O(n^2)$ 改成 $O(n)$</strong>：用第五节的”找重名”，先用双重循环，再用哈希表，n 取 10000，比较真实耗时。<br><em>你会第一次真切体会”空间换时间”不是一句口号。</em></li>
+<li><strong>把它讲给别人</strong>：找一个完全不懂编程的人，用<strong>找本子</strong>这个例子给他讲一遍二分查找，直到他问出”那为什么不一开始就翻中间”——<strong>那一刻你就懂了。</strong></li>
+</ol>
+<p>如果你讲不清楚，别急着说自己笨。<strong>说不清楚的地方，正是你还没懂的地方。</strong> 这就是我全部的方法，没什么神秘的。</p>
+<hr>
+<p><em>（全文完。本文的图一、图二、图三由脚本生成，横纵轴和数字都是算出来的，不是我编的。)</em></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/6751/">https://moxin1044.github.io/posts/6751/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%AE%97%E6%B3%95/">算法</a><a class="post-meta__tags" href="/tags/%E5%A4%8D%E6%9D%82%E5%BA%A6/">复杂度</a><a class="post-meta__tags" href="/tags/%E5%A4%A7O/">大O</a><a class="post-meta__tags" href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">数据结构</a><a class="post-meta__tags" href="/tags/%E8%B4%B9%E6%9B%BC%E5%AD%A6%E4%B9%A0%E6%B3%95/">费曼学习法</a></div><div class="post-share"><div class="social-share" data-image="/attachments/fig1_%E5%A4%8D%E6%9D%82%E5%BA%A6%E9%98%B6%E6%A2%AF.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/posts/b7f1/" title="【BUUCTF】WEB-刷题记录-[极客大挑战 2019]BuyFlag"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20261014052001111.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">【BUUCTF】WEB-刷题记录-[极客大挑战 2019]BuyFlag</div></div><div class="info-2"><div class="info-item-1">前言这是一道经典的 PHP 代码审计题。题目来自 BUUCTF / CTF² 平台的 [极客大挑战 2019]BuyFlag，主要考察 is_numeric 绕过、松散比较，以及用数组绕过长度校验。记录一下完整解题过程。 题目信息 平台：BUUCTF（CTF²） 类型：WEB 目标：花掉 100000000 money，买到 flag  信息收集首页菜单里有 Home / PayFlag，进入 pay.php：  Flag need your 100000000 moneyIf you want to buy the FLAG:You must be a student from CUIT!!!You must be answer the correct password!!!   查看页面源码，底部 HTML 注释直接泄露了 password 的校验逻辑： 123456789~~~post money and password~~~if (isset($_POST['password'])) {    $password = $_POST[...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/posts/7d36/" title="【LeetCode】力扣刷题记录-Z字形变换"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20251026143906390.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【LeetCode】力扣刷题记录-Z字形变换</div></div><div class="info-2"><div class="info-item-1">将一个给定字符串 s 根据给定的行数 numRows ，以从上往下、从左到右进行 Z 字形排列。 比如输入字符串为 "PAYPALISHIRING" 行数为 3 时，排列如下： 123P   A   H   NA P L S I I GY   I   R 之后，你的输出需要从左往右逐行读取，产生出一个新的字符串，比如："PAHNAPLSIIGYIR"。 请你实现这个将字符串进行指定行数变换的函数： 1string convert(string s, int numRows); 示例 1： 12输入：s = "PAYPALISHIRING", numRows = 3输出："PAHNAPLSIIGYIR" 示例 2： 1234567输入：s = "PAYPALISHIRING", numRows = 4输出："PINALSIGYAHRPI"解释：P     I    NA   L S  I GY A   H RP     I 示例 3： 12输入：s = "...</div></div></div></a><a class="pagination-related" href="/posts/a855/" title="【LeetCode】力扣刷题记录-两数之和"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/Pasted%20image%2020251026030936.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【LeetCode】力扣刷题记录-两数之和</div></div><div class="info-2"><div class="info-item-1">给定一个整数数组 nums 和一个整数目标值 target，请你在该数组中找出 和为目标值 target  的那 两个 整数，并返回它们的数组下标。 你可以假设每种输入只会对应一个答案，并且你不能使用两次相同的元素。 你可以按任意顺序返回答案。 示例 1：  输入： nums = [2,7,11,15], target = 9输出：[0,1]解释：因为 nums[0] + nums[1] == 9 ，返回 [0, 1] 。  示例 2：  输入： nums = [3,2,4], target = 6输出：[1,2]  示例 3：  输入： nums = [3,3], target = 6输出：[0,1]  提示：  2 &lt;= nums.length &lt;= 104 -109 &lt;= nums[i] &lt;= 109 -109 &lt;= target &lt;= 109 只会存在一个有效答案  这个题是经典的 Two Sum（两数之和），最优解法使用哈希表（字典）在一次遍历中解决，时间复杂度为 O(n)。  对于每个元素 num，计算出需要的另一个数 comple...</div></div></div></a><a class="pagination-related" href="/posts/5a9/" title="【LeetCode】力扣刷题记录-两数相加"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/Pasted%20image%2020251026031903.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【LeetCode】力扣刷题记录-两数相加</div></div><div class="info-2"><div class="info-item-1">给你两个 非空 的链表，表示两个非负的整数。它们每位数字都是按照 逆序 的方式存储的，并且每个节点只能存储 一位 数字。 请你将两个数相加，并以相同形式返回一个表示和的链表。 你可以假设除了数字 0 之外，这两个数都不会以 0 开头。 123456789101112class Solution:    def addTwoNumbers(self, l1, l2):        head = cur = ListNode()        carry = 0        while l1 or l2 or carry:            carry += (l1.val if l1 else 0) + (l2.val if l2 else 0)            cur.next = ListNode(carry % 10)            cur = cur.next            carry //= 10            l1 = l1.next if l1 else None            l2 = l2.next if l2 els...</div></div></div></a><a class="pagination-related" href="/posts/11c4/" title="【LeetCode】力扣刷题记录-分数排名"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20251026045908557.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【LeetCode】力扣刷题记录-分数排名</div></div><div class="info-2"><div class="info-item-1">表: Scores 12345678+-------------+---------+| Column Name | Type    |+-------------+---------+| id          | int     || score       | decimal |+-------------+---------+id 是该表的主键（有不同值的列）。该表的每一行都包含了一场比赛的分数。Score 是一个有两位小数点的浮点值。 编写一个解决方案来查询分数的排名。排名按以下规则计算:  分数应按从高到低排列。 如果两个分数相等，那么两个分数的排名应该相同。 在排名相同的分数后，排名数应该是下一个连续的整数。换句话说，排名之间不应该有空缺的数字。  按 score 降序返回结果表。 查询结果格式如下所示。 示例 1: 1234567891011121314151617181920212223输入: Scores 表:+----+-------+| id | score |+----+-------+| 1  | 3.50  || 2  | 3.65  || 3  |...</div></div></div></a><a class="pagination-related" href="/posts/dbbd/" title="【LeetCode】力扣刷题记录-回文数"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20251026145910008.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【LeetCode】力扣刷题记录-回文数</div></div><div class="info-2"><div class="info-item-1">给你一个整数 x ，如果 x 是一个回文整数，返回 true ；否则，返回 false 。 回文数是指正序（从左向右）和倒序（从右向左）读都是一样的整数。  例如，121 是回文，而 123 不是。  示例 1： 12输入：x = 121输出：true 示例 2： 123输入：x = -121输出：false解释：从左向右读, 为 -121 。 从右向左读, 为 121- 。因此它不是一个回文数。 示例 3： 123输入：x = 10输出：false解释：从右向左读, 为 01 。因此它不是一个回文数。 提示：  -231 &lt;= x &lt;= 231 - 1  进阶：你能不将整数转为字符串来解决这个问题吗？ 123456789101112131415161718192021class Solution:    def isPalindrome(self, x: int) -&gt; bool:        # 负数不是回文数        if x &lt; 0:            return False                # 单个数字是回文数    ...</div></div></div></a><a class="pagination-related" href="/posts/11b9/" title="【LeetCode】力扣刷题记录-字符串转换整数 (atoi)"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/Pasted%20image%2020251026145415.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-26</div><div class="info-item-2">【LeetCode】力扣刷题记录-字符串转换整数 (atoi)</div></div><div class="info-2"><div class="info-item-1">请你来实现一个 myAtoi(string s) 函数，使其能将字符串转换成一个 32 位有符号整数。 函数 myAtoi(string s) 的算法如下：  空格： 读入字符串并丢弃无用的前导空格（" "） 符号： 检查下一个字符（假设还未到字符末尾）为 '-' 还是 '+'。如果两者都不存在，则假定结果为正。 转换： 通过跳过前置零来读取该整数，直到遇到非数字字符或到达字符串的结尾。如果没有读取数字，则结果为0。 舍入： 如果整数数超过 32 位有符号整数范围 [−231, 231 − 1] ，需要截断这个整数，使其保持在这个范围内。具体来说，小于 −231 的整数应该被舍入为 −231 ，大于 231 − 1 的整数应该被舍入为 231 − 1 。  返回整数作为最终结果。 示例 1： 输入： s = “42” 输出： 42 解释：加粗的字符串为已经读入的字符，插入符号是当前读取的字符。 1234567带下划线线的字符是所读的内容，插入符号是当前读入位置。第 1 步："42"（当前没有读入字符，因为没有...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">82</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">50</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">35</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="/atom.xml" target="_blank" title="RSS"><i class="fas fa-rss" style="color: #f26522;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E4%B8%AA%E5%88%9D%E4%B8%AD%E7%94%9F%E4%B9%9F%E8%83%BD%E8%AF%BB%E6%87%82%E7%9A%84%E3%80%8C%E6%97%B6%E9%97%B4%E5%A4%8D%E6%9D%82%E5%BA%A6%E4%B8%8E%E7%A9%BA%E9%97%B4%E5%A4%8D%E6%9D%82%E5%BA%A6%E3%80%8D"><span class="toc-number">1.</span> <span class="toc-text">一个初中生也能读懂的「时间复杂度与空间复杂度」</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E5%88%AB%E7%AE%A1%E5%90%8D%E5%AD%97%EF%BC%8C%E6%9D%A5%E6%95%B0%E4%B8%80%E6%95%B0"><span class="toc-number">1.1.</span> <span class="toc-text">一、先别管名字，来数一数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%A4%A7-O%EF%BC%9A%E4%B8%80%E7%A7%8D%E2%80%9D%E5%8F%AA%E7%95%99%E4%B8%BB%E5%B9%B2%E2%80%9D%E7%9A%84%E5%86%99%E6%B3%95"><span class="toc-number">1.2.</span> <span class="toc-text">二、大 O：一种”只留主干”的写法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BA%94%E7%A7%8D%E6%B6%A8%E6%B3%95%EF%BC%88%E5%9B%BE%E4%B8%80%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">三、五种涨法（图一）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%BE%8B%E5%AD%90%E4%B8%80%EF%BC%9A%E6%89%BE%E4%BA%BA%EF%BC%88-O-n-%E5%AF%B9%E4%B8%8A-O-log-n-%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">四、例子一：找人（$O(n)$ 对上 $O(\log n)$）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%81%9A%E6%B3%95-A%EF%BC%9A%E4%B8%80%E6%9C%AC%E4%B8%80%E6%9C%AC%E7%BF%BB%EF%BC%88-O-n-%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">做法 A：一本一本翻（$O(n)$）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%81%9A%E6%B3%95-B%EF%BC%9A%E6%AF%8F%E6%AC%A1%E7%A0%8D%E6%8E%89%E4%B8%80%E5%8D%8A%EF%BC%88-O-log-n-%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">做法 B：每次砍掉一半（$O(\log n)$）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%BE%8B%E5%AD%90%E4%BA%8C%EF%BC%9A%E4%B8%A4%E4%B8%A4%E9%83%BD%E6%AF%94%E8%BE%83%EF%BC%88-O-n-2-%EF%BC%89%E2%80%94%E2%80%94-%E4%BB%A5%E5%8F%8A%E5%AE%83%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AF%E6%80%95"><span class="toc-number">1.5.</span> <span class="toc-text">五、例子二：两两都比较（$O(n^2)$）—— 以及它为什么可怕</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%BE%8B%E5%AD%90%E4%B8%89%EF%BC%9A%E6%8E%92%E5%BA%8F%E2%80%94%E2%80%94%E4%B8%BA%E4%BB%80%E4%B9%88%E5%A5%BD%E7%9A%84%E6%8E%92%E5%BA%8F%E6%98%AF-n-log-n"><span class="toc-number">1.6.</span> <span class="toc-text">六、例子三：排序——为什么好的排序是 $n\log n$</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E7%A9%BA%E9%97%B4%E5%A4%8D%E6%9D%82%E5%BA%A6%EF%BC%9A%E4%B8%8D%E5%85%89%E8%A6%81%E8%83%BD%E8%B7%91%EF%BC%8C%E8%BF%98%E8%A6%81%E5%8D%A0%E5%BE%97%E4%BD%8F"><span class="toc-number">1.7.</span> <span class="toc-text">七、空间复杂度：不光要能跑，还要占得住</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E2%98%85-%E6%9C%80%E6%9C%89%E7%94%A8%E7%9A%84%E9%82%A3%E4%B8%80%E6%8B%9B%EF%BC%9A%E7%A9%BA%E9%97%B4%E6%8D%A2%E6%97%B6%E9%97%B4"><span class="toc-number">1.8.</span> <span class="toc-text">八、★ 最有用的那一招：空间换时间</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E5%88%AB%E9%AA%97%E8%87%AA%E5%B7%B1%EF%BC%9A%E4%B8%89%E4%B8%AA%E5%B8%B8%E8%A7%81%E7%9A%84%E8%87%AA%E6%AC%BA"><span class="toc-number">1.9.</span> <span class="toc-text">九、别骗自己：三个常见的自欺</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E3%80%81%E6%88%91%E4%B8%8D%E7%9F%A5%E9%81%93%E7%9A%84%E9%83%A8%E5%88%86%EF%BC%88%E4%BB%A5%E5%8F%8A%E5%AE%83%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E4%B8%A2%E4%BA%BA%EF%BC%89"><span class="toc-number">1.10.</span> <span class="toc-text">十、我不知道的部分（以及它为什么不丢人）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%B8%80%E3%80%81%E4%B8%80%E5%8F%A5%E8%AF%9D%EF%BC%8C%E5%B8%A6%E8%B5%B0%E5%B0%B1%E8%A1%8C"><span class="toc-number">1.11.</span> <span class="toc-text">十一、一句话，带走就行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%BA%8C%E3%80%81%E8%87%AA%E5%B7%B1%E8%AF%95%EF%BC%88%E5%88%AB%E5%85%89%E7%9C%8B%EF%BC%8C%E7%9C%8B%E6%B2%A1%E7%94%A8%EF%BC%89"><span class="toc-number">1.12.</span> <span class="toc-text">十二、自己试（别光看，看没用）</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/6751/" title="一个初中生也能读懂的复杂度"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_%E5%A4%8D%E6%9D%82%E5%BA%A6%E9%98%B6%E6%A2%AF.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="一个初中生也能读懂的复杂度"></a><div class="content"><a class="title" href="/posts/6751/" title="一个初中生也能读懂的复杂度">一个初中生也能读懂的复杂度</a><time datetime="2026-10-13T20:58:06.000Z" title="发表于 2026-10-14 04:58:06">2026-10-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/b7f1/" title="【BUUCTF】WEB-刷题记录-[极客大挑战 2019]BuyFlag"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20261014052001111.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【BUUCTF】WEB-刷题记录-[极客大挑战 2019]BuyFlag"></a><div class="content"><a class="title" href="/posts/b7f1/" title="【BUUCTF】WEB-刷题记录-[极客大挑战 2019]BuyFlag">【BUUCTF】WEB-刷题记录-[极客大挑战 2019]BuyFlag</a><time datetime="2026-10-13T20:09:00.000Z" title="发表于 2026-10-14 04:09:00">2026-10-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/b004/" title="【漏洞复现】CVE-2026-60004 Gitea diffpatch 接口 Git 钩子注入致远程命令执行"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20261014040001333.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【漏洞复现】CVE-2026-60004 Gitea diffpatch 接口 Git 钩子注入致远程命令执行"></a><div class="content"><a class="title" href="/posts/b004/" title="【漏洞复现】CVE-2026-60004 Gitea diffpatch 接口 Git 钩子注入致远程命令执行">【漏洞复现】CVE-2026-60004 Gitea diffpatch 接口 Git 钩子注入致远程命令执行</a><time datetime="2026-10-13T19:41:00.000Z" title="发表于 2026-10-14 03:41:00">2026-10-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/9a7d/" title="【Windows】修复 Win11 文件资源管理器复选框关不掉的问题"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20261014021012.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【Windows】修复 Win11 文件资源管理器复选框关不掉的问题"></a><div class="content"><a class="title" href="/posts/9a7d/" title="【Windows】修复 Win11 文件资源管理器复选框关不掉的问题">【Windows】修复 Win11 文件资源管理器复选框关不掉的问题</a><time datetime="2026-10-13T18:10:00.000Z" title="发表于 2026-10-14 02:10:00">2026-10-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/ac10/" title="【ArchLinux】如何制服国产免驱网卡"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20260501231151650.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【ArchLinux】如何制服国产免驱网卡"></a><div class="content"><a class="title" href="/posts/ac10/" title="【ArchLinux】如何制服国产免驱网卡">【ArchLinux】如何制服国产免驱网卡</a><time datetime="2026-05-01T14:45:02.000Z" title="发表于 2026-05-01 22:45:02">2026-05-01</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
