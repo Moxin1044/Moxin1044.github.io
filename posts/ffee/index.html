@@ -1,0 +1,559 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>从图片验证码到字符识别：YOLO 模型在验证码识别中的实践 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="用两个开源项目讲清楚机器怎么&quot;认字&quot;：验证码为什么要等宽切分、YOLO 分类和检测差在哪、单字 83% 的准确率为什么连起来只剩四成。含八张配图与真实训练数据，初中生也能读懂。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践">
+<meta property="og:url" content="https://moxin1044.github.io/posts/ffee/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="用两个开源项目讲清楚机器怎么&quot;认字&quot;：验证码为什么要等宽切分、YOLO 分类和检测差在哪、单字 83% 的准确率为什么连起来只剩四成。含八张配图与真实训练数据，初中生也能读懂。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/fig1_%E9%AA%8C%E8%AF%81%E7%A0%81%E4%B8%8E%E5%88%87%E5%88%86.png">
+<meta property="article:published_time" content="2026-10-14T14:40:00.000Z">
+<meta property="article:modified_time" content="2026-10-14T14:21:34.313Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="PyTorch">
+<meta property="article:tag" content="Ultralytics">
+<meta property="article:tag" content="YOLO">
+<meta property="article:tag" content="机器学习">
+<meta property="article:tag" content="计算机视觉">
+<meta property="article:tag" content="费曼学习法">
+<meta property="article:tag" content="验证码">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/fig1_%E9%AA%8C%E8%AF%81%E7%A0%81%E4%B8%8E%E5%88%87%E5%88%86.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "从图片验证码到字符识别：YOLO 模型在验证码识别中的实践",
+  "url": "https://moxin1044.github.io/posts/ffee/",
+  "image": "https://moxin1044.github.io/attachments/fig1_%E9%AA%8C%E8%AF%81%E7%A0%81%E4%B8%8E%E5%88%87%E5%88%86.png",
+  "datePublished": "2026-10-14T14:40:00.000Z",
+  "dateModified": "2026-10-14T14:21:34.313Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/ffee/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":true,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: true,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '从图片验证码到字符识别：YOLO 模型在验证码识别中的实践',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="末心的小博客" type="application/atom+xml">
+</head><body><div id="web_bg" style="background-image: url(https://bing.biturl.top/?resolution=1920&amp;format=image&amp;index=0&amp;mkt=zh-CN);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">85</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">63</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">36</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/attachments/fig1_%E9%AA%8C%E8%AF%81%E7%A0%81%E4%B8%8E%E5%88%87%E5%88%86.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">从图片验证码到字符识别：YOLO 模型在验证码识别中的实践</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">从图片验证码到字符识别：YOLO 模型在验证码识别中的实践</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-10-14T14:40:00.000Z" title="发表于 2026-10-14 22:40:00">2026-10-14</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-10-14T14:21:34.313Z" title="更新于 2026-10-14 22:21:34">2026-10-14</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BC%96%E7%A8%8B/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">4.2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>13分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/attachments/fig1_%E9%AA%8C%E8%AF%81%E7%A0%81%E4%B8%8E%E5%88%87%E5%88%86.png);"></div><article class="container post-content" id="article-container"><h1 id="从图片验证码到字符识别：YOLO-模型在验证码识别中的实践"><a href="#从图片验证码到字符识别：YOLO-模型在验证码识别中的实践" class="headerlink" title="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践"></a>从图片验证码到字符识别：YOLO 模型在验证码识别中的实践</h1><p>先看一张图。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/captcha_KYHXV.png" alt="仓库里的真实样例：KYHXV.png"></p>
+<p>五个字母，歪歪扭扭，中间还划过一条线。这是网站登录框里那种验证码，练手项目里非常常见的一种。</p>
+<p>你一眼能不能认出来是 KYHXV？大概能，但可能要盯两秒。</p>
+<p>这篇文章想做的事，是把”机器怎么做到这件事”从头讲一遍。不讲玄乎的概念，只讲它到底在干什么。写完之后你会发现，整件事的骨架简单得有点意外。</p>
+<p>配套的两个仓库：</p>
+<ul>
+<li><code>image-captcha-recognition-yolo</code>：数据集准备、训练脚本、推理脚本</li>
+<li><code>pyocrcaptcha</code>：把训练好的模型打包成 <code>pip</code> 能装的包，带命令行</li>
+</ul>
+<hr>
+<h2 id="一、项目背景"><a href="#一、项目背景" class="headerlink" title="一、项目背景"></a>一、项目背景</h2><h3 id="验证码是干什么用的"><a href="#验证码是干什么用的" class="headerlink" title="验证码是干什么用的"></a>验证码是干什么用的</h3><p>网站为什么要给你看这五个歪字母？</p>
+<p>因为它想区分”坐在电脑前面的人”和”写脚本的机器”。人认字很轻松，程序想认字就费劲了，在深度学习普及之前尤其费劲。所以早期的思路很朴素：这个任务对机器难，对人容易，那就拿它当门槛。</p>
+<p>这个思路在二十年前是成立的。现在不太成立了。</p>
+<h3 id="为什么这类验证码容易被打穿"><a href="#为什么这类验证码容易被打穿" class="headerlink" title="为什么这类验证码容易被打穿"></a>为什么这类验证码容易被打穿</h3><p>看几个数字。</p>
+<p>这个项目用的字符集是 <strong>36 类</strong>：数字 <code>0-9</code> 加字母 <code>A-Z</code>。没有小写字母，没有区分易混字符。图片尺寸固定 <strong>100×40 像素</strong>，五个字符<strong>等宽排列</strong>，每个字符正好占 20 像素。</p>
+<p>这三条凑在一起，等于把题目的答案提前交了一半：</p>
+<p>字符集小，36 个选项，瞎猜一个也有 2.8% 的机会蒙对。</p>
+<p>布局固定。字符不会飘、不会转、不会挤在一起，位置可以直接算出来，不需要让模型去”找”。</p>
+<p>图像也干净，只有一条干扰线和轻微的倾斜，没有噪点、没有背景纹理、没有字符粘连。</p>
+<p>三条加起来，识别这件事就从”看懂一张图”退化成”把图画成五格，每格问一次这是哪个字”。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_验证码与切分.png" alt="真实验证码按 20 像素等宽切成五段"></p>
+<blockquote>
+<p>红色竖线是按宽度算出来的，不是模型找出来的。100 ÷ 5 = 20，一条线一个位置。<strong>这一步是这套方案能跑通的前提，也是它最脆弱的地方。</strong></p>
+</blockquote>
+<hr>
+<h2 id="二、项目整体架构"><a href="#二、项目整体架构" class="headerlink" title="二、项目整体架构"></a>二、项目整体架构</h2><h3 id="技术栈"><a href="#技术栈" class="headerlink" title="技术栈"></a>技术栈</h3><p>整条链路用到的东西不多：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>环节</th>
+<th>用什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>图片读写、切分</td>
+<td>Pillow（PIL）</td>
+</tr>
+<tr>
+<td>模型与训练框架</td>
+<td>Ultralytics 8.3+</td>
+</tr>
+<tr>
+<td>底层张量计算</td>
+<td>PyTorch</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>YOLO11n-cls（分类版，n 是最小的那一档）</td>
+</tr>
+<tr>
+<td>打包分发</td>
+<td>setuptools + PyPI + GitHub Actions</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>注意模型名后缀那个 <code>-cls</code>。它代表 classification（分类），不是 detection（检测）。这个区别是这篇文章最想讲清楚的一件事。</p>
+<h3 id="识别流程"><a href="#识别流程" class="headerlink" title="识别流程"></a>识别流程</h3><p>整条流程长这样：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig7_流程.png" alt="整条识别流程"></p>
+<p>分成四步：<strong>切分 → 逐段分类 → 取最高概率的类别 → 拼接</strong>。</p>
+<p>到这儿有人会问：说好的”目标检测”呢？</p>
+<h3 id="分类和检测，到底差在哪"><a href="#分类和检测，到底差在哪" class="headerlink" title="分类和检测，到底差在哪"></a>分类和检测，到底差在哪</h3><p>这是最容易混的地方。两个任务都是看图片得出结论，但输出完全不同。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig2_分类与检测.png" alt="分类与检测的任务差别"></p>
+<p>左边是<strong>分类</strong>：给一张图，回答”这是什么”。答案是一个类别。</p>
+<p>右边是<strong>检测</strong>：给一张图，回答”这里有什么、那里有什么”。答案是<strong>若干个框</strong>，每个框带一个类别。</p>
+<p>用一句话概括：</p>
+<blockquote>
+<p>分类告诉你<strong>是什么</strong>，检测告诉你<strong>在哪、是什么</strong>。</p>
+</blockquote>
+<p>于是选择哪条路，取决于”位置”这件事要不要模型去猜。</p>
+<p>这个项目的字符是等宽的，位置<strong>直接除一下就算出来了</strong>。既然能算，何必让模型去猜？所以它选了分类，把图切成五段，每段问一次”这是哪个字”，问五次。</p>
+<p>省下来的还有人工。让模型学”框在哪里”需要大量的标注（每张图都要人工画框），而”每段是哪个字”的标注可以直接从文件名里得到。工作量差了一个数量级。</p>
+<p>后面第六节会讲：如果字符不等宽、有重叠、有旋转，情况就变了，那时必须上检测。</p>
+<hr>
+<h2 id="三、环境搭建"><a href="#三、环境搭建" class="headerlink" title="三、环境搭建"></a>三、环境搭建</h2><p>依赖只有两个：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -m pip install -r requirements.txt</span><br></pre></td></tr></tbody></table></figure>
+<p><code>requirements.txt</code> 的内容是：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ultralytics&gt;=8.3.0</span><br><span class="line">Pillow&gt;=10.0.0</span><br></pre></td></tr></tbody></table></figure>
+<p>Ultralytics 会自己把 PyTorch、TorchVision、NumPy、OpenCV 这些带进来，不用手动装。</p>
+<p>确认一下装好了：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -c <span class="string">"import ultralytics, torch; print(ultralytics.__version__, torch.__version__)"</span></span><br></pre></td></tr></tbody></table></figure>
+<p>有显卡的机器用 <code>--device 0</code> 训练，没显卡用 <code>--device cpu</code>。这个模型很小（<code>yolo11n</code> 里的 n 是 nano），CPU 也跑得动，只是慢一些。</p>
+<hr>
+<h2 id="四、数据集分析"><a href="#四、数据集分析" class="headerlink" title="四、数据集分析"></a>四、数据集分析</h2><h3 id="图片长什么样"><a href="#图片长什么样" class="headerlink" title="图片长什么样"></a>图片长什么样</h3><p>原始验证码是 <strong>100×40 的 PNG</strong>，五个字符，宽度正好被 5 整除。仓库里放了 10 张示例：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">KYHXV  6YNE2  Y3FV8  CHMHX  CSZQX</span><br><span class="line">5ZXN3  C38HM  FWM48  ZNYXU  ZRZQ6</span><br></pre></td></tr></tbody></table></figure>
+<h3 id="标注怎么来的"><a href="#标注怎么来的" class="headerlink" title="标注怎么来的"></a>标注怎么来的</h3><p>这是这个项目里最省事、也最值得学的一处设计。</p>
+<p>文件名就是标签。图片叫 <code>000a.png</code>，那它的答案就是 <code>000a</code>；叫 <code>KYHXV.png</code>，答案就是 <code>KYHXV</code>。</p>
+<p>不需要人工标注，也用不着额外的标签文件，数据集整理这一步直接变成了”读文件名”。</p>
+<p>脚本里还留了另一条路：如果文件名没意义，就用 <code>train.txt</code> / <code>val.txt</code> 两个清单，每行写”图片名 验证码”，中间用空格隔开。</p>
+<h3 id="从整图到字符图"><a href="#从整图到字符图" class="headerlink" title="从整图到字符图"></a>从整图到字符图</h3><p>训练分类模型需要的是<strong>单字图片</strong>，不是整串。所以中间要切一刀：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">char_width = width // <span class="built_in">len</span>(text)          <span class="comment"># 100 // 5 = 20</span></span><br><span class="line"><span class="keyword">for</span> position, character <span class="keyword">in</span> <span class="built_in">enumerate</span>(text):</span><br><span class="line">    crop = image.crop((position * char_width, <span class="number">0</span>,</span><br><span class="line">                       (position + <span class="number">1</span>) * char_width, height))</span><br><span class="line">    crop.save(output / split / character / <span class="string">f"<span class="subst">{stem}</span>_<span class="subst">{position}</span>.png"</span>)</span><br></pre></td></tr></tbody></table></figure>
+<p>切完之后，磁盘上的目录结构自动变成了分类模型要的样子：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">data/characters/</span><br><span class="line">├── train/</span><br><span class="line">│   ├── A/  A_0.png  A_1.png  ...</span><br><span class="line">│   ├── B/  ...</span><br><span class="line">│   └── Z/  ...</span><br><span class="line">└── val/</span><br><span class="line">    └── 同结构</span><br></pre></td></tr></tbody></table></figure>
+<p>每个文件夹的名字就是类别名，Ultralytics 直接读这个结构，不需要另外写类别映射表。</p>
+<p>训练集和验证集怎么分？脚本用文件名的哈希值取前 32 位，折算成 0 到 1 之间的小数，小于 0.2 的进验证集。这样划分是确定的：同一批图片，不管在哪台机器上跑，分法完全一样，方便复现。</p>
+<hr>
+<h2 id="五、模型训练过程"><a href="#五、模型训练过程" class="headerlink" title="五、模型训练过程"></a>五、模型训练过程</h2><h3 id="训练参数"><a href="#训练参数" class="headerlink" title="训练参数"></a>训练参数</h3><figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python train.py --data data/characters --epochs 100 --imgsz 96 --device 0</span><br></pre></td></tr></tbody></table></figure>
+<p>关键参数：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>值</th>
+<th>为什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型</td>
+<td><code>yolo11n-cls.pt</code></td>
+<td>最小的分类模型，验证码这种简单任务够用</td>
+</tr>
+<tr>
+<td>轮数</td>
+<td>100</td>
+<td>实际在第 94 轮取得最佳结果</td>
+</tr>
+<tr>
+<td>输入尺寸</td>
+<td>96×96</td>
+<td>比默认的 64 大，能保住笔画的细节</td>
+</tr>
+<tr>
+<td>批量</td>
+<td>128</td>
+<td>一次喂 128 张字符图</td>
+</tr>
+<tr>
+<td>早停</td>
+<td>20 轮</td>
+<td>连续 20 轮没进步就停</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="一个反直觉的细节：把翻转关掉"><a href="#一个反直觉的细节：把翻转关掉" class="headerlink" title="一个反直觉的细节：把翻转关掉"></a>一个反直觉的细节：把翻转关掉</h3><p>训练图像模型时，通常会给图片做各种随机变换来增加数据多样性，转一点角度、挪一点位置、放大缩小。这叫<strong>数据增强</strong>，是防止模型死记硬背的常用手段。</p>
+<p>但这里有一条被特意关掉了：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">fliplr=<span class="number">0.0</span>,   <span class="comment"># 左右翻转，关闭</span></span><br><span class="line">flipud=<span class="number">0.0</span>,   <span class="comment"># 上下翻转，关闭</span></span><br></pre></td></tr></tbody></table></figure>
+<p>为什么？因为<strong>镜像会改变字符的身份</strong>。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig4_翻转为什么有害.png" alt="左右翻转会改变字符的身份"></p>
+<p><code>R</code> 翻转过来不像任何一个字母，<code>K</code> 也一样。如果你把翻转后的图喂给模型，还告诉它”这是 R”，那等于在教错的东西，模型会困惑，准确率反而下降。</p>
+<p>同一条道理：<code>b</code> 和 <code>d</code>、<code>p</code> 和 <code>q</code>、<code>6</code> 和 <code>9</code>，这些字符互为镜像或旋转关系。对它们做翻转增强，就是在制造标签冲突。</p>
+<p>保留的增强是温和的：旋转 ±3 度、平移 5%、缩放 20%、随机擦除 10%。这些都<strong>不改变字符的身份</strong>，只是让模型见过更多”同一个字的不同写法”。</p>
+<blockquote>
+<p>数据增强不是越多越好。判断标准只有一条：<strong>这个变换之后，答案还对不对？</strong> 对就留，错就扔。</p>
+</blockquote>
+<h3 id="训练产出"><a href="#训练产出" class="headerlink" title="训练产出"></a>训练产出</h3><p>训练结果落在：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">runs/captcha/character_classifier/weights/best.pt</span><br></pre></td></tr></tbody></table></figure>
+<p>这个 <code>best.pt</code> 就是最终模型，只有几兆。项目把它发布在 GitHub Release 上，可以直接下载。</p>
+<h3 id="成绩"><a href="#成绩" class="headerlink" title="成绩"></a>成绩</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单字符 Top-1 准确率</td>
+<td><strong>83.23%</strong></td>
+</tr>
+<tr>
+<td>单字符 Top-5 准确率</td>
+<td><strong>94.59%</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Top-1 是”模型给出的第一名猜对了没有”，Top-5 是”正确答案在模型的前五名里”。</p>
+<p>83% 看着还行，但下一节会看到，这个数字用到整串上会发生什么。</p>
+<hr>
+<h2 id="六、推理流程分析"><a href="#六、推理流程分析" class="headerlink" title="六、推理流程分析"></a>六、推理流程分析</h2><h3 id="图片输入"><a href="#图片输入" class="headerlink" title="图片输入"></a>图片输入</h3><figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> Image.<span class="built_in">open</span>(image_path) <span class="keyword">as</span> source:</span><br><span class="line">    image = source.convert(<span class="string">"RGB"</span>)</span><br><span class="line">    width, height = image.size</span><br><span class="line">    <span class="keyword">if</span> width % positions:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">f"Image width <span class="subst">{width}</span> is not divisible by <span class="subst">{positions}</span>"</span>)</span><br></pre></td></tr></tbody></table></figure>
+<p>先检查一件事：<strong>宽度能不能被位数整除</strong>。100 ÷ 5 = 20，可以；要是 103 除以 5，除不尽，脚本直接报错。</p>
+<p>这个检查暴露了方案的前提，它假设字符严格等宽。</p>
+<h3 id="字符定位：算出来的，不是找出来的"><a href="#字符定位：算出来的，不是找出来的" class="headerlink" title="字符定位：算出来的，不是找出来的"></a>字符定位：算出来的，不是找出来的</h3><figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">char_width = width // positions       <span class="comment"># 每段多宽</span></span><br><span class="line">crop = image.crop((position * char_width, <span class="number">0</span>,</span><br><span class="line">                   (position + <span class="number">1</span>) * char_width, height))</span><br></pre></td></tr></tbody></table></figure>
+<p>第几个字符，就从第几个 20 像素开始切。位置是<strong>乘法算出来的</strong>。</p>
+<p>那如果换成检测方案，这一步怎么做？</p>
+<p>检测模型会对整张图输出一堆候选框，每个框带一个置信度分数。问题是同一个字符通常会被预测出<strong>很多个重叠的框</strong>，得挑一个留下。怎么挑？靠两个工具。</p>
+<p>先说 IoU（交并比），它衡量两个框重叠了多少：</p>
+<script type="math/tex; mode=display">\text{IoU} = \frac{|A \cap B|}{|A \cup B|}</script><blockquote>
+<p>就是”两个框重合的面积”除以”两个框加起来占的总面积”。完全重合是 1，完全不挨着是 0。</p>
+</blockquote>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig5_IoU计算.png" alt="IoU 的四种情形，数值为实际计算"></p>
+<p>再用 NMS（非极大值抑制）把重复的框压掉：先按分数从高到低排队，留下第一个；然后把跟它重叠超过阈值（通常是 0.5）的框全部删掉；再从剩下的里挑最高的，重复。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig6_NMS抑制.png" alt="NMS 的真实抑制过程"></p>
+<p>七个候选框进去，两个出来。左边那一堆同一个字符的猜测被压成了一个，右边同理。</p>
+<p>下一步是坐标排序，把留下的框按左上角的 x 坐标从小到大排，从左到右读出来。这一步简单，但只有在”检测”路线里才需要。</p>
+<p>回到这个项目：因为它提前算好了位置，IoU 和 NMS 整个环节都被省掉了。</p>
+<h3 id="结果输出"><a href="#结果输出" class="headerlink" title="结果输出"></a>结果输出</h3><p>每一段送进模型，得到一个 36 维的概率向量，取最大的那个：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">result = model.predict(source=crop, imgsz=imgsz, verbose=<span class="literal">False</span>)[<span class="number">0</span>]</span><br><span class="line">index = <span class="built_in">int</span>(result.probs.top1)</span><br><span class="line">results.append((result.names[index], <span class="built_in">float</span>(result.probs.top1conf)))</span><br></pre></td></tr></tbody></table></figure>
+<p>最后拼起来，顺带算出平均置信度：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">text = <span class="string">""</span>.join(character <span class="keyword">for</span> character, _ <span class="keyword">in</span> results)</span><br><span class="line">confidence = <span class="built_in">sum</span>(score <span class="keyword">for</span> _, score <span class="keyword">in</span> results) / positions</span><br></pre></td></tr></tbody></table></figure>
+<p>命令行跑出来是这样：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">KYHXV    confidence=0.9712</span><br></pre></td></tr></tbody></table></figure>
+<h3 id="关键问题：单字-83-，整串是多少"><a href="#关键问题：单字-83-，整串是多少" class="headerlink" title="关键问题：单字 83%，整串是多少"></a>关键问题：单字 83%，整串是多少</h3><p>这才是这篇文章最该看的一段。</p>
+<p>整串验证码要<strong>每一个字都对</strong>才算对。而每个字认错的概率是独立的，所以：</p>
+<script type="math/tex; mode=display">P_{\text{整串}} = p^{n}</script><blockquote>
+<p>p 是单字准确率，n 是字符个数。每个字都得过，所以要把单字准确率连乘 n 次，是乘，不是加。</p>
+</blockquote>
+<p>拿 83.23% 代进去算：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>位数</th>
+<th>整串准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4 位</td>
+<td>48.0%</td>
+</tr>
+<tr>
+<td>5 位</td>
+<td>40.0%</td>
+</tr>
+<tr>
+<td>6 位</td>
+<td>33.3%</td>
+</tr>
+<tr>
+<td>8 位</td>
+<td>23.0%</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig3_整串准确率.png" alt="单字准确率和整串准确率的差距"></p>
+<p>单字 83%，五个字连起来只剩 40%。</p>
+<p>而如果用的是 Top-5 的 94.59%，这里要注意，Top-5 在单字场景下有意义（可以给五个候选让下游去选），在验证码场景下却没用：提交上去只有一个答案，模型必须自己挑出最可能的那一个。</p>
+<p>这张图解释了一件容易被忽略的事：”单字准确率”是个偏乐观的指标。评价一个验证码识别模型，要看的是整串准确率，不是单字。</p>
+<p>也顺便说明了为什么验证码做到 6 位、8 位就明显更难。不是验证码变聪明了，是连乘的尾巴拖得长。</p>
+<hr>
+<h2 id="七、安全角度分析"><a href="#七、安全角度分析" class="headerlink" title="七、安全角度分析"></a>七、安全角度分析</h2><p>这一段从防守方的角度看。</p>
+<h3 id="这类验证码为什么不够"><a href="#这类验证码为什么不够" class="headerlink" title="这类验证码为什么不够"></a>这类验证码为什么不够</h3><p>回到第一节的三条：字符集小、布局固定、图像干净。三条都是便利，也都是弱点。</p>
+<p>字符集只有 36 类，信息量本来就小。5 位验证码的理论组合是 $36^5 = 60{,}466{,}176$ 种，看着挺多，但模型不需要穷举，它认字，一次就能给出答案。</p>
+<p>布局固定，切分就成了理所当然的事。这一条最致命：它把”看懂一张图”这个困难任务，拆成了五个”认一个字”的简单任务。而认单字是老问题，几十年前就被神经网络解决了。</p>
+<p>图像干净，等于没有防线。真正有用的干扰是让切分失效：字符互相重叠、宽度不等、随位置浮动、加入局部扭曲。只要位置不再是”宽度除以位数”，那一步乘法就崩了，方案要么退回到检测（成本立刻上升），要么直接失效。</p>
+<h3 id="自动化门槛有多低"><a href="#自动化门槛有多低" class="headerlink" title="自动化门槛有多低"></a>自动化门槛有多低</h3><p>这个项目的全部依赖是两个包，模型几兆，用的是最小的那一档，训练 100 轮。一台普通带显卡的笔记本，几个小时就能从头训出一个能用的模型。</p>
+<p>也就是说，用固定字体的等宽验证码挡机器人，在今天基本等于没挡。这也不是什么高不可攀的技术。</p>
+<p>要说明的是，这个项目本身在 README 里写明了仅供学习研究使用，并提醒遵守数据来源网站的服务条款。这里讨论的是<strong>防御视角</strong>：知道攻击怎么做，才知道自己的防线该怎么改。</p>
+<h3 id="对防守方的建议"><a href="#对防守方的建议" class="headerlink" title="对防守方的建议"></a>对防守方的建议</h3><p>如果哪天你需要自己设计验证码，或者评估正在用的那套，下面几条比较实用。</p>
+<p>最容易犯的一条，是把答案放在布局里。尽量让字符位置、宽度、间距随机化，破坏”能算出来”这个前提。</p>
+<p>加干扰线基本是心理安慰。一条线、几点噪点，对现在的模型几乎没影响。有效的干扰是破坏结构，比如字符粘连、局部扭曲、非等距排布。</p>
+<p>图像本身也别太指望。图像验证码可以被自动化攻破，这一点最好当成前提接受。真正有效的是叠加行为与风险维度：请求频率、IP 信誉、鼠标轨迹，再加上无感验证和有感验证混着用。</p>
+<p>最后是评价口径。别只看”单字准确率”或者”人工通过率”，要看整串准确率和人工通过率的差值，差值越大，防线越薄。</p>
+<hr>
+<h2 id="八、总结与优化建议"><a href="#八、总结与优化建议" class="headerlink" title="八、总结与优化建议"></a>八、总结与优化建议</h2><p>把整件事压缩成一句话：</p>
+<blockquote>
+<p>图片验证码的识别，无非是”把图上的字符变成文字”。如果位置能算，就切成几段逐个认字；如果位置算不出来，就让模型画框找位置。</p>
+</blockquote>
+<p>这个项目选了前一条路，因为它的字符是等宽的。</p>
+<p>通用的流程只有四步：<strong>切分 → 逐个分类 → 取最高概率 → 拼接</strong>。没有别的玄机。</p>
+<h3 id="可以继续优化的地方"><a href="#可以继续优化的地方" class="headerlink" title="可以继续优化的地方"></a>可以继续优化的地方</h3><p>输入尺寸可以调大。96×96 已经比默认的 64 好，但笔画细节还能再榨一些出来，可以试 128。代价是训练和推理都变慢。</p>
+<p>数据量是最直接的瓶颈。83.23% 这个数字的主要问题就出在这儿。同一套代码，把训练图片从几千张加到几万张，成绩通常会有明显提升。</p>
+<p>集成思路也值得试试。同一个字符切得稍偏一点再认一次，两次结果不一致时按置信度裁决，能吃掉一部分切分误差。</p>
+<p>再往下就得准备检测方案了。一旦遇到的验证码不是等宽布局，现在的脚本会直接报错。这时候要把标注方式从”文件名当标签”换成”每张图人工画框”，用 YOLO 的检测版本重训。工作量上一个台阶，但能应对真实世界的排布。</p>
+<p>最后，报告成绩时把口径写清楚，是单字还是整串。前面算过，这两个数字能差一半以上。</p>
+<h3 id="最后一句"><a href="#最后一句" class="headerlink" title="最后一句"></a>最后一句</h3><p>这件事没有想象中神秘。一张图进来，算法把它变成一堆数字，一层一层算下去，最后吐出 36 个概率，挑最大的那个。</p>
+<p>如果你能把这个过程讲给一个没学过编程的人听明白，那你就是真的理解了它。讲不明白的地方，就是你还没搞清楚的地方。</p>
+<p>就这么回事。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/ffee/">https://moxin1044.github.io/posts/ffee/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/YOLO/">YOLO</a><a class="post-meta__tags" href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="post-meta__tags" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%A7%86%E8%A7%89/">计算机视觉</a><a class="post-meta__tags" href="/tags/%E9%AA%8C%E8%AF%81%E7%A0%81/">验证码</a><a class="post-meta__tags" href="/tags/Ultralytics/">Ultralytics</a><a class="post-meta__tags" href="/tags/PyTorch/">PyTorch</a><a class="post-meta__tags" href="/tags/%E8%B4%B9%E6%9B%BC%E5%AD%A6%E4%B9%A0%E6%B3%95/">费曼学习法</a></div><div class="post-share"><div class="social-share" data-image="/attachments/fig1_%E9%AA%8C%E8%AF%81%E7%A0%81%E4%B8%8E%E5%88%87%E5%88%86.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/posts/879d/" title="ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig4_ZIP%E7%BB%93%E6%9E%84.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限</div></div><div class="info-2"><div class="info-item-1">ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限先看三个事实，它们看起来互相矛盾。 第一个：一个 221 KB 的中文文本文件，压成 ZIP 之后只剩 1.1 KB，砍掉了 99.5%。 第二个：一个 293 KB 的随机数据文件，压成 ZIP 之后变成 293.1 KB，不但没小，还胖了一点。 第三个：把一个已经压好的 ZIP 再压一遍、再压一遍、再压一遍。 这三个事实是同一件事的三个侧面。这篇文章想把它们串起来讲清楚。下面所有数字都是我在自己机器上跑出来的，不是抄的，代码逻辑在文中随手能找到。 顺便说一下这篇的写法。压这个话题有很多层，我打算把几套不同的思路混着用：用第一性原理拆它的成本结构，用它反过来想想什么时候不该压，用代码跑一遍验证，再盯一下那些极端情况。同一件事从几个角度各看一遍，比只从一个角度往下挖更容易看到全貌。 一、ZIP 文件格式分析要理解压缩，先看看压缩出来的东西长什么样。很多人用了十几年 ZIP，从没打开过一个 ZIP 文件看里面。 一个 ZIP 文件不是”一团压缩数据”，它是一个有结构的容器。它的结构大致是这样：  从左到右，重复出现的是本地文件...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/posts/6751/" title="时间复杂度与空间复杂度详解"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_%E5%A4%8D%E6%9D%82%E5%BA%A6%E9%98%B6%E6%A2%AF.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-14</div><div class="info-item-2">时间复杂度与空间复杂度详解</div></div><div class="info-2"><div class="info-item-1">时间复杂度与空间复杂度详解 时间复杂度和空间复杂度，是衡量算法效率的两个核心度量。下面从”数一数”这种最直观的方式讲起，给出大 O 的形式化定义，配上 C++ / Python 双版本代码、公式推导和三张图，中间点几个常见误区，也说说这篇讲不到的地方。  这两天在教一个小孩子学习算法，用一种简单的思维讲解时间复杂度和空间复杂度。  一、先别管名字，来数一数假设你妹妹让你帮她在书包里找一本作业本。 书包里有 3 本本子的时候，你抓两下就找到了，用了 2 秒。书包里有 30 本本子的时候，你要翻一会儿，用了 20 秒。书包里有 300 本本子的时候，你翻了两个小时。 现在我问你一个问题，“找本子”这件事，到底”有多快”？ 你可能会说：”2 秒。” 错。2 秒是书包里有 3 本时的答案。 本子变成 300 本，答案就变成了两个小时。 所以真正要问的，是下面这句话。  本子每多一倍，我要多用多少时间？  这就是”复杂度”这个词真正在问的东西。它不关心你跑得多快，关心的是东西变多了以后，你变慢的速度有多快。 我觉得这是理解复杂度的唯一入口。如果你记住了 O(n²) 这四个字符，但不知道它在...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">85</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">63</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">36</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="/atom.xml" target="_blank" title="RSS"><i class="fas fa-rss" style="color: #f26522;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8E%E5%9B%BE%E7%89%87%E9%AA%8C%E8%AF%81%E7%A0%81%E5%88%B0%E5%AD%97%E7%AC%A6%E8%AF%86%E5%88%AB%EF%BC%9AYOLO-%E6%A8%A1%E5%9E%8B%E5%9C%A8%E9%AA%8C%E8%AF%81%E7%A0%81%E8%AF%86%E5%88%AB%E4%B8%AD%E7%9A%84%E5%AE%9E%E8%B7%B5"><span class="toc-number">1.</span> <span class="toc-text">从图片验证码到字符识别：YOLO 模型在验证码识别中的实践</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%A1%B9%E7%9B%AE%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">一、项目背景</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81%E7%A0%81%E6%98%AF%E5%B9%B2%E4%BB%80%E4%B9%88%E7%94%A8%E7%9A%84"><span class="toc-number">1.1.1.</span> <span class="toc-text">验证码是干什么用的</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E7%B1%BB%E9%AA%8C%E8%AF%81%E7%A0%81%E5%AE%B9%E6%98%93%E8%A2%AB%E6%89%93%E7%A9%BF"><span class="toc-number">1.1.2.</span> <span class="toc-text">为什么这类验证码容易被打穿</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E9%A1%B9%E7%9B%AE%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="toc-number">1.2.</span> <span class="toc-text">二、项目整体架构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8A%80%E6%9C%AF%E6%A0%88"><span class="toc-number">1.2.1.</span> <span class="toc-text">技术栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%86%E5%88%AB%E6%B5%81%E7%A8%8B"><span class="toc-number">1.2.2.</span> <span class="toc-text">识别流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E7%B1%BB%E5%92%8C%E6%A3%80%E6%B5%8B%EF%BC%8C%E5%88%B0%E5%BA%95%E5%B7%AE%E5%9C%A8%E5%93%AA"><span class="toc-number">1.2.3.</span> <span class="toc-text">分类和检测，到底差在哪</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA"><span class="toc-number">1.3.</span> <span class="toc-text">三、环境搭建</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%95%B0%E6%8D%AE%E9%9B%86%E5%88%86%E6%9E%90"><span class="toc-number">1.4.</span> <span class="toc-text">四、数据集分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%BE%E7%89%87%E9%95%BF%E4%BB%80%E4%B9%88%E6%A0%B7"><span class="toc-number">1.4.1.</span> <span class="toc-text">图片长什么样</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E6%B3%A8%E6%80%8E%E4%B9%88%E6%9D%A5%E7%9A%84"><span class="toc-number">1.4.2.</span> <span class="toc-text">标注怎么来的</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E%E6%95%B4%E5%9B%BE%E5%88%B0%E5%AD%97%E7%AC%A6%E5%9B%BE"><span class="toc-number">1.4.3.</span> <span class="toc-text">从整图到字符图</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E8%BF%87%E7%A8%8B"><span class="toc-number">1.5.</span> <span class="toc-text">五、模型训练过程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%AD%E7%BB%83%E5%8F%82%E6%95%B0"><span class="toc-number">1.5.1.</span> <span class="toc-text">训练参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E4%B8%AA%E5%8F%8D%E7%9B%B4%E8%A7%89%E7%9A%84%E7%BB%86%E8%8A%82%EF%BC%9A%E6%8A%8A%E7%BF%BB%E8%BD%AC%E5%85%B3%E6%8E%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">一个反直觉的细节：把翻转关掉</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%AD%E7%BB%83%E4%BA%A7%E5%87%BA"><span class="toc-number">1.5.3.</span> <span class="toc-text">训练产出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%88%90%E7%BB%A9"><span class="toc-number">1.5.4.</span> <span class="toc-text">成绩</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E6%8E%A8%E7%90%86%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90"><span class="toc-number">1.6.</span> <span class="toc-text">六、推理流程分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%BE%E7%89%87%E8%BE%93%E5%85%A5"><span class="toc-number">1.6.1.</span> <span class="toc-text">图片输入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%97%E7%AC%A6%E5%AE%9A%E4%BD%8D%EF%BC%9A%E7%AE%97%E5%87%BA%E6%9D%A5%E7%9A%84%EF%BC%8C%E4%B8%8D%E6%98%AF%E6%89%BE%E5%87%BA%E6%9D%A5%E7%9A%84"><span class="toc-number">1.6.2.</span> <span class="toc-text">字符定位：算出来的，不是找出来的</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%93%E6%9E%9C%E8%BE%93%E5%87%BA"><span class="toc-number">1.6.3.</span> <span class="toc-text">结果输出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E9%97%AE%E9%A2%98%EF%BC%9A%E5%8D%95%E5%AD%97-83-%EF%BC%8C%E6%95%B4%E4%B8%B2%E6%98%AF%E5%A4%9A%E5%B0%91"><span class="toc-number">1.6.4.</span> <span class="toc-text">关键问题：单字 83%，整串是多少</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E5%AE%89%E5%85%A8%E8%A7%92%E5%BA%A6%E5%88%86%E6%9E%90"><span class="toc-number">1.7.</span> <span class="toc-text">七、安全角度分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%99%E7%B1%BB%E9%AA%8C%E8%AF%81%E7%A0%81%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E5%A4%9F"><span class="toc-number">1.7.1.</span> <span class="toc-text">这类验证码为什么不够</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%87%AA%E5%8A%A8%E5%8C%96%E9%97%A8%E6%A7%9B%E6%9C%89%E5%A4%9A%E4%BD%8E"><span class="toc-number">1.7.2.</span> <span class="toc-text">自动化门槛有多低</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E9%98%B2%E5%AE%88%E6%96%B9%E7%9A%84%E5%BB%BA%E8%AE%AE"><span class="toc-number">1.7.3.</span> <span class="toc-text">对防守方的建议</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E6%80%BB%E7%BB%93%E4%B8%8E%E4%BC%98%E5%8C%96%E5%BB%BA%E8%AE%AE"><span class="toc-number">1.8.</span> <span class="toc-text">八、总结与优化建议</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%AF%E4%BB%A5%E7%BB%A7%E7%BB%AD%E4%BC%98%E5%8C%96%E7%9A%84%E5%9C%B0%E6%96%B9"><span class="toc-number">1.8.1.</span> <span class="toc-text">可以继续优化的地方</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%80%E5%90%8E%E4%B8%80%E5%8F%A5"><span class="toc-number">1.8.2.</span> <span class="toc-text">最后一句</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/ffee/" title="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_%E9%AA%8C%E8%AF%81%E7%A0%81%E4%B8%8E%E5%88%87%E5%88%86.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践"></a><div class="content"><a class="title" href="/posts/ffee/" title="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践">从图片验证码到字符识别：YOLO 模型在验证码识别中的实践</a><time datetime="2026-10-14T14:40:00.000Z" title="发表于 2026-10-14 22:40:00">2026-10-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/879d/" title="ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig4_ZIP%E7%BB%93%E6%9E%84.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限"></a><div class="content"><a class="title" href="/posts/879d/" title="ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限">ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限</a><time datetime="2026-10-13T21:25:08.000Z" title="发表于 2026-10-14 05:25:08">2026-10-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/6254/" title="什么是均摊复杂度？均摊分析？"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_%E9%80%90%E6%AC%A1%E8%80%97%E6%97%B6.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="什么是均摊复杂度？均摊分析？"></a><div class="content"><a class="title" href="/posts/6254/" title="什么是均摊复杂度？均摊分析？">什么是均摊复杂度？均摊分析？</a><time datetime="2026-10-13T21:16:57.000Z" title="发表于 2026-10-14 05:16:57">2026-10-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/6751/" title="时间复杂度与空间复杂度详解"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_%E5%A4%8D%E6%9D%82%E5%BA%A6%E9%98%B6%E6%A2%AF.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="时间复杂度与空间复杂度详解"></a><div class="content"><a class="title" href="/posts/6751/" title="时间复杂度与空间复杂度详解">时间复杂度与空间复杂度详解</a><time datetime="2026-10-13T20:58:06.000Z" title="发表于 2026-10-14 04:58:06">2026-10-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/b7f1/" title="【BUUCTF】WEB-刷题记录-[极客大挑战 2019]BuyFlag"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20261014052001111.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="【BUUCTF】WEB-刷题记录-[极客大挑战 2019]BuyFlag"></a><div class="content"><a class="title" href="/posts/b7f1/" title="【BUUCTF】WEB-刷题记录-[极客大挑战 2019]BuyFlag">【BUUCTF】WEB-刷题记录-[极客大挑战 2019]BuyFlag</a><time datetime="2026-10-13T20:09:00.000Z" title="发表于 2026-10-14 04:09:00">2026-10-14</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
