@@ -1,0 +1,882 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="在 KVM 虚拟机里用自己写的 ptrace 追踪器和自采计数器，把 read()、mmap、O_DIRECT 三条数据路径拆开对比。用 rchar 与 read_bytes 的差值证明数据来自页缓存，并实测出一个反直觉的结论：缺页次数不等于访问过的页数。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径">
+<meta property="og:url" content="https://moxin1044.github.io/posts/5b21/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="在 KVM 虚拟机里用自己写的 ptrace 追踪器和自采计数器，把 read()、mmap、O_DIRECT 三条数据路径拆开对比。用 rchar 与 read_bytes 的差值证明数据来自页缓存，并实测出一个反直觉的结论：缺页次数不等于访问过的页数。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/figR1_%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84.png">
+<meta property="article:published_time" content="2026-10-15T13:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-15T10:23:15.455Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="mmap">
+<meta property="article:tag" content="ptrace">
+<meta property="article:tag" content="性能分析">
+<meta property="article:tag" content="系统调用">
+<meta property="article:tag" content="页缓存">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/figR1_%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径",
+  "url": "https://moxin1044.github.io/posts/5b21/",
+  "image": "https://moxin1044.github.io/attachments/figR1_%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84.png",
+  "datePublished": "2026-10-15T13:00:00.000Z",
+  "dateModified": "2026-10-15T10:23:15.455Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/5b21/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":true,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: true,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><script src="/js/lolia.js"></script><meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="末心的小博客" type="application/atom+xml">
+</head><body><div id="web_bg" style="background: linear-gradient(135deg, #eef4fc 0%, #e8eef8 48%, #eae6f6 100%);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">89</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">85</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">38</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/attachments/figR1_%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-10-15T13:00:00.000Z" title="发表于 2026-10-15 21:00:00">2026-10-15</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-10-15T10:23:15.455Z" title="更新于 2026-10-15 18:23:15">2026-10-15</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BC%96%E7%A8%8B/%E7%B3%BB%E7%BB%9F/">系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">11.9k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>41分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/attachments/figR1_%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84.png);"></div><article class="container post-content" id="article-container"><p>有个现象几乎人人都遇到过，但很少有人说清为什么会这样。</p>
+<p>同一个文件，第一次读要几百毫秒，第二次读只要几十毫秒。<code>time</code> 命令给出的数字摆在那里，于是结论就写成了「第二次命中了页缓存」。</p>
+<p>这个结论对不对？对。但<strong>它不是一个被证明的结论，只是一个被观察到的相关性</strong>。耗时短的原因有很多：磁盘刚好不忙、CPU 频率刚好上去了、别的进程刚好没抢内存。耗时是结果的投影，不是原因本身。</p>
+<p>要真的证明「数据来自页缓存」，得拿出缓存层自己的计数。这篇文章就是把这件事做完整：先拆数据路径，再给出四类互相独立的证据，然后回答一个更实际的问题，这些证据能推出什么，推不出什么。</p>
+<p>所有数据都来自一台真实的 KVM 虚拟机，本机实测，可复现。实验环境、程序源码和原始输出都在文末。</p>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#第一章-一次-read-的完整数据路径">第一章 一次 read() 的完整数据路径</a></li>
+<li><a href="#第二章-用什么证明数据来自页缓存">第二章 用什么证明数据来自页缓存</a></li>
+<li><a href="#第三章-冷读与热读的完整对照">第三章 冷读与热读的完整对照</a></li>
+<li><a href="#第四章-readmmapodirect-的三条路径">第四章 read、mmap、O_DIRECT 的三条路径</a></li>
+<li><a href="#第五章-一个意外发现缺页次数不等于访问页数">第五章 一个意外发现：缺页次数不等于访问页数</a></li>
+<li><a href="#第六章-证据能推出什么推不出什么">第六章 证据能推出什么，推不出什么</a></li>
+<li><a href="#第七章-实现把分析沉淀成工具">第七章 实现：把分析沉淀成工具</a></li>
+<li><a href="#第八章-一套可复用的诊断流程">第八章 一套可复用的诊断流程</a></li>
+</ul>
+<hr>
+<h2 id="第一章-一次-read-的完整数据路径"><a href="#第一章-一次-read-的完整数据路径" class="headerlink" title="第一章 一次 read() 的完整数据路径"></a>第一章 一次 read() 的完整数据路径</h2><h3 id="从一行代码说起"><a href="#从一行代码说起" class="headerlink" title="从一行代码说起"></a>从一行代码说起</h3><figure class="highlight c"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ssize_t</span> n = read(fd, buf, <span class="number">4096</span>);</span><br></pre></td></tr></tbody></table></figure>
+<p>这行代码做了两件事：把进程的意图告诉内核，等内核把数据放到 <code>buf</code> 里。真正的工作全在内核侧。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figR1_数据路径.png" alt="图一：read() 的完整数据路径"></p>
+<p>从下往上看每一层在干什么：</p>
+<p>设备与驱动层。数据的终点。这台机器上的「物理磁盘」是 QEMU 给虚拟机的一块虚拟盘，驱动是 virtio-blk。这一层负责把块号翻译成真正的读命令发出去。</p>
+<p>块层。它接收「读第 N 到第 M 个扇区」这样的请求，做合并和排序，再交给驱动。相邻的小请求会在这里被合并成大请求，这一点后面会影响到实测数字。</p>
+<p>文件系统层。它的职责是翻译：把「文件的第 8192 字节」这种逻辑地址，翻译成「磁盘的某个块」。不同文件系统的翻译方式不同（ext4 用 extent 树，XFS 用 B+ 树），但对上层来说是透明的。</p>
+<p>页缓存。这是整条路径的关键。它是一棵按「文件 + 页号」索引的树，缓存着文件内容对应的物理页。<strong>如果请求的页已经在这棵树里，内核就跳过下面所有层，直接把数据拷回用户缓冲区。</strong></p>
+<p>VFS 层。统一的文件操作接口，负责权限检查、文件位置维护、以及决定走哪条具体实现。</p>
+<p>回到用户态。数据通过 <code>copy_to_user</code> 拷进 <code>buf</code>，<code>read()</code> 返回拷贝的字节数。</p>
+<h3 id="分岔点在哪"><a href="#分岔点在哪" class="headerlink" title="分岔点在哪"></a>分岔点在哪</h3><p>这张图里最值得记住的是<strong>分岔</strong>：路径在页缓存处一分为二。</p>
+<ul>
+<li><strong>命中</strong>：数据已经在页缓存里 → 直接拷贝返回。下面三层完全不参与。</li>
+<li><strong>未命中</strong>：先把数据从磁盘读上来，填进页缓存，然后走命中那条路。</li>
+</ul>
+<p>注意这里有个容易被忽略的设计：<strong>未命中时，读上来的数据会留在页缓存里</strong>。这就是为什么第二次读会快：第一次顺便把缓存铺好了。</p>
+<p>还要注意，无论哪条路，最终数据都是<strong>拷贝</strong>进用户缓冲区的。这个拷贝不是免费的：1 GiB 的数据要在内核态和用户态之间搬 1 GiB。后面讲 <code>mmap</code> 时会看到，这条拷贝正是 <code>mmap</code> 想省掉的东西。</p>
+<h3 id="关键观察：系统调用这一层是”瞎”的"><a href="#关键观察：系统调用这一层是”瞎”的" class="headerlink" title="关键观察：系统调用这一层是”瞎”的"></a>关键观察：系统调用这一层是”瞎”的</h3><p>把上面那段话反过来读一遍。</p>
+<p><code>read()</code> 这个系统调用做的事情，无论命中还是未命中，都完全一样：检查参数、走 VFS、要数据、拷回来、返回字节数。</p>
+<p><strong>它不知道、也不关心数据是从哪来的。</strong> 接下来的实验会用实测数据证明这一点：冷读和热读的系统调用序列，一字不差。</p>
+<p>这件事的直接后果是：<strong>光看系统调用，你无法判断缓存有没有起作用。</strong> 证据必须从别的地方找。</p>
+<h2 id="第二章-用什么证明数据来自页缓存"><a href="#第二章-用什么证明数据来自页缓存" class="headerlink" title="第二章 用什么证明数据来自页缓存"></a>第二章 用什么证明数据来自页缓存</h2><h3 id="为什么耗时不算证据"><a href="#为什么耗时不算证据" class="headerlink" title="为什么耗时不算证据"></a>为什么耗时不算证据</h3><p>先把这个思路排除掉，因为它看起来最直观。</p>
+<p>耗时 = 你的代码 + 内核代码 + 内存拷贝 + 磁盘等待 + 调度延迟 + 中断处理 + ……。磁盘等待只是其中一项。当它在总耗时里占比很低时，耗时对「有没有走磁盘」这件事就几乎没有分辨力。</p>
+<p>实测数字很能说明问题。同一个 1 GiB 文件，同一段读取代码：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">冷读（缓存被驱逐后）   0.2664 s</span><br><span class="line">热读（紧接着再读一遍） 0.1009 s</span><br></pre></td></tr></tbody></table></figure>
+<p>只差 2.6 倍。而两者的实际磁盘 I/O 差了多少？1 GiB 对 0。</p>
+<p><strong>耗时的比值是 2.6，I/O 的比值是无穷大。</strong> 拿 2.6 倍去论证「数据来自缓存」，等于用一把刻度很粗的尺子去量一个精度要求很高的东西。更糟的是，如果换成一个 4 KiB 块的小文件读，冷热耗时只差 1.5 倍（0.3836 s 对 0.2508 s），这个信号几乎淹没在噪声里。</p>
+<p>耗时能告诉你「可能有缓存参与」，但给不出「一定」和「有多少」。</p>
+<h3 id="四类能直接回答问题的证据"><a href="#四类能直接回答问题的证据" class="headerlink" title="四类能直接回答问题的证据"></a>四类能直接回答问题的证据</h3><p>这台机器上没有装 <code>strace</code>、<code>perf</code>、<code>blktrace</code>，而且 <code>sudo</code> 需要密码，所以这些现成工具一个都用不了。但这不影响取证，内核在 <code>/proc</code> 里暴露了足够多的计数器，非特权进程就能读。</p>
+<p><strong>证据一：<code>/proc/self/io</code> 的两个计数器</strong></p>
+<p>这是最有力的一条。这个文件里有两行关键内容：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rchar: 2884          &lt;- 进程通过系统调用读写了多少字节（含缓存命中）</span><br><span class="line">read_bytes: 0        &lt;- 进程真正从块设备取了多少字节</span><br></pre></td></tr></tbody></table></figure>
+<p>两者的语义差别正是问题的答案：</p>
+<ul>
+<li><code>rchar</code> 统计<strong>走过系统调用的字节数</strong>。看着 <code>read()</code> 把数据给你了，它就算数，不关心数据从哪来。</li>
+<li><code>read_bytes</code> 统计<strong>真正落到块设备上的字节数</strong>。只有页缓存没命中、必须去磁盘拿的部分才算。</li>
+</ul>
+<p>于是：</p>
+<script type="math/tex; mode=display">
+\text{被页缓存省掉的字节} = \texttt{rchar} - \texttt{read\_bytes}</script><p>这个差值是<strong>内核自己记的账</strong>，不是推理出来的。缓存有没有替我们干活、替了多少，两个数字一减就出来了。</p>
+<p><strong>证据二：<code>mincore()</code> 直接问每一页在不在</strong></p>
+<p><code>/proc/self/io</code> 给的是总量。如果要精确到每一页，可以用 <code>mincore()</code> 系统调用：给它一段映射的地址，它返回一个位图，每一位表示对应页当前是否驻留在内存里。</p>
+<figure class="highlight c"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *vec = <span class="built_in">calloc</span>(npages, <span class="number">1</span>);</span><br><span class="line">mincore(mapped_addr, size, vec);      <span class="comment">// vec[i] 的 bit0 为 1 表示第 i 页驻留</span></span><br></pre></td></tr></tbody></table></figure>
+<p>要让 <code>mincore</code> 检查文件的内容页，需要先把文件 mmap 进来。它返回的是「页是否在内存」，这正是缓存命中的定义。</p>
+<p><strong>证据三：缺页异常计数</strong></p>
+<p><code>getrusage(RUSAGE_SELF)</code> 里的 <code>ru_minflt</code> / <code>ru_majflt</code>，或者 <code>/proc/self/stat</code> 里的对应字段：</p>
+<ul>
+<li><strong>次缺页（minor fault）</strong>：页已经在内存里，只需要建立页表映射。缓存命中走这个。</li>
+<li><strong>主缺页（major fault）</strong>：页不在内存里，必须去磁盘读。<strong>只有这种情况才涉及物理 I/O。</strong></li>
+</ul>
+<p>两个计数器分开，正好把「从缓存拿」和「从磁盘拿」区分开了。用两个独立来源交叉验证（<code>getrusage</code> 和 <code>/proc/self/stat</code>）还能排除单一接口统计口径的问题。</p>
+<p><strong>证据四：<code>/proc/diskstats</code> 的设备级计数</strong></p>
+<p>上面三条都是进程视角。<code>/proc/diskstats</code> 是设备视角，统计整块盘被读了多少个扇区。</p>
+<p>读取前后各取一次，差值就是这次操作期间这块盘真实承受的读负载。这条证据的价值在于它<strong>不受进程边界限制</strong>：就算读操作发生在别的进程、别的线程，甚至内核自己的预读线程里，设备计数照样会涨。</p>
+<h3 id="小结：四类证据各管一段"><a href="#小结：四类证据各管一段" class="headerlink" title="小结：四类证据各管一段"></a>小结：四类证据各管一段</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>证据</th>
+<th>回答的问题</th>
+<th>视角</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rchar</code></td>
+<td>进程以为自己读了多少</td>
+<td>进程 · 系统调用层</td>
+</tr>
+<tr>
+<td><code>read_bytes</code></td>
+<td>进程真的从设备取了多少</td>
+<td>进程 · 块设备层</td>
+</tr>
+<tr>
+<td><code>mincore()</code></td>
+<td>具体哪些页现在在内存里</td>
+<td>页 · 缓存层</td>
+</tr>
+<tr>
+<td><code>diskstats</code></td>
+<td>整台机器的盘被读了多少</td>
+<td>设备 · 硬件层</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>四者互相独立，交叉起来就能把「数据到底从哪来」钉死，不必依赖任何时间测量。</p>
+<h2 id="第三章-冷读与热读的完整对照"><a href="#第三章-冷读与热读的完整对照" class="headerlink" title="第三章 冷读与热读的完整对照"></a>第三章 冷读与热读的完整对照</h2><h3 id="实验设置"><a href="#实验设置" class="headerlink" title="实验设置"></a>实验设置</h3><p>为了能可靠地制造「冷」，需要能把指定文件踢出页缓存。通常的做法是往 <code>/proc/sys/vm/drop_caches</code> 写 1，但那需要 root，而且会把<strong>整台机器</strong>的缓存清空，副作用太大。</p>
+<p>非 root 条件下有个精确得多的工具：<code>posix_fadvise()</code>。</p>
+<figure class="highlight c"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">posix_fadvise(fd, <span class="number">0</span>, <span class="number">0</span>, POSIX_FADV_DONTNEED);</span><br></pre></td></tr></tbody></table></figure>
+<p>这个调用的意思是「这个文件的这部分，我暂时不需要了，可以丢掉」。它只影响指定的文件区间，不碰别的进程、别的文件。</p>
+<p>实测它在 1 GiB 文件上的效果：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">fadvise 前驻留: 262144 / 262144 页</span><br><span class="line">fadvise 后驻留:      0 / 262144 页</span><br></pre></td></tr></tbody></table></figure>
+<p>用 <code>mincore()</code> 逐页数出来的，一页不剩。<strong>「冷」这个前提是被验证过的，不是假设的。</strong></p>
+<h3 id="对照结果"><a href="#对照结果" class="headerlink" title="对照结果"></a>对照结果</h3><p>测试文件 1 GiB，<code>read()</code> 每次读 128 KiB，每组跑三次取中位数：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>耗时 (s)</th>
+<th>吞吐 (MB/s)</th>
+<th>rchar (字节)</th>
+<th>read_bytes (字节)</th>
+<th>设备读 (MB)</th>
+<th>minflt</th>
+<th>majflt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>冷读</td>
+<td>0.2664</td>
+<td>3844.3</td>
+<td>1073742573</td>
+<td>1073741824</td>
+<td>1024.0</td>
+<td>35</td>
+<td>0</td>
+</tr>
+<tr>
+<td>热读</td>
+<td>0.1009</td>
+<td>10147.7</td>
+<td>1073742573</td>
+<td><strong>0</strong></td>
+<td><strong>0.0</strong></td>
+<td>35</td>
+<td>0</td>
+</tr>
+<tr>
+<td>冷读 4K 块</td>
+<td>0.3836</td>
+<td>2669.3</td>
+<td>1073742573</td>
+<td>1073741824</td>
+<td>1024.0</td>
+<td>4</td>
+<td>0</td>
+</tr>
+<tr>
+<td>热读 4K 块</td>
+<td>0.2508</td>
+<td>4082.7</td>
+<td>1073742573</td>
+<td><strong>0</strong></td>
+<td><strong>0.0</strong></td>
+<td>4</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figR2_冷热证据.png" alt="图二：冷热对照，rchar 一样，read_bytes 分岔"></p>
+<p>三次重复的原始耗时（<code>seq_cold_128k</code>）：0.2752 / 0.2601 / 0.2664 秒，波动在 5% 以内。</p>
+<h3 id="这张表里最重要的一列"><a href="#这张表里最重要的一列" class="headerlink" title="这张表里最重要的一列"></a>这张表里最重要的一列</h3><p>看 <code>rchar</code> 那一列：<strong>冷读和热读完全一样</strong>，都是 1073742573 字节。</p>
+<p>这跟第一章那个结论是同一个道理：系统调用层只负责搬数据，不负责记录数据从哪来。进程要求读 1 GiB，<code>read()</code> 就忠实地交付 1 GiB，一次不多一次不少。</p>
+<p>分岔在下一列。<code>read_bytes</code> 从 1073741824 掉到 <strong>0</strong>。</p>
+<p><strong>这就是页缓存在干活的确凿证据</strong>：进程以为自己读了 1 GiB，而块设备一个字节都没被要求提供。</p>
+<p>再看设备级确认。<code>/proc/diskstats</code> 里 sda 的读扇区增量，冷读时是 1024.0 MB，热读时是 0.0 MB。设备自己也是这么说的。</p>
+<p>三路证据（进程层 <code>read_bytes</code>、设备层 <code>diskstats</code>、页层 <code>mincore</code>）互相独立，结论一致。</p>
+<h3 id="系统调用记录：两遍一模一样"><a href="#系统调用记录：两遍一模一样" class="headerlink" title="系统调用记录：两遍一模一样"></a>系统调用记录：两遍一模一样</h3><p>前面两节都是数字。这一节换成直接的调用记录。因为这台机器没有 <code>strace</code>，我用 <code>ptrace</code> 自己写了一个追踪器（第七章给实现）。</p>
+<p>追踪一个只做一次 <code>read()</code> 的最小程序，把文件相关的调用挑出来。</p>
+<p><strong>热读</strong>：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">openat     (-100, "data/small.txt", 0x0, 0) = 3</span><br><span class="line">read       (3, buf, 4096) = 4096</span><br><span class="line">close      (0x3, 0x0, 0x0) = 0</span><br></pre></td></tr></tbody></table></figure>
+<p><strong>冷读</strong>（读取前先驱逐缓存）：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">openat     (-100, "data/small.txt", 0x0, 0) = 3</span><br><span class="line">fadvise64  (3, 0, 0, 4) = 0</span><br><span class="line">read       (3, buf, 4096) = 4096</span><br><span class="line">close      (0x3, 0x0, 0x0) = 0</span><br></pre></td></tr></tbody></table></figure>
+<p>两条记录里，<code>read(3, buf, 4096) = 4096</code> 这一行<strong>一字不差</strong>。唯一的区别是我自己加的那个 <code>fadvise64</code>。</p>
+<p>这个对照的价值在于它排除了一个常见的误判路径。有人会想：「冷热读肯定会在系统调用上有区别吧，比如多了个什么调用。」实测告诉你：<strong>没有</strong>。系统调用这一层自始至终是同一套动作，差别全部发生在它下面。</p>
+<p>所以，想通过跟踪系统调用来判断缓存命中，方向本身就是错的。要看得再往下走一层。</p>
+<h3 id="连续读取"><a href="#连续读取" class="headerlink" title="连续读取"></a>连续读取</h3><p>最后补一个更贴近现实的场景。同一个 1 GiB 文件，连续完整读三遍：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>耗时 (s)</th>
+<th>rchar (字节)</th>
+<th>read_bytes (字节)</th>
+<th>设备读 (MB)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>连读 3 次</td>
+<td>0.3046</td>
+<td>3221226225</td>
+<td><strong>0</strong></td>
+<td><strong>0.0</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code>rchar</code> 是 3 GiB，三次读取的系统调用全部老老实实走完了，数据也全部拷进了用户缓冲区。而 <code>read_bytes</code> 是 0。</p>
+<p>这就是「第二次读取几乎不产生物理磁盘 I/O」这句话的精确版本：<strong>不是几乎没有，是完全没有</strong>。三遍里只有第一遍的前半段碰了盘，之后全程由页缓存供给。</p>
+<p>顺带说明一个容易被误读的点：热读只快了 2.6 倍，不是因为磁盘很慢，而是因为<strong>拷贝本身有成本</strong>。1 GiB 数据要从内核页拷贝到用户缓冲区，这个 <code>memcpy</code> 再快也要时间。热读的 0.1009 秒里，绝大部分花在这个拷贝上。想省掉它，就得看下一章的 <code>mmap</code>。</p>
+<h2 id="第四章-read、mmap、O-DIRECT-的三条路径"><a href="#第四章-read、mmap、O-DIRECT-的三条路径" class="headerlink" title="第四章 read、mmap、O_DIRECT 的三条路径"></a>第四章 read、mmap、O_DIRECT 的三条路径</h2><p>三个接口看起来都能「把文件内容弄到进程里」，但数据走的路完全不同。</p>
+<h3 id="read-：内核替你拷"><a href="#read-：内核替你拷" class="headerlink" title="read()：内核替你拷"></a>read()：内核替你拷</h3><p>路径是第一章那张图。数据从页缓存<strong>拷贝</strong>到用户缓冲区，进程拿到一份副本。</p>
+<ul>
+<li>优点：简单、通用，文件描述符语义清晰（带文件位置，可 <code>lseek</code>）。</li>
+<li>代价：多一次内存拷贝。1 GiB 数据就要多搬 1 GiB。</li>
+</ul>
+<h3 id="mmap-：建立映射，靠缺页搬数据"><a href="#mmap-：建立映射，靠缺页搬数据" class="headerlink" title="mmap()：建立映射，靠缺页搬数据"></a>mmap()：建立映射，靠缺页搬数据</h3><p><code>mmap()</code> 不拷贝任何数据。它做的是<strong>建立映射</strong>：把文件的某段区间和进程虚拟地址空间的某段区间关联起来。</p>
+<figure class="highlight c"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">char</span> *m = mmap(<span class="literal">NULL</span>, size, PROT_READ, MAP_SHARED, fd, <span class="number">0</span>);</span><br></pre></td></tr></tbody></table></figure>
+<p>接下来访问 <code>m[i]</code> 时，CPU 发现这个虚拟地址没有对应的物理页，触发<strong>缺页异常</strong>，内核此时才去页缓存找页、建立页表映射。</p>
+<p><strong>数据从头到尾没有被拷贝</strong>，进程直接读的是页缓存里的那些物理页。</p>
+<p>这个差别在数据上留了非常清晰的指纹：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>耗时 (s)</th>
+<th>吞吐 (MB/s)</th>
+<th>rchar (字节)</th>
+<th>read_bytes (字节)</th>
+<th>minflt</th>
+<th>majflt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mmap 冷</td>
+<td>0.2152</td>
+<td>4759.1</td>
+<td><strong>749</strong></td>
+<td>1073741824</td>
+<td>919</td>
+<td>1</td>
+</tr>
+<tr>
+<td>mmap 热</td>
+<td>0.0051</td>
+<td>200666.3</td>
+<td><strong>749</strong></td>
+<td><strong>0</strong></td>
+<td>919</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong><code>rchar</code> 只有 749 字节</strong>，而这 749 字节还是程序读取 <code>/proc/self/io</code> 自己造成的。</p>
+<p>进程访问了整整 1 GiB 的文件内容，可是<strong>一个字节都没走 <code>read()</code></strong>。数据是通过缺页异常进入进程的，绕过了系统调用层的字节计数。</p>
+<p>如果不看 <code>rchar</code> 而只看耗时，会很自然地写出「mmap 比 read 快 50 倍」这样的结论。但热读状态下 mmap 比 read 快的是 <strong>2 万倍</strong>（0.0051 对 0.1009），差了三个数量级。这个量级差异不是「快一点」，而是「省掉了一整次拷贝」。</p>
+<p>用 200 GB/s 这个数字反推：1 GiB / 0.0051 s ≈ 200 GB/s，远超任何磁盘、也超过单通道内存带宽。它测的其实只是「遍历一遍已经在缓存里的页」的成本，因为缺页搬页表这件事在第一遍就做完了，第二遍连缺页都不会发生（那 919 次缺页是在第一次触碰时产生的）。</p>
+<h3 id="O-DIRECT：主动绕开缓存"><a href="#O-DIRECT：主动绕开缓存" class="headerlink" title="O_DIRECT：主动绕开缓存"></a>O_DIRECT：主动绕开缓存</h3><p>第三条路是显式声明「不要缓存」：</p>
+<figure class="highlight c"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> fd = open(path, O_RDONLY | O_DIRECT);</span><br></pre></td></tr></tbody></table></figure>
+<p><code>O_DIRECT</code> 让读写直接落在块设备上，不经过页缓存。它有两个硬性要求：</p>
+<ul>
+<li>缓冲区的地址必须按逻辑块大小对齐（本项目用 <code>posix_memalign(&amp;buf, 4096, size)</code>）</li>
+<li>读写长度和文件偏移也要对齐</li>
+</ul>
+<p>实测：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>耗时 (s)</th>
+<th>吞吐 (MB/s)</th>
+<th>rchar (字节)</th>
+<th>read_bytes (字节)</th>
+<th>设备读 (MB)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O_DIRECT 128K</td>
+<td>0.7153</td>
+<td>1431.6</td>
+<td>1073742575</td>
+<td>1073741824</td>
+<td>1024.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>注意它<strong>比冷读还慢</strong>（0.7153 对 0.2664）。</p>
+<p>这个结果初看反直觉：绕开缓存不是应该更快吗？</p>
+<p>原因在于<strong>预读</strong>。普通 <code>read()</code> 即使缓存没命中，内核也在背后做顺序预读：读当前位置的数据时，顺手把后面一段也读进来，下一次读就直接命中了。等于内核在帮你把延迟藏起来。<code>O_DIRECT</code> 放弃了页缓存，同时也就放弃了预读，每次都得实打实地去设备拿。</p>
+<p><code>O_DIRECT</code> 的价值不在于「更快」，而在于「可控」：它让 I/O 的时机和数量完全由程序决定，不被内核的缓存策略干扰。数据库这类自己管理缓存的软件才需要它。</p>
+<h3 id="三条路径的指纹"><a href="#三条路径的指纹" class="headerlink" title="三条路径的指纹"></a>三条路径的指纹</h3><p>把三者的差异压缩成一句话：<strong>看 <code>rchar</code> 和缺页这两个计数器，就能认出是哪条路。</strong></p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">read()      rchar ≈ 读取量        数据是拷回来的</span><br><span class="line">mmap()      rchar ≈ 0            数据靠缺页搬</span><br><span class="line">O_DIRECT    rchar ≈ 读取量        但 read_bytes 永远等于读取量，没有任何缓存折扣</span><br></pre></td></tr></tbody></table></figure>
+<p><code>read()</code> 和 <code>O_DIRECT</code> 的 <code>rchar</code> 看起来一样，区分它们的是 <code>read_bytes</code>：<code>read()</code> 在热读时能做到 0，<code>O_DIRECT</code> 永远做不到。</p>
+<h2 id="第五章-一个意外发现：缺页次数不等于访问页数"><a href="#第五章-一个意外发现：缺页次数不等于访问页数" class="headerlink" title="第五章 一个意外发现：缺页次数不等于访问页数"></a>第五章 一个意外发现：缺页次数不等于访问页数</h2><p>这一章是实验过程中撞出来的，不在原计划里，但它值得单独讲，因为它揭示了一个和第一章同一类型的错误：<strong>把某个计数器当成它字面上看起来的意思</strong>。</p>
+<h3 id="问题的起点"><a href="#问题的起点" class="headerlink" title="问题的起点"></a>问题的起点</h3><p><code>mmap</code> 那条路径的缺页计数看着很不对劲。</p>
+<p>文件 1 GiB，逐页触碰一遍（每 4 KiB 触一次，共 262144 次）。按理说，每一页第一次访问都要触发一次缺页，那就该有 262144 次缺页。</p>
+<p>实测：<strong>915 次</strong>。</p>
+<p>差了 286 倍。第一反应是计数器读错了，于是从两个独立来源各读一遍：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">getrusage minflt: 917</span><br><span class="line">/proc/self/stat : 915</span><br></pre></td></tr></tbody></table></figure>
+<p>两个来源一致。而且重复跑五次，结果是 915 / 915 / 916 / 916 / 915，波动只有一次。</p>
+<p>所以数字是对的，是我对「缺页」的理解错了。</p>
+<h3 id="验证一：它和访问顺序有关"><a href="#验证一：它和访问顺序有关" class="headerlink" title="验证一：它和访问顺序有关"></a>验证一：它和访问顺序有关</h3><p>如果一次缺页能覆盖多页，那么「覆盖多少页」应该取决于内核能提前准备多少页。而内核提前准备的量，取决于它能不能预测你要访问哪里。</p>
+<p>于是做一个对照实验：同一个文件、同一次 <code>mmap</code>、同样逐页触碰，<strong>只改访问顺序</strong>。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figR3_缺页与性能.png" alt="图三：缺页批量粒度与性能对比"></p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>访问顺序</th>
+<th>页数</th>
+<th>缺页次数</th>
+<th>每次缺页覆盖</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 GiB</td>
+<td>顺序正读</td>
+<td>262144</td>
+<td>915</td>
+<td><strong>286.5 页</strong></td>
+</tr>
+<tr>
+<td>1 GiB</td>
+<td>顺序倒读</td>
+<td>262144</td>
+<td>16382</td>
+<td>16.0 页</td>
+</tr>
+<tr>
+<td>1 GiB</td>
+<td>随机</td>
+<td>262144</td>
+<td>16266</td>
+<td>16.1 页</td>
+</tr>
+<tr>
+<td>32 MB</td>
+<td>顺序正读</td>
+<td>8192</td>
+<td>418</td>
+<td>19.6 页</td>
+</tr>
+<tr>
+<td>32 MB</td>
+<td>顺序倒读</td>
+<td>8192</td>
+<td>511</td>
+<td>16.0 页</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>结论很干净：</p>
+<ul>
+<li><strong>顺序访问</strong>：内核识别出这个模式，提前把后面一大段读进内存，一次缺页可以顺手把几百个页表项都建好。</li>
+<li><strong>逆序或随机访问</strong>：内核无法预测，退化成固定窗口，<strong>每次缺页恰好覆盖 16 页</strong>。</li>
+</ul>
+<p>那个 16 不是巧合。它是内核 <code>fault_around</code> 机制的默认窗口大小：当一页缺页时，内核会顺便把它周围一片页的映射一起建好，默认窗口是 64 KiB，正好 16 个 4 KiB 页。验证方式是拿小文件测：1 MB 到 16 MB 的文件，无论多大，都精确是 16.0 到 16.5 页：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">文件    1.0 MB  页数     256  首次缺页    16  每缺页覆盖  16.0 页</span><br><span class="line">文件    4.0 MB  页数    1024  首次缺页    63  每缺页覆盖  16.3 页</span><br><span class="line">文件   16.0 MB  页数    4096  首次缺页   255  每缺页覆盖  16.1 页</span><br></pre></td></tr></tbody></table></figure>
+<p>16 × 16 = 256，64 × 16 = 1024，255 × 16 = 4080，都和页数对得上。</p>
+<h3 id="验证二：排除大页的干扰"><a href="#验证二：排除大页的干扰" class="headerlink" title="验证二：排除大页的干扰"></a>验证二：排除大页的干扰</h3><p>顺序访问那个 286 页的批量很大，是一个自然的怀疑对象：是不是透明大页（THP）在起作用？</p>
+<p>这台机器的 THP 是开着的（<code>/sys/kernel/mm/transparent_hugepage/enabled</code> = <code>[always]</code>），而且 <code>smaps</code> 里确实能看到大页映射：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">FilePmdMapped:   1007616 kB      ← 984 MB 的文件内容是用 2 MB 大页映射的</span><br></pre></td></tr></tbody></table></figure>
+<p>那就做个对照，显式关掉这个映射的大页：</p>
+<figure class="highlight c"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">madvise(m, size, MADV_NOHUGEPAGE);</span><br></pre></td></tr></tbody></table></figure>
+<p>结果：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">不关大页:  缺页 915 / 916 / 915</span><br><span class="line">关掉大页:  缺页 915 / 916 / 915</span><br></pre></td></tr></tbody></table></figure>
+<p><strong>一模一样，一次都没变。</strong></p>
+<p>所以 286 页这个批量<strong>不是</strong>大页造成的。<code>FilePmdMapped</code> 那 984 MB 是另一回事（它统计的是页表用了多大的粒度），和缺页次数没有因果关系。</p>
+<h3 id="正确的解释"><a href="#正确的解释" class="headerlink" title="正确的解释"></a>正确的解释</h3><p>把两条验证合起来：</p>
+<ul>
+<li>批量大小随访问顺序变化（顺序 286 页，逆序/随机 16 页）</li>
+<li>关掉大页不改变任何结果</li>
+</ul>
+<p>那么批量的来源只能是<strong>预读窗口</strong>：顺序访问时预读一直往前跑，页缓存里常驻着一大段数据；缺页时内核发现周围这些页已经在内存里，就一次性把它们的映射全建好，不用一页一页来。</p>
+<p><strong>这个批量的上限是动态的，取决于内核当前把预读窗口开到了多大。</strong> 它不是一个文件属性，也不是一个固定常数。</p>
+<h3 id="这条发现的实用价值"><a href="#这条发现的实用价值" class="headerlink" title="这条发现的实用价值"></a>这条发现的实用价值</h3><p>它推翻的是一个很常见的性能分析习惯：</p>
+<blockquote>
+<p>「这个程序缺页很多，说明它在大量访问没缓存的数据。」</p>
+</blockquote>
+<p>从前面的数据看，这句话在<strong>两个方向上</strong>都可能错：</p>
+<ul>
+<li>缺页多不代表访问的页多。16266 次缺页对应的是 262144 页，比例是 1:16。</li>
+<li>反过来，缺页少也不代表访问少。915 次缺页对应的是整整 1 GiB 数据，每一次缺页背后是 286 页的真实工作。</li>
+</ul>
+<p>正确读法是：<strong>缺页次数衡量的是「内核为你做了多少次映射工作」，不是「你访问了多少数据」。</strong> 想知道后者，得看 <code>rchar</code> 或者别的计数器。</p>
+<p>同样的坑在 <code>majflt</code> 上也存在。这次实验里 <code>majflt</code> 几乎全程是 0，即使在做冷读、真的从磁盘拿数据的时候。原因类似：顺序读取时，内核的预读把数据批量读进来，缺页发生时数据往往已经在内存里了，于是记为次缺页。<strong><code>majflt = 0</code> 不代表没有磁盘 I/O。</strong></p>
+<h2 id="第六章-证据能推出什么，推不出什么"><a href="#第六章-证据能推出什么，推不出什么" class="headerlink" title="第六章 证据能推出什么，推不出什么"></a>第六章 证据能推出什么，推不出什么</h2><p>前面几章给了不少结论。这一章专门讲这些结论的边界，哪些是证据支持的，哪些是推断，哪些根本推不出来。</p>
+<p>这一节和前面一样重要。一份只有结论没有边界的分析，读者照着用到别处就会翻车。</p>
+<h3 id="能确定推出的"><a href="#能确定推出的" class="headerlink" title="能确定推出的"></a>能确定推出的</h3><p><strong>其一：页缓存确实替进程承担了全部读取工作。</strong></p>
+<p>三路独立证据同时指向这个结论：</p>
+<ul>
+<li>进程层：<code>read_bytes</code> = 0（内核记录「这个进程没有从块设备取字节」）</li>
+<li>页层：<code>mincore()</code> 报告 262144/262144 页驻留</li>
+<li>设备层：<code>diskstats</code> 的 sda 读扇区增量为 0</li>
+</ul>
+<p>这三条分别由不同的内核子系统维护，出错方向各不相同。三者一致，结论可靠。</p>
+<p><strong>其二：<code>read()</code> 的耗时差异确实来自缓存层，而不是别的地方。</strong></p>
+<p>论证方式：冷读和热读的系统调用序列<strong>逐字相同</strong>（第三章的 trace 对照）。既然系统调用这一层没有任何差别，差异只能发生在它下面；而下面各层里，唯一被独立证据证明发生了状态变化的就是页缓存。</p>
+<p>这是一条排除法论证，但它比单纯的「耗时短所以是缓存」强得多，因为它先排除了同一层内的其他解释。</p>
+<p><strong>其三：<code>mmap</code> 和 <code>read</code> 的差异是结构性的，不是性能调优级别的。</strong></p>
+<p><code>rchar</code> 从 1073742573 掉到 749，差了六个数量级。这不是「快一点」，而是数据根本没有流经 <code>read()</code> 这条路径。这个差异由接口设计决定，换机器、换文件系统都不会消失。</p>
+<h3 id="不能推出的"><a href="#不能推出的" class="headerlink" title="不能推出的"></a>不能推出的</h3><p><strong>其一：<code>rchar - read_bytes</code> 并不总是「缓存省下的字节」。</strong></p>
+<p>这是最容易踩的一个坑，因为第二章那个公式看起来很自然。实测一下就会发现它会崩：</p>
+<p>只读 4 KiB，看这次 <code>read()</code> 造成的增量：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rchar      +4189</span><br><span class="line">read_bytes +16384          ← 比要的还多！</span><br></pre></td></tr></tbody></table></figure>
+<p><code>read_bytes</code> 比 <code>rchar</code> 大，差值是个负数。放大倍数分别是：读 4 KiB 时 3.9 倍，读 64 KiB 时 4.0 倍，读 1 MiB 时 2.0 倍。</p>
+<p>原因就是预读。你只要 4 KiB，内核顺手读了 16 KiB。</p>
+<p>连续读 8 次 4 KiB 更能看清这个过程（每次都只读 4 KiB）：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">第1次: read_bytes +16384      窗口开了 16 KiB</span><br><span class="line">第2次: read_bytes +65536      预读窗口涨到 64 KiB</span><br><span class="line">第3次: read_bytes +0          命中上一轮预读</span><br><span class="line">第4次: read_bytes +0</span><br><span class="line">第5次: read_bytes +245760     窗口涨到 240 KiB</span><br><span class="line">第6次: read_bytes +0</span><br><span class="line">第7次: read_bytes +0</span><br><span class="line">第8次: read_bytes +0</span><br></pre></td></tr></tbody></table></figure>
+<p>八次要了 32 KiB，设备上实际读走 320 KiB。<strong>预读是自适应的</strong>：命中一次就加大窗口，所以增量是一整块一整块地来的，并不均匀。</p>
+<p>所以那个公式要加个前提：<strong><code>rchar - read_bytes</code> 表示「净缓存收益」，只在读完整个文件（或稳态连续读取）时才等于「省下的字节」。</strong> 局部小读时它可能是负数，因为内核在为未来投资。</p>
+<p><strong>其二：这台虚拟机的「物理读」不是真的物理读。</strong></p>
+<p>这是虚拟化环境特有的坑，而且很隐蔽。</p>
+<p>实验里有一组数据我看第一遍时觉得不对：用 <code>O_DIRECT</code> 读一个刚写完的文件，测出 3.3 GB/s。这个速度远超这台虚拟机的磁盘能力。</p>
+<p>原因在于：<strong>虚拟机的磁盘是宿主机上的一个文件。</strong> 虚拟机里的「块设备读」，到了宿主机上可能只是一次内存拷贝，因为宿主机自己也有一层页缓存。</p>
+<p>后果是：<strong>在这个环境里测出的「冷读」速度，反映的是宿主机的缓存状态，不是真实磁盘的性能。</strong></p>
+<p>这不影响本文关于<strong>机制</strong>的结论（页缓存命中与否、<code>rchar</code> 与 <code>read_bytes</code> 的语义、<code>mmap</code> 不走 <code>read()</code>，这些都是客户机内核的行为，与后端是不是虚拟磁盘无关）。但只要涉及<strong>绝对性能数字</strong>，就必须注明环境。本文表里的 MB/s 都只在这台机器、这个 KVM 配置下成立。</p>
+<p><strong>其三：<code>diskstats</code> 的增量归属不到具体进程。</strong></p>
+<p><code>/proc/diskstats</code> 是设备级计数。本次实验期间没有别的负载，所以可以认为增量全部来自被测进程。但在有并发 I/O 的机器上，这个增量是所有进程共享的，不能直接归给某一个。</p>
+<p>需要进程级归属时得换工具，<code>iotop</code>、<code>bpftrace</code> 的 <code>biolatency</code>/<code>iosnoop</code>，或者 cgroup 的 <code>io.stat</code>。它们在这台机器上要么没装、要么需要 root。</p>
+<p><strong>其四：精确的 folio 粒度无法确定。</strong></p>
+<p>第五章确认了批量来自预读窗口而不是大页，但<strong>没有测出内核实际用的是多大的 folio</strong>。能查到 <code>/proc/meminfo</code> 的 <code>FileHugePages: 1189888 kB</code>（说明这个文件确实被多页 folio 缓存着），但要读具体的 folio 阶数需要 <code>debugfs</code>，而这台机器上 <code>debugfs</code> 没挂载、也拿不到 root。</p>
+<p>所以第五章给出的结论精确到「批量由预读窗口决定」为止，再往下就没有证据支撑了。</p>
+<h3 id="边界汇总"><a href="#边界汇总" class="headerlink" title="边界汇总"></a>边界汇总</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>结论</th>
+<th>证据强度</th>
+<th>边界</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>页缓存承担了全部读取</td>
+<td>强（三路独立）</td>
+<td>无</td>
+</tr>
+<tr>
+<td>冷热差异来自缓存层</td>
+<td>强（排除法 + 直接计数）</td>
+<td>无</td>
+</tr>
+<tr>
+<td><code>mmap</code> 不走 <code>read()</code></td>
+<td>强（<code>rchar</code> 六个数量级差）</td>
+<td>无</td>
+</tr>
+<tr>
+<td>缺页批量由预读窗口决定</td>
+<td>中（顺序对照 + 大页排除）</td>
+<td>folio 阶数未测出</td>
+</tr>
+<tr>
+<td>具体吞吐数字</td>
+<td>弱（单机单次）</td>
+<td>仅本环境成立，宿主缓存有干扰</td>
+</tr>
+<tr>
+<td><code>diskstats</code> 归因</td>
+<td>中</td>
+<td>需无并发负载才成立</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>有一点想说明：把「中」和「弱」的结论也列出来、并写清边界，不会削弱文章的说服力。相反，它让「强」那几条更可信，因为读者知道作者是真的在区分，而不是把所有结论都写成同等肯定。</p>
+<h2 id="第七章-实现：把分析沉淀成工具"><a href="#第七章-实现：把分析沉淀成工具" class="headerlink" title="第七章 实现：把分析沉淀成工具"></a>第七章 实现：把分析沉淀成工具</h2><p>这一章把前面用的东西固化成可复用的工具。总共三件，都是单文件 C，<code>gcc</code> 直接编译，不需要 root，不需要装任何依赖。</p>
+<p>这个前提本身就值得说一句：<strong>这台机器上 <code>strace</code>、<code>perf</code>、<code>blktrace</code> 一个都没装，<code>sudo</code> 也要密码。</strong> 如果分析能力依赖于「先装一套工具」，那么在受限环境里就什么都做不了。而内核在 <code>/proc</code> 和系统调用层面暴露的接口，非特权进程就能用，缺的只是一个把它们串起来的程序。</p>
+<h3 id="工具一：minitrace，自己写的最小追踪器"><a href="#工具一：minitrace，自己写的最小追踪器" class="headerlink" title="工具一：minitrace，自己写的最小追踪器"></a>工具一：minitrace，自己写的最小追踪器</h3><p><code>ptrace</code> 是这个工具的支点。它本来是给调试器用的：让一个进程停下来，另一个进程检查它的寄存器和内存。追踪自己 fork 出来的子进程<strong>不需要任何特权</strong>。</p>
+<figure class="highlight c"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*  @Moxin1044 2026-10-15</span></span><br><span class="line"><span class="comment">    minitrace ， 精简版系统调用追踪器（x86_64）</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">    核心就三件事：</span></span><br><span class="line"><span class="comment">      1. fork + PTRACE_TRACEME + execve，让子进程一出生就被追；</span></span><br><span class="line"><span class="comment">      2. PTRACE_SYSCALL 让子进程跑到「进系统调用」和「出系统调用」时各停一次；</span></span><br><span class="line"><span class="comment">      3. 停两次配成一个完整的调用：第一次在寄存器里取编号和参数，</span></span><br><span class="line"><span class="comment">         第二次从 rax 取返回值。</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">    编译：gcc -O2 -o minitrace minitrace.c</span></span><br><span class="line"><span class="comment">    用法：./minitrace &lt;程序&gt; [参数...]</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> _GNU_SOURCE</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;errno.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/ptrace.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/wait.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/user.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* 从被追踪进程的内存里读一个以 \0 结尾的字符串。</span></span><br><span class="line"><span class="comment">   PTRACE_PEEKDATA 一次只能取一个机器字，所以要逐字节判断有没有到结尾。 */</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">read_string</span><span class="params">(<span class="type">pid_t</span> pid, <span class="type">unsigned</span> <span class="type">long</span> addr, <span class="type">char</span> *buf, <span class="type">size_t</span> n)</span> {</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; n - <span class="number">1</span>; i += <span class="keyword">sizeof</span>(<span class="type">long</span>)) {</span><br><span class="line">        errno = <span class="number">0</span>;</span><br><span class="line">        <span class="type">long</span> w = ptrace(PTRACE_PEEKDATA, pid, addr + i, <span class="literal">NULL</span>);</span><br><span class="line">        <span class="keyword">if</span> (errno) <span class="keyword">break</span>;</span><br><span class="line">        <span class="built_in">memcpy</span>(buf + i, &amp;w, <span class="keyword">sizeof</span>(<span class="type">long</span>));</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">memchr</span>(&amp;w, <span class="string">'\0'</span>, <span class="keyword">sizeof</span>(<span class="type">long</span>))) <span class="keyword">break</span>;</span><br><span class="line">    }</span><br><span class="line">    buf[n - <span class="number">1</span>] = <span class="string">'\0'</span>;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">/* x86_64 上这几个编号足够看清文件 I/O 的主干 */</span></span><br><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">char</span> *<span class="title function_">name_of</span><span class="params">(<span class="type">long</span> n)</span> {</span><br><span class="line">    <span class="keyword">switch</span> (n) {</span><br><span class="line">    <span class="keyword">case</span> <span class="number">0</span>:   <span class="keyword">return</span> <span class="string">"read"</span>;        <span class="keyword">case</span> <span class="number">1</span>:   <span class="keyword">return</span> <span class="string">"write"</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">2</span>:   <span class="keyword">return</span> <span class="string">"open"</span>;        <span class="keyword">case</span> <span class="number">3</span>:   <span class="keyword">return</span> <span class="string">"close"</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">8</span>:   <span class="keyword">return</span> <span class="string">"lseek"</span>;       <span class="keyword">case</span> <span class="number">9</span>:   <span class="keyword">return</span> <span class="string">"mmap"</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">11</span>:  <span class="keyword">return</span> <span class="string">"munmap"</span>;      <span class="keyword">case</span> <span class="number">17</span>:  <span class="keyword">return</span> <span class="string">"pread64"</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">27</span>:  <span class="keyword">return</span> <span class="string">"mincore"</span>;     <span class="keyword">case</span> <span class="number">217</span>: <span class="keyword">return</span> <span class="string">"getdents64"</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">221</span>: <span class="keyword">return</span> <span class="string">"fadvise64"</span>;   <span class="keyword">case</span> <span class="number">257</span>: <span class="keyword">return</span> <span class="string">"openat"</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">275</span>: <span class="keyword">return</span> <span class="string">"splice"</span>;      <span class="keyword">case</span> <span class="number">326</span>: <span class="keyword">return</span> <span class="string">"copy_file_range"</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">332</span>: <span class="keyword">return</span> <span class="string">"statx"</span>;</span><br><span class="line">    <span class="keyword">default</span>:  <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv)</span> {</span><br><span class="line">    <span class="keyword">if</span> (argc &lt; <span class="number">2</span>) { <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"用法: %s &lt;程序&gt; [参数...]\n"</span>, argv[<span class="number">0</span>]); <span class="keyword">return</span> <span class="number">2</span>; }</span><br><span class="line"></span><br><span class="line">    <span class="type">pid_t</span> pid = fork();</span><br><span class="line">    <span class="keyword">if</span> (pid &lt; <span class="number">0</span>) { perror(<span class="string">"fork"</span>); <span class="keyword">return</span> <span class="number">1</span>; }</span><br><span class="line">    <span class="keyword">if</span> (pid == <span class="number">0</span>) {                       <span class="comment">/* 子进程 */</span></span><br><span class="line">        ptrace(PTRACE_TRACEME, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);  <span class="comment">/* 声明「我要被父进程追」 */</span></span><br><span class="line">        execvp(argv[<span class="number">1</span>], &amp;argv[<span class="number">1</span>]);        <span class="comment">/* execve 会被父进程拦下 */</span></span><br><span class="line">        _exit(<span class="number">127</span>);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> status;</span><br><span class="line">    waitpid(pid, &amp;status, <span class="number">0</span>);             <span class="comment">/* 等 execve 停住 */</span></span><br><span class="line">    <span class="comment">/* 关键选项：让系统调用产生的停止带上 0x80 标志，</span></span><br><span class="line"><span class="comment">       这样就能和普通信号引发的停止区分开 */</span></span><br><span class="line">    ptrace(PTRACE_SETOPTIONS, pid, <span class="number">0</span>, (<span class="type">void</span> *)PTRACE_O_TRACESYSGOOD);</span><br><span class="line"></span><br><span class="line">    <span class="type">long</span> nr = <span class="number">-1</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> a0 = <span class="number">0</span>, a1 = <span class="number">0</span>, a2 = <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> entering = <span class="number">1</span>;</span><br><span class="line">    <span class="type">char</span> path[<span class="number">512</span>];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (;;) {</span><br><span class="line">        <span class="keyword">if</span> (ptrace(PTRACE_SYSCALL, pid, <span class="number">0</span>, <span class="number">0</span>) &lt; <span class="number">0</span>) <span class="keyword">break</span>;   <span class="comment">/* 放行到下一个停止点 */</span></span><br><span class="line">        <span class="keyword">if</span> (waitpid(pid, &amp;status, <span class="number">0</span>) &lt; <span class="number">0</span>) <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">if</span> (WIFEXITED(status)) <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">if</span> (WSTOPSIG(status) != (SIGTRAP | <span class="number">0x80</span>)) <span class="keyword">continue</span>; <span class="comment">/* 不是系统调用，跳过 */</span></span><br><span class="line"></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">user_regs_struct</span> <span class="title">r</span>;</span></span><br><span class="line">        ptrace(PTRACE_GETREGS, pid, <span class="number">0</span>, &amp;r);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (entering) {                    <span class="comment">/* 进入：rdi/rsi/rdx 是前三个参数 */</span></span><br><span class="line">            nr = (<span class="type">long</span>)r.orig_rax;</span><br><span class="line">            a0 = r.rdi; a1 = r.rsi; a2 = r.rdx;</span><br><span class="line">        } <span class="keyword">else</span> {                           <span class="comment">/* 退出：rax 是返回值 */</span></span><br><span class="line">            <span class="type">const</span> <span class="type">char</span> *nm = name_of(nr);</span><br><span class="line">            <span class="keyword">if</span> (nm) {</span><br><span class="line">                <span class="type">long</span> ret = (<span class="type">long</span>)r.rax;</span><br><span class="line">                <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(nm, <span class="string">"read"</span>) || !<span class="built_in">strcmp</span>(nm, <span class="string">"pread64"</span>))</span><br><span class="line">                    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"%-11s(%d, buf, %lu) = %ld\n"</span>, nm, (<span class="type">int</span>)a0, a2, ret);</span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(nm, <span class="string">"openat"</span>)) {</span><br><span class="line">                    read_string(pid, a1, path, <span class="keyword">sizeof</span>(path));   <span class="comment">/* 第二个参数是路径 */</span></span><br><span class="line">                    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"%-11s(%d, \"%s\", 0x%lx, 0) = %ld\n"</span>,</span><br><span class="line">                            nm, (<span class="type">int</span>)a0, path, a2, ret);</span><br><span class="line">                }</span><br><span class="line">                <span class="keyword">else</span></span><br><span class="line">                    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"%-11s(0x%lx, ...) = %ld\n"</span>, nm, a2, ret);</span><br><span class="line">            }</span><br><span class="line">            nr = <span class="number">-1</span>;</span><br><span class="line">        }</span><br><span class="line">        entering = !entering;              <span class="comment">/* 进 / 出 交替 */</span></span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>三个关键点：</p>
+<p><strong><code>PTRACE_O_TRACESYSGOOD</code>。</strong> 不加这个选项，系统调用停止和普通信号停止在 <code>waitpid</code> 返回值里长得一样，追踪器会被信号干扰得一团乱。加上之后系统调用停止会多一个 <code>0x80</code> 位，一个判断就能滤干净。</p>
+<p><strong>进 / 出交替。</strong> <code>PTRACE_SYSCALL</code> 每放行一次，子进程就在下一个系统调用边界停住。停奇数次数是「进入」，偶数是「退出」。参数只在进入时有效，返回值只在退出时有效，这个交替是追踪器最容易写错的地方。</p>
+<p><strong>读字符串要分块。</strong> 要打印 <code>openat</code> 的路径名，得从子进程内存里读。<code>PTRACE_PEEKDATA</code> 一次只能读一个机器字，所以得循环读、逐块查 <code>\0</code>。本文的精简版为了可读性把这块省略了，直接打印参数值。</p>
+<h3 id="这个工具立刻给了一个反直觉的结果"><a href="#这个工具立刻给了一个反直觉的结果" class="headerlink" title="这个工具立刻给了一个反直觉的结果"></a>这个工具立刻给了一个反直觉的结果</h3><p>拿它去追 <code>cat</code>，本来想看一次「经典的文件读取」，结果看到的是：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">openat     (AT_FDCWD, ..., 0x0) = 3</span><br><span class="line">fadvise64  (0x0, ...) = 0</span><br><span class="line">splice     (0x5, ...) = 262144</span><br><span class="line">splice     (0x1, ...) = 262144</span><br><span class="line">splice     (0x5, ...) = 0</span><br><span class="line">close      (0x0, ...) = 0</span><br></pre></td></tr></tbody></table></figure>
+<p><strong>没有 <code>read</code>。</strong> 一个都没有。</p>
+<p>现代 coreutils 的 <code>cat</code> 在检测到「文件到文件」的拷贝时，走的是 <code>splice()</code>，一个零拷贝接口。数据从文件描述符直接搬到管道，再搬到标准输出，中间根本不进入用户态缓冲区，所以也不需要 <code>read()</code>。</p>
+<p>这个发现有两层意义：</p>
+<ul>
+<li>具体层面：<strong>「读文件」这件事不必然经过 <code>read()</code>。</strong> 想看真实的读取路径，得用自己控制的程序，不能拿 <code>cat</code> 当样本。</li>
+<li>抽象层面：这也是本文反复出现的那类错误的又一个实例：<strong>工具的名字和它实际调用的系统调用之间，没有必然联系。</strong> 只靠猜是猜不到的，必须测。</li>
+</ul>
+<h3 id="工具二：cacheproof，一次读取走没走缓存"><a href="#工具二：cacheproof，一次读取走没走缓存" class="headerlink" title="工具二：cacheproof，一次读取走没走缓存"></a>工具二：cacheproof，一次读取走没走缓存</h3><p>第二个工具把第二章的四类证据打包在一起，一条命令给出结论。</p>
+<figure class="highlight c"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*  @Moxin1044 2026-10-15</span></span><br><span class="line"><span class="comment">    cacheproof ， 判断一次读取到底走没走页缓存的最小工具</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">    输出四项互相独立的证据：</span></span><br><span class="line"><span class="comment">      rchar / read_bytes  ， 进程视角（前者含缓存命中，后者只算真去设备的）</span></span><br><span class="line"><span class="comment">      minflt / majflt     ， 缺页视角</span></span><br><span class="line"><span class="comment">      mincore 驻留页数     ， 页缓存视角</span></span><br><span class="line"><span class="comment">      diskstats 增量       ， 设备视角</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">    编译：gcc -O2 -o cacheproof cacheproof.c</span></span><br><span class="line"><span class="comment">    用法：./cacheproof &lt;文件&gt; [--cold]</span></span><br><span class="line"><span class="comment">          --cold 会先用 posix_fadvise(DONTNEED) 把该文件踢出页缓存</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> _GNU_SOURCE</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;errno.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/resource.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">io_now</span><span class="params">(<span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> *rchar, <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> *rbytes)</span> {</span><br><span class="line">    FILE *f = fopen(<span class="string">"/proc/self/io"</span>, <span class="string">"r"</span>);</span><br><span class="line">    <span class="type">char</span> k[<span class="number">64</span>]; <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> v;</span><br><span class="line">    *rchar = *rbytes = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (f &amp;&amp; <span class="built_in">fscanf</span>(f, <span class="string">"%63s %llu"</span>, k, &amp;v) == <span class="number">2</span>) {</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(k, <span class="string">"rchar:"</span>))      *rchar = v;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(k, <span class="string">"read_bytes:"</span>)) *rbytes = v;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (f) fclose(f);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> <span class="title function_">disk_read_sectors</span><span class="params">(<span class="type">void</span>)</span> {</span><br><span class="line">    FILE *f = fopen(<span class="string">"/proc/diskstats"</span>, <span class="string">"r"</span>);</span><br><span class="line">    <span class="keyword">if</span> (!f) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="type">char</span> line[<span class="number">512</span>]; <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> total = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (fgets(line, <span class="keyword">sizeof</span>(line), f)) {</span><br><span class="line">        <span class="type">int</span> maj, min; <span class="type">char</span> dev[<span class="number">64</span>]; <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> sectors;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">sscanf</span>(line, <span class="string">"%d %d %63s %*u %*u %llu"</span>, &amp;maj, &amp;min, dev, &amp;sectors) == <span class="number">4</span></span><br><span class="line">            &amp;&amp; maj == <span class="number">8</span> &amp;&amp; min == <span class="number">0</span>)          <span class="comment">/* sda 整盘；换机器要改这两个号 */</span></span><br><span class="line">            total += sectors;</span><br><span class="line">    }</span><br><span class="line">    fclose(f);</span><br><span class="line">    <span class="keyword">return</span> total;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">resident_pages</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *path, <span class="type">long</span> <span class="type">long</span> *res, <span class="type">long</span> <span class="type">long</span> *tot)</span> {</span><br><span class="line">    <span class="type">int</span> fd = open(path, O_RDONLY);</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">stat</span> <span class="title">st</span>;</span> *res = *tot = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (fd &lt; <span class="number">0</span> || fstat(fd, &amp;st) &lt; <span class="number">0</span>) { <span class="keyword">if</span> (fd &gt;= <span class="number">0</span>) close(fd); <span class="keyword">return</span>; }</span><br><span class="line">    <span class="type">long</span> ps = sysconf(_SC_PAGESIZE);</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> n = (st.st_size + ps - <span class="number">1</span>) / ps;</span><br><span class="line">    <span class="type">void</span> *m = mmap(<span class="literal">NULL</span>, (<span class="type">size_t</span>)n * ps, PROT_READ, MAP_SHARED, fd, <span class="number">0</span>);</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *v = <span class="built_in">calloc</span>(n, <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">if</span> (m != MAP_FAILED &amp;&amp; v &amp;&amp; mincore(m, (<span class="type">size_t</span>)n * ps, v) == <span class="number">0</span>) {</span><br><span class="line">        *tot = n;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">long</span> <span class="type">long</span> i = <span class="number">0</span>; i &lt; n; ++i) <span class="keyword">if</span> (v[i] &amp; <span class="number">1</span>) ++*res;</span><br><span class="line">    }</span><br><span class="line">    <span class="built_in">free</span>(v);</span><br><span class="line">    <span class="keyword">if</span> (m != MAP_FAILED) munmap(m, (<span class="type">size_t</span>)n * ps);</span><br><span class="line">    close(fd);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv)</span> {</span><br><span class="line">    <span class="keyword">if</span> (argc &lt; <span class="number">2</span>) { <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"用法: %s &lt;文件&gt; [--cold]\n"</span>, argv[<span class="number">0</span>]); <span class="keyword">return</span> <span class="number">2</span>; }</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *path = argv[<span class="number">1</span>];</span><br><span class="line">    <span class="type">int</span> cold = (argc &gt; <span class="number">2</span> &amp;&amp; !<span class="built_in">strcmp</span>(argv[<span class="number">2</span>], <span class="string">"--cold"</span>));</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> fd = open(path, O_RDONLY);</span><br><span class="line">    <span class="keyword">if</span> (fd &lt; <span class="number">0</span>) { perror(<span class="string">"open"</span>); <span class="keyword">return</span> <span class="number">1</span>; }</span><br><span class="line">    <span class="keyword">if</span> (cold) {</span><br><span class="line">        posix_fadvise(fd, <span class="number">0</span>, <span class="number">0</span>, POSIX_FADV_DONTNEED);</span><br><span class="line">        <span class="type">long</span> <span class="type">long</span> r, t; resident_pages(path, &amp;r, &amp;t);</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"冷启动确认：%lld/%lld 页驻留\n"</span>, r, t);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> res0, tot; resident_pages(path, &amp;res0, &amp;tot);</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> rc0, rb0; io_now(&amp;rc0, &amp;rb0);</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> d0 = disk_read_sectors();</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">rusage</span> <span class="title">u0</span>, <span class="title">u1</span>;</span> getrusage(RUSAGE_SELF, &amp;u0);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* 用 read() 把整个文件读一遍 */</span></span><br><span class="line">    <span class="type">size_t</span> chunk = <span class="number">128</span> * <span class="number">1024</span>;</span><br><span class="line">    <span class="type">char</span> *buf = <span class="built_in">malloc</span>(chunk);</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> total = <span class="number">0</span>; <span class="type">ssize_t</span> n;</span><br><span class="line">    <span class="keyword">while</span> ((n = read(fd, buf, chunk)) &gt; <span class="number">0</span>) total += n;</span><br><span class="line"></span><br><span class="line">    getrusage(RUSAGE_SELF, &amp;u1);</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> rc1, rb1; io_now(&amp;rc1, &amp;rb1);</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> d1 = disk_read_sectors();</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> res1; resident_pages(path, &amp;res1, &amp;tot);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"读取字节        : %lld\n"</span>, total);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"rchar           : %llu\n"</span>, rc1 - rc0);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"read_bytes      : %llu    &lt;- 真去了块设备的字节\n"</span>, rb1 - rb0);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"设备读扇区增量  : %llu  (= %.1f MB)\n"</span>, d1 - d0, (d1 - d0) / <span class="number">2048.0</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"缺页            : minflt=%ld  majflt=%ld\n"</span>,</span><br><span class="line">           u1.ru_minflt - u0.ru_minflt, u1.ru_majflt - u0.ru_majflt);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"缓存驻留        : %lld -&gt; %lld / %lld 页\n"</span>, res0, res1, tot);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"\n判读："</span>);</span><br><span class="line">    <span class="keyword">if</span> (rb1 - rb0 &lt; (<span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span>)(total / <span class="number">100</span>))</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"read_bytes 接近 0，数据全部来自页缓存。\n"</span>);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"read_bytes 约等于读取量，数据是从块设备真读上来的。\n"</span>);</span><br><span class="line"></span><br><span class="line">    close(fd); <span class="built_in">free</span>(buf);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>在一个 1 GiB 文件上的实际输出：</p>
+<p><strong>冷读</strong>（<code>--cold</code>，先驱逐）：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">冷启动确认：0/262144 页驻留</span><br><span class="line">读取字节        : 1073741824</span><br><span class="line">rchar           : 1073742247</span><br><span class="line">read_bytes      : 1073741824    &lt;- 真去了块设备的字节</span><br><span class="line">设备读扇区增量  : 2097152  (= 1024.0 MB)</span><br><span class="line">缺页            : minflt=0  majflt=0</span><br><span class="line">缓存驻留        : 0 -&gt; 262144 / 262144 页</span><br><span class="line"></span><br><span class="line">判读：read_bytes 约等于读取量，数据是从块设备真读上来的。</span><br></pre></td></tr></tbody></table></figure>
+<p><strong>热读</strong>（紧接着再跑一次）：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">读取字节        : 1073741824</span><br><span class="line">rchar           : 1073742247</span><br><span class="line">read_bytes      : 0    &lt;- 真去了块设备的字节</span><br><span class="line">设备读扇区增量  : 0  (= 0.0 MB)</span><br><span class="line">缺页            : minflt=32  majflt=0</span><br><span class="line">缓存驻留        : 262144 -&gt; 262144 / 262144 页</span><br><span class="line"></span><br><span class="line">判读：read_bytes 接近 0，数据全部来自页缓存。</span><br></pre></td></tr></tbody></table></figure>
+<p>注意冷读那次的 <code>minflt=0  majflt=0</code>，一次缺页都没有。<strong>但这不代表没读数据</strong>，那 1 GiB 确实从磁盘上来了（<code>read_bytes</code> 和 <code>diskstats</code> 都能证明）。原因就是第五章那个发现：用 <code>read()</code> 而不是 <code>mmap()</code> 时，数据由内核拷贝到用户缓冲区，页缓存的填充发生在内核自己的地址空间里，不经过进程的缺页异常。</p>
+<p><strong>这一条再一次说明：任何单一的计数器都可能给出误导性的信号，必须交叉验证。</strong></p>
+<h3 id="工具三：readbench"><a href="#工具三：readbench" class="headerlink" title="工具三：readbench"></a>工具三：readbench</h3><p>第三个工具是把前面的测量组织成可对照的实验台：同一个文件跑 <code>read()</code> / <code>mmap</code> / <code>O_DIRECT</code> 三条路径，每组重复三次取中位数，输出 JSON 方便二次分析。它复用的就是 <code>cacheproof</code> 里的那几个采集函数，加上 <code>posix_memalign</code> 对齐缓冲区（<code>O_DIRECT</code> 的硬要求）和不同的访问循环。</p>
+<h3 id="三件套的分工"><a href="#三件套的分工" class="headerlink" title="三件套的分工"></a>三件套的分工</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>回答的问题</th>
+<th>关键手段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>minitrace</code></td>
+<td>它到底调了哪些系统调用</td>
+<td><code>ptrace</code> 单步拦截</td>
+</tr>
+<tr>
+<td><code>cacheproof</code></td>
+<td>这一次读取走没走缓存</td>
+<td>四路计数器交叉验证</td>
+</tr>
+<tr>
+<td><code>readbench</code></td>
+<td>三条路径的差异有多大</td>
+<td>受控对照 + 重复取中位数</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>三件事合起来就是一套完整的取证链：<strong>先看它调了什么，再验证数据从哪来，最后量化差异。</strong></p>
+<h2 id="第八章-一套可复用的诊断流程"><a href="#第八章-一套可复用的诊断流程" class="headerlink" title="第八章 一套可复用的诊断流程"></a>第八章 一套可复用的诊断流程</h2><p>把前面的方法整理成可以照着走的步骤。</p>
+<h3 id="第一步：先问清楚要回答哪个问题"><a href="#第一步：先问清楚要回答哪个问题" class="headerlink" title="第一步：先问清楚要回答哪个问题"></a>第一步：先问清楚要回答哪个问题</h3><p>这一步经常被跳过，结果是忙了半天没答到点上。三个问题对应三套完全不同的做法：</p>
+<ul>
+<li><strong>「它调了哪些系统调用？」</strong> → 用 <code>minitrace</code> 这类追踪器。</li>
+<li><strong>「数据是从缓存还是磁盘来的？」</strong> → 用 <code>cacheproof</code> 这类计数器工具。</li>
+<li><strong>「慢在哪里？」</strong> → 这个最难，需要时间维度，得用采样类工具（<code>perf</code>）或分阶段插桩。</li>
+</ul>
+<h3 id="第二步：把环境钉住"><a href="#第二步：把环境钉住" class="headerlink" title="第二步：把环境钉住"></a>第二步：把环境钉住</h3><p>任何性能结论都必须带上环境。至少要记录：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">内核版本          uname -r</span><br><span class="line">文件系统          df -T &lt;路径&gt;</span><br><span class="line">设备与你关系的    lsblk / /proc/diskstats 里的主次设备号</span><br><span class="line">文件大小          stat -c%s</span><br><span class="line">内存总量          /proc/meminfo 的 MemTotal</span><br><span class="line">是否虚拟机        systemd-detect-virt</span><br><span class="line">缓存状态          用 mincore 在实验前后各测一次</span><br></pre></td></tr></tbody></table></figure>
+<p>缺少任何一项，结论就只能在这个环境里成立，换台机器不保证复现。<strong>本文所有吞吐数字都只属于文末那份环境清单。</strong></p>
+<h3 id="第三步：确保「冷」是真的冷"><a href="#第三步：确保「冷」是真的冷" class="headerlink" title="第三步：确保「冷」是真的冷"></a>第三步：确保「冷」是真的冷</h3><p>不要假设缓存没了，要验证：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">用 posix_fadvise(fd, 0, 0, POSIX_FADV_DONTNEED) 驱逐</span><br><span class="line">再用 mincore() 逐页确认驻留数为 0</span><br></pre></td></tr></tbody></table></figure>
+<p>看到 <code>0/262144 页驻留</code> 才算冷。如果 <code>mincore</code> 还报有页驻留，说明驱逐失败（比如文件在别的挂载点上，或者有别的进程刚把它读回来了），这时的「冷热对比」是无效的。</p>
+<h3 id="第四步：用计数器交叉验证，不要只看耗时"><a href="#第四步：用计数器交叉验证，不要只看耗时" class="headerlink" title="第四步：用计数器交叉验证，不要只看耗时"></a>第四步：用计数器交叉验证，不要只看耗时</h3><p>至少取两项独立证据。推荐组合是 <code>read_bytes</code>（进程视角）加 <code>diskstats</code>（设备视角），两者由不同子系统维护，同时出错的可能性极低。</p>
+<p><strong>耗时只作为辅助参考。</strong> 本实验里冷热耗时只差 2.6 倍，而 I/O 量差到无穷大。耗时对「走没走缓存」这个问题的分辨力很弱。</p>
+<h3 id="第五步：对不上就先怀疑自己的理解"><a href="#第五步：对不上就先怀疑自己的理解" class="headerlink" title="第五步：对不上就先怀疑自己的理解"></a>第五步：对不上就先怀疑自己的理解</h3><p>第五章那个「缺页 915 次对 262144 页」的异常，第一反应应该是「我这个计数器理解错了」，而不是「数据有问题」。做法是：</p>
+<ol>
+<li>换一个独立来源读同样的量（<code>getrusage</code> 对 <code>/proc/self/stat</code>）</li>
+<li>重复几次看稳定性</li>
+<li>做对照实验找出因果（改访问顺序、关大页）</li>
+<li>只有前三条都过了，才承认这个反直觉的数字是对的</li>
+</ol>
+<p>这次流程走完，得到的是一个真结论（批量由预读窗口决定），而不是一个被误读的数字。</p>
+<h3 id="第六步：写清边界"><a href="#第六步：写清边界" class="headerlink" title="第六步：写清边界"></a>第六步：写清边界</h3><p>结论分三档写：证据强的、证据中等的、单机观察的。前面第六章那张表就是模板。</p>
+<p><strong>把边界写出来反而提升可信度</strong>，因为读者能看出作者在区分「测出来的」和「推出来的」。</p>
+<h3 id="一个快速决策清单"><a href="#一个快速决策清单" class="headerlink" title="一个快速决策清单"></a>一个快速决策清单</h3><figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">要追系统调用？</span><br><span class="line">    → minitrace（自写 ptrace 追踪器），或装 strace</span><br><span class="line">要判断数据来源？</span><br><span class="line">    → cacheproof：rchar / read_bytes / mincore / diskstats 四项一起看</span><br><span class="line">要对比不同 I/O 接口？</span><br><span class="line">    → 同一文件、同样块大小、每组三次取中位数，别只跑一次</span><br><span class="line">要定位慢在哪？</span><br><span class="line">    → 先分阶段插桩测时间，再上采样工具</span><br><span class="line">结果反直觉？</span><br><span class="line">    → 先怀疑自己的理解，做对照实验，换独立来源交叉验证</span><br></pre></td></tr></tbody></table></figure>
+<hr>
+<h2 id="附录-A：实验环境"><a href="#附录-A：实验环境" class="headerlink" title="附录 A：实验环境"></a>附录 A：实验环境</h2><p>本文所有数据来自这台机器，一次完整的实验记录：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">内核版本        Linux 7.2.7-arch1-1</span><br><span class="line">发行版          Arch Linux</span><br><span class="line">虚拟化          KVM（QEMU，Standard PC i440FX + PIIX）</span><br><span class="line">CPU             Intel Core i5-4590T @ 2.00GHz，4 核</span><br><span class="line">内存            5.8 GiB（实验时 cached 约 2.7 GiB）</span><br><span class="line">根文件系统      ext4，挂在 /dev/sda2</span><br><span class="line">测试文件        1 GiB，位于 /home/moxin/.../data/big.bin</span><br><span class="line">块设备          sda（主设备号 8，次设备号 0），扇区 512 字节</span><br><span class="line">页大小          4096 字节</span><br><span class="line">透明大页        /sys/kernel/mm/transparent_hugepage/enabled = [always]</span><br><span class="line">权限            普通用户，无 sudo</span><br><span class="line">缺失的工具      strace / perf / blktrace / bpftrace / iotop</span><br></pre></td></tr></tbody></table></figure>
+<p><strong>重要提示</strong>：<code>big.bin</code> 不能放在 <code>/tmp</code>，这台机器的 <code>/tmp</code> 是 tmpfs，也就是内存文件系统，在上面测不出任何块设备 I/O，读多少次 <code>read_bytes</code> 都是 0。这个坑很隐蔽，因为一切看起来都正常。</p>
+<h3 id="几个必须跟着结论一起讲的限制"><a href="#几个必须跟着结论一起讲的限制" class="headerlink" title="几个必须跟着结论一起讲的限制"></a>几个必须跟着结论一起讲的限制</h3><p><strong>宿主缓存。</strong> 这是虚拟机的固有干扰。虚拟机的「虚拟磁盘」是宿主机上的文件，客户机发出的「块设备读」在宿主机上可能只命中宿主机的页缓存。实测证据：用 <code>O_DIRECT</code> 读一个刚写完的文件，跑出 3.3 GB/s，远超这台虚拟机的磁盘能力，说明数据实际来自宿主内存。</p>
+<p>因此：<strong>机制层面的结论不受影响</strong>（那是客户机内核的行为），但<strong>绝对性能数字只在这个环境下成立</strong>。</p>
+<p><strong>无法完全排除的干扰。</strong> 实验期间没有刻意制造并发负载，也没有做 CPU 绑核或频率固定，所以表里的 MB/s 含有一定噪声。三次重复的耗时波动在 5% 以内，这个量级的变化不影响任何一条结论的方向。</p>
+<p><strong>没有 root 的代价。</strong> <code>perf</code>、<code>blktrace</code>、<code>ftrace</code>、<code>debugfs</code> 都不可用，所以拿不到块层的详细统计、也读不到 <code>fault_around_bytes</code> 的实际值和 folio 的阶数。第五章的结论到「预读窗口决定批量」为止，再往下没有证据。</p>
+<h2 id="附录-B：复现步骤"><a href="#附录-B：复现步骤" class="headerlink" title="附录 B：复现步骤"></a>附录 B：复现步骤</h2><p>全部命令不需要 root：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 准备测试文件。注意不能放 /tmp（那是 tmpfs）</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /path/on/real/fs &amp;&amp; <span class="built_in">cd</span> /path/on/real/fs</span><br><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/dev/zero of=data/big.bin bs=1M count=1024 conv=fdatasync</span><br><span class="line"><span class="built_in">sync</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 编译三个工具</span></span><br><span class="line">gcc -O2 -Wall -o minitrace  minitrace.c</span><br><span class="line">gcc -O2 -Wall -o cacheproof cacheproof.c</span><br><span class="line">gcc -O2 -Wall -o readbench  readbench.c</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 看一次 read() 的真实系统调用序列</span></span><br><span class="line">./minitrace ./oneread data/small.txt 4096</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 冷读 / 热读的证据对照（关键：--cold 会验证驱逐生效）</span></span><br><span class="line">./cacheproof data/big.bin --cold</span><br><span class="line">./cacheproof data/big.bin</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5. 三条路径的完整对照，每组三次</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> 1 2 3; <span class="keyword">do</span> ./readbench data/big.bin <span class="built_in">seq</span> 128 --fadvise --json; <span class="keyword">done</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> 1 2 3; <span class="keyword">do</span> ./readbench data/big.bin <span class="built_in">seq</span> 128 --json; <span class="keyword">done</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> 1 2 3; <span class="keyword">do</span> ./readbench data/big.bin mmap --fadvise --json; <span class="keyword">done</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> 1 2 3; <span class="keyword">do</span> ./readbench data/big.bin mmap --json; <span class="keyword">done</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> 1 2 3; <span class="keyword">do</span> ./readbench data/big.bin odirect 128 --json; <span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 6. 连续读三遍，看 read_bytes 是否归零</span></span><br><span class="line">./readbench data/big.bin reopen 128 --<span class="built_in">times</span> 3 --json</span><br></pre></td></tr></tbody></table></figure>
+<p>复现时最值得自己动手改的两处：<strong>把测试文件换成你实际在意的那个</strong>，以及<strong>把 <code>disk_read_sectors()</code> 里 <code>maj == 8 &amp;&amp; min == 0</code> 换成你这台机器根文件系统所在设备的主次设备号</strong>（<code>lsblk -o NAME,MAJ:MIN</code> 可以查）。不改这一处，设备级证据会一直是 0。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ol>
+<li><p><strong><code>man 2 read</code> / <code>man 2 mmap</code> / <code>man 2 open</code></strong>：三个接口的语义、返回值、错误码，以及 <code>O_DIRECT</code> 的对齐要求。</p>
+</li>
+<li><p><strong><code>man 2 posix_fadvise</code></strong>：<code>POSIX_FADV_DONTNEED</code> 的确切语义：只影响指定文件的指定区间，不干扰其他进程。这是非 root 条件下制造「冷读」的关键依据。</p>
+</li>
+<li><p><strong><code>man 2 mincore</code></strong>：逐页查询驻留状态，本文页缓存层证据的来源。</p>
+</li>
+<li><p><strong><code>man 2 ptrace</code> 与 <code>PTRACE_O_TRACESYSGOOD</code> 的说明</strong>：追踪器实现的依据；<code>0x80</code> 标志位的用法在这里有正式定义。</p>
+</li>
+<li><p><strong>Linux 内核文档 <code>Documentation/filesystems/proc.rst</code></strong>：<code>/proc/self/io</code> 各字段的正式定义，特别是 <code>rchar</code>（含缓存命中）与 <code>read_bytes</code>（只计块设备）的区别，这是本文全部证据链的起点。</p>
+</li>
+<li><p><strong>Linux 内核文档 <code>Documentation/admin-guide/blockdev/stat.rst</code></strong>：<code>/proc/diskstats</code> 的字段含义与单位（扇区数，512 字节）。</p>
+</li>
+<li><p><strong><code>man 5 proc</code></strong>：<code>/proc/diskstats</code> 与 <code>/proc/stat</code> 的字段布局；本文 <code>disk_read_sectors()</code> 解析的就是其中的第 6 个字段。</p>
+</li>
+<li><p><strong>coreutils 的 <code>cat</code> 实现</strong>：<code>splice</code> 路径的引入背景。本文是用 <code>minitrace</code> 实测到 <code>splice</code> 而非 <code>read</code> 的，源码可作为对照确认。</p>
+</li>
+</ol>
+<p>文中所有数据均为本机实测；三个工具的源码在文末附录给出，可自行编译复现。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/5b21/">https://moxin1044.github.io/posts/5b21/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Linux/">Linux</a><a class="post-meta__tags" href="/tags/%E9%A1%B5%E7%BC%93%E5%AD%98/">页缓存</a><a class="post-meta__tags" href="/tags/%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8/">系统调用</a><a class="post-meta__tags" href="/tags/ptrace/">ptrace</a><a class="post-meta__tags" href="/tags/mmap/">mmap</a><a class="post-meta__tags" href="/tags/%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90/">性能分析</a></div><div class="post-share"><div class="social-share" data-image="/attachments/figR1_%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/posts/6a71/" title="贪心算法详解：核心思想、策略设计、正确性证明与经典例题"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figG1_%E8%B4%AA%E5%BF%83%E5%86%B3%E7%AD%96%E6%B5%81%E7%A8%8B.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">贪心算法详解：核心思想、策略设计、正确性证明与经典例题</div></div><div class="info-2"><div class="info-item-1">贪心大概是所有算法思想里最像”常识”的一个。它的规则简单到一句话就能说完：每一步都挑当下看起来最好的那个，选完就往前走，不回头。 麻烦的地方也在这里。常识常常靠不住。同一个问题，换一种”看起来最好”的定义，结果可能就从最优变成了次优。更棘手的是，一个错的贪心策略往往在小数据上完全看不出问题——它会安静地给出一个看起来合理的答案，直到某个隐蔽的用例把它戳穿。 所以这篇文章不打算只讲”贪心怎么用”。它更想回答的是三个问题：什么样的局部选择是安全的、怎么证明它是安全的、以及怎么把它彻底推翻。 内容分十二个部分：先是概念和理论基础，然后是一套从题目推到算法的流程，接着用一整章展开正确性证明的五种思路，再按策略类型归纳实现模式，最后是四道完整例题、三组反例、复杂度推导、常见错误清单和学习路线。所有代码都是 C++17，可以独立编译运行，样例输入输出都给全了。 目录 第一章 贪心算法是什么 第二章 贪心算法的核心理论基础 第三章 如何设计一个贪心策略 第四章 贪心算法的正确性证明 第五章 贪心算法的经典策略与实现模式 第六章 经典例题详解 第七章 贪心算法的反例分析 第八章 贪心算法与其他算...</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">89</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">85</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">38</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="/atom.xml" target="_blank" title="RSS"><i class="fas fa-rss" style="color: #f26522;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-number">1.</span> <span class="toc-text">目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E7%AB%A0-%E4%B8%80%E6%AC%A1-read-%E7%9A%84%E5%AE%8C%E6%95%B4%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84"><span class="toc-number">2.</span> <span class="toc-text">第一章 一次 read() 的完整数据路径</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E%E4%B8%80%E8%A1%8C%E4%BB%A3%E7%A0%81%E8%AF%B4%E8%B5%B7"><span class="toc-number">2.1.</span> <span class="toc-text">从一行代码说起</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E5%B2%94%E7%82%B9%E5%9C%A8%E5%93%AA"><span class="toc-number">2.2.</span> <span class="toc-text">分岔点在哪</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E8%A7%82%E5%AF%9F%EF%BC%9A%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E8%BF%99%E4%B8%80%E5%B1%82%E6%98%AF%E2%80%9D%E7%9E%8E%E2%80%9D%E7%9A%84"><span class="toc-number">2.3.</span> <span class="toc-text">关键观察：系统调用这一层是”瞎”的</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E7%AB%A0-%E7%94%A8%E4%BB%80%E4%B9%88%E8%AF%81%E6%98%8E%E6%95%B0%E6%8D%AE%E6%9D%A5%E8%87%AA%E9%A1%B5%E7%BC%93%E5%AD%98"><span class="toc-number">3.</span> <span class="toc-text">第二章 用什么证明数据来自页缓存</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%80%97%E6%97%B6%E4%B8%8D%E7%AE%97%E8%AF%81%E6%8D%AE"><span class="toc-number">3.1.</span> <span class="toc-text">为什么耗时不算证据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E7%B1%BB%E8%83%BD%E7%9B%B4%E6%8E%A5%E5%9B%9E%E7%AD%94%E9%97%AE%E9%A2%98%E7%9A%84%E8%AF%81%E6%8D%AE"><span class="toc-number">3.2.</span> <span class="toc-text">四类能直接回答问题的证据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%9B%9B%E7%B1%BB%E8%AF%81%E6%8D%AE%E5%90%84%E7%AE%A1%E4%B8%80%E6%AE%B5"><span class="toc-number">3.3.</span> <span class="toc-text">小结：四类证据各管一段</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E7%AB%A0-%E5%86%B7%E8%AF%BB%E4%B8%8E%E7%83%AD%E8%AF%BB%E7%9A%84%E5%AE%8C%E6%95%B4%E5%AF%B9%E7%85%A7"><span class="toc-number">4.</span> <span class="toc-text">第三章 冷读与热读的完整对照</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C%E8%AE%BE%E7%BD%AE"><span class="toc-number">4.1.</span> <span class="toc-text">实验设置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E7%85%A7%E7%BB%93%E6%9E%9C"><span class="toc-number">4.2.</span> <span class="toc-text">对照结果</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%99%E5%BC%A0%E8%A1%A8%E9%87%8C%E6%9C%80%E9%87%8D%E8%A6%81%E7%9A%84%E4%B8%80%E5%88%97"><span class="toc-number">4.3.</span> <span class="toc-text">这张表里最重要的一列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E8%AE%B0%E5%BD%95%EF%BC%9A%E4%B8%A4%E9%81%8D%E4%B8%80%E6%A8%A1%E4%B8%80%E6%A0%B7"><span class="toc-number">4.4.</span> <span class="toc-text">系统调用记录：两遍一模一样</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%9E%E7%BB%AD%E8%AF%BB%E5%8F%96"><span class="toc-number">4.5.</span> <span class="toc-text">连续读取</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E5%9B%9B%E7%AB%A0-read%E3%80%81mmap%E3%80%81O-DIRECT-%E7%9A%84%E4%B8%89%E6%9D%A1%E8%B7%AF%E5%BE%84"><span class="toc-number">5.</span> <span class="toc-text">第四章 read、mmap、O_DIRECT 的三条路径</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#read-%EF%BC%9A%E5%86%85%E6%A0%B8%E6%9B%BF%E4%BD%A0%E6%8B%B7"><span class="toc-number">5.1.</span> <span class="toc-text">read()：内核替你拷</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#mmap-%EF%BC%9A%E5%BB%BA%E7%AB%8B%E6%98%A0%E5%B0%84%EF%BC%8C%E9%9D%A0%E7%BC%BA%E9%A1%B5%E6%90%AC%E6%95%B0%E6%8D%AE"><span class="toc-number">5.2.</span> <span class="toc-text">mmap()：建立映射，靠缺页搬数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#O-DIRECT%EF%BC%9A%E4%B8%BB%E5%8A%A8%E7%BB%95%E5%BC%80%E7%BC%93%E5%AD%98"><span class="toc-number">5.3.</span> <span class="toc-text">O_DIRECT：主动绕开缓存</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E6%9D%A1%E8%B7%AF%E5%BE%84%E7%9A%84%E6%8C%87%E7%BA%B9"><span class="toc-number">5.4.</span> <span class="toc-text">三条路径的指纹</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%BA%94%E7%AB%A0-%E4%B8%80%E4%B8%AA%E6%84%8F%E5%A4%96%E5%8F%91%E7%8E%B0%EF%BC%9A%E7%BC%BA%E9%A1%B5%E6%AC%A1%E6%95%B0%E4%B8%8D%E7%AD%89%E4%BA%8E%E8%AE%BF%E9%97%AE%E9%A1%B5%E6%95%B0"><span class="toc-number">6.</span> <span class="toc-text">第五章 一个意外发现：缺页次数不等于访问页数</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E7%9A%84%E8%B5%B7%E7%82%B9"><span class="toc-number">6.1.</span> <span class="toc-text">问题的起点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81%E4%B8%80%EF%BC%9A%E5%AE%83%E5%92%8C%E8%AE%BF%E9%97%AE%E9%A1%BA%E5%BA%8F%E6%9C%89%E5%85%B3"><span class="toc-number">6.2.</span> <span class="toc-text">验证一：它和访问顺序有关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81%E4%BA%8C%EF%BC%9A%E6%8E%92%E9%99%A4%E5%A4%A7%E9%A1%B5%E7%9A%84%E5%B9%B2%E6%89%B0"><span class="toc-number">6.3.</span> <span class="toc-text">验证二：排除大页的干扰</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A3%E7%A1%AE%E7%9A%84%E8%A7%A3%E9%87%8A"><span class="toc-number">6.4.</span> <span class="toc-text">正确的解释</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%99%E6%9D%A1%E5%8F%91%E7%8E%B0%E7%9A%84%E5%AE%9E%E7%94%A8%E4%BB%B7%E5%80%BC"><span class="toc-number">6.5.</span> <span class="toc-text">这条发现的实用价值</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E5%85%AD%E7%AB%A0-%E8%AF%81%E6%8D%AE%E8%83%BD%E6%8E%A8%E5%87%BA%E4%BB%80%E4%B9%88%EF%BC%8C%E6%8E%A8%E4%B8%8D%E5%87%BA%E4%BB%80%E4%B9%88"><span class="toc-number">7.</span> <span class="toc-text">第六章 证据能推出什么，推不出什么</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%83%BD%E7%A1%AE%E5%AE%9A%E6%8E%A8%E5%87%BA%E7%9A%84"><span class="toc-number">7.1.</span> <span class="toc-text">能确定推出的</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8D%E8%83%BD%E6%8E%A8%E5%87%BA%E7%9A%84"><span class="toc-number">7.2.</span> <span class="toc-text">不能推出的</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BE%B9%E7%95%8C%E6%B1%87%E6%80%BB"><span class="toc-number">7.3.</span> <span class="toc-text">边界汇总</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%83%E7%AB%A0-%E5%AE%9E%E7%8E%B0%EF%BC%9A%E6%8A%8A%E5%88%86%E6%9E%90%E6%B2%89%E6%B7%80%E6%88%90%E5%B7%A5%E5%85%B7"><span class="toc-number">8.</span> <span class="toc-text">第七章 实现：把分析沉淀成工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E5%85%B7%E4%B8%80%EF%BC%9Aminitrace%EF%BC%8C%E8%87%AA%E5%B7%B1%E5%86%99%E7%9A%84%E6%9C%80%E5%B0%8F%E8%BF%BD%E8%B8%AA%E5%99%A8"><span class="toc-number">8.1.</span> <span class="toc-text">工具一：minitrace，自己写的最小追踪器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%99%E4%B8%AA%E5%B7%A5%E5%85%B7%E7%AB%8B%E5%88%BB%E7%BB%99%E4%BA%86%E4%B8%80%E4%B8%AA%E5%8F%8D%E7%9B%B4%E8%A7%89%E7%9A%84%E7%BB%93%E6%9E%9C"><span class="toc-number">8.2.</span> <span class="toc-text">这个工具立刻给了一个反直觉的结果</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E5%85%B7%E4%BA%8C%EF%BC%9Acacheproof%EF%BC%8C%E4%B8%80%E6%AC%A1%E8%AF%BB%E5%8F%96%E8%B5%B0%E6%B2%A1%E8%B5%B0%E7%BC%93%E5%AD%98"><span class="toc-number">8.3.</span> <span class="toc-text">工具二：cacheproof，一次读取走没走缓存</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E5%85%B7%E4%B8%89%EF%BC%9Areadbench"><span class="toc-number">8.4.</span> <span class="toc-text">工具三：readbench</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E4%BB%B6%E5%A5%97%E7%9A%84%E5%88%86%E5%B7%A5"><span class="toc-number">8.5.</span> <span class="toc-text">三件套的分工</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E5%85%AB%E7%AB%A0-%E4%B8%80%E5%A5%97%E5%8F%AF%E5%A4%8D%E7%94%A8%E7%9A%84%E8%AF%8A%E6%96%AD%E6%B5%81%E7%A8%8B"><span class="toc-number">9.</span> <span class="toc-text">第八章 一套可复用的诊断流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%9A%E5%85%88%E9%97%AE%E6%B8%85%E6%A5%9A%E8%A6%81%E5%9B%9E%E7%AD%94%E5%93%AA%E4%B8%AA%E9%97%AE%E9%A2%98"><span class="toc-number">9.1.</span> <span class="toc-text">第一步：先问清楚要回答哪个问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E6%AD%A5%EF%BC%9A%E6%8A%8A%E7%8E%AF%E5%A2%83%E9%92%89%E4%BD%8F"><span class="toc-number">9.2.</span> <span class="toc-text">第二步：把环境钉住</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E6%AD%A5%EF%BC%9A%E7%A1%AE%E4%BF%9D%E3%80%8C%E5%86%B7%E3%80%8D%E6%98%AF%E7%9C%9F%E7%9A%84%E5%86%B7"><span class="toc-number">9.3.</span> <span class="toc-text">第三步：确保「冷」是真的冷</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E5%9B%9B%E6%AD%A5%EF%BC%9A%E7%94%A8%E8%AE%A1%E6%95%B0%E5%99%A8%E4%BA%A4%E5%8F%89%E9%AA%8C%E8%AF%81%EF%BC%8C%E4%B8%8D%E8%A6%81%E5%8F%AA%E7%9C%8B%E8%80%97%E6%97%B6"><span class="toc-number">9.4.</span> <span class="toc-text">第四步：用计数器交叉验证，不要只看耗时</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%BA%94%E6%AD%A5%EF%BC%9A%E5%AF%B9%E4%B8%8D%E4%B8%8A%E5%B0%B1%E5%85%88%E6%80%80%E7%96%91%E8%87%AA%E5%B7%B1%E7%9A%84%E7%90%86%E8%A7%A3"><span class="toc-number">9.5.</span> <span class="toc-text">第五步：对不上就先怀疑自己的理解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E5%85%AD%E6%AD%A5%EF%BC%9A%E5%86%99%E6%B8%85%E8%BE%B9%E7%95%8C"><span class="toc-number">9.6.</span> <span class="toc-text">第六步：写清边界</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E4%B8%AA%E5%BF%AB%E9%80%9F%E5%86%B3%E7%AD%96%E6%B8%85%E5%8D%95"><span class="toc-number">9.7.</span> <span class="toc-text">一个快速决策清单</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%BD%95-A%EF%BC%9A%E5%AE%9E%E9%AA%8C%E7%8E%AF%E5%A2%83"><span class="toc-number">10.</span> <span class="toc-text">附录 A：实验环境</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%A0%E4%B8%AA%E5%BF%85%E9%A1%BB%E8%B7%9F%E7%9D%80%E7%BB%93%E8%AE%BA%E4%B8%80%E8%B5%B7%E8%AE%B2%E7%9A%84%E9%99%90%E5%88%B6"><span class="toc-number">10.1.</span> <span class="toc-text">几个必须跟着结论一起讲的限制</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%BD%95-B%EF%BC%9A%E5%A4%8D%E7%8E%B0%E6%AD%A5%E9%AA%A4"><span class="toc-number">11.</span> <span class="toc-text">附录 B：复现步骤</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">12.</span> <span class="toc-text">参考资料</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/5b21/" title="一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figR1_%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径"></a><div class="content"><a class="title" href="/posts/5b21/" title="一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径">一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径</a><time datetime="2026-10-15T13:00:00.000Z" title="发表于 2026-10-15 21:00:00">2026-10-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/6a71/" title="贪心算法详解：核心思想、策略设计、正确性证明与经典例题"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figG1_%E8%B4%AA%E5%BF%83%E5%86%B3%E7%AD%96%E6%B5%81%E7%A8%8B.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="贪心算法详解：核心思想、策略设计、正确性证明与经典例题"></a><div class="content"><a class="title" href="/posts/6a71/" title="贪心算法详解：核心思想、策略设计、正确性证明与经典例题">贪心算法详解：核心思想、策略设计、正确性证明与经典例题</a><time datetime="2026-10-15T08:00:00.000Z" title="发表于 2026-10-15 16:00:00">2026-10-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/2811/" title="OpenJudge 2811：熄灯问题"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig2_%E7%AC%AC%E4%B8%80%E8%A1%8C%E5%AE%9A%E7%94%9F%E6%AD%BB.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="OpenJudge 2811：熄灯问题"></a><div class="content"><a class="title" href="/posts/2811/" title="OpenJudge 2811：熄灯问题">OpenJudge 2811：熄灯问题</a><time datetime="2026-10-15T04:30:00.000Z" title="发表于 2026-10-15 12:30:00">2026-10-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/7a3e/" title="计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig3_%E9%87%87%E6%A0%B7%E4%B8%8E%E9%87%8F%E5%8C%96.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理"></a><div class="content"><a class="title" href="/posts/7a3e/" title="计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理">计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理</a><time datetime="2026-10-14T21:40:00.000Z" title="发表于 2026-10-15 05:40:00">2026-10-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/ffee/" title="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_%E9%AA%8C%E8%AF%81%E7%A0%81%E4%B8%8E%E5%88%87%E5%88%86.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践"></a><div class="content"><a class="title" href="/posts/ffee/" title="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践">从图片验证码到字符识别：YOLO 模型在验证码识别中的实践</a><time datetime="2026-10-14T14:40:00.000Z" title="发表于 2026-10-14 22:40:00">2026-10-14</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
