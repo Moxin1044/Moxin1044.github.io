@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- @Moxin1044 2026-10-15
+     缺省封面占位图。lolia.js 会在页面加载后把这张图换成随机的 Lolia 二次元图。
+     JS 没跑起来时（禁用脚本、网络异常）就显示这个渐变，不会出现裂图。 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#f6d5e8"/>
+      <stop offset="45%"  stop-color="#d8c2f0"/>
+      <stop offset="100%" stop-color="#b8c8f4"/>
+    </linearGradient>
+    <radialGradient id="h" cx="0.72" cy="0.28" r="0.62">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#g)"/>
+  <rect width="400" height="300" fill="url(#h)"/>
+  <circle cx="112" cy="196" r="52"  fill="#ffffff" opacity="0.20"/>
+  <circle cx="286" cy="96"  r="34"  fill="#ffffff" opacity="0.16"/>
+  <circle cx="212" cy="238" r="22"  fill="#ffffff" opacity="0.14"/>
+</svg>
