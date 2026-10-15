@@ -1,0 +1,462 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="从空气振动讲到磁盘字节：麦克风怎么把声音变成电压，硅麦为什么成了手机标配，采样和量化到底在做什么，WAV 那 44 字节的头逐字节拆开看，MP3 凭什么能压到十分之一，以及用代码亲手写一个 WAV 出来。含 11 张配图和一份真实的十六进制对照。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理">
+<meta property="og:url" content="https://moxin1044.github.io/posts/7a3e/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="从空气振动讲到磁盘字节：麦克风怎么把声音变成电压，硅麦为什么成了手机标配，采样和量化到底在做什么，WAV 那 44 字节的头逐字节拆开看，MP3 凭什么能压到十分之一，以及用代码亲手写一个 WAV 出来。含 11 张配图和一份真实的十六进制对照。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/fig3_%E9%87%87%E6%A0%B7%E4%B8%8E%E9%87%8F%E5%8C%96.png">
+<meta property="article:published_time" content="2026-10-14T21:40:00.000Z">
+<meta property="article:modified_time" content="2026-10-14T21:39:10.122Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="MP3">
+<meta property="article:tag" content="WAV">
+<meta property="article:tag" content="硬件">
+<meta property="article:tag" content="编码">
+<meta property="article:tag" content="采样">
+<meta property="article:tag" content="音频">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/fig3_%E9%87%87%E6%A0%B7%E4%B8%8E%E9%87%8F%E5%8C%96.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理",
+  "url": "https://moxin1044.github.io/posts/7a3e/",
+  "image": "https://moxin1044.github.io/attachments/fig3_%E9%87%87%E6%A0%B7%E4%B8%8E%E9%87%8F%E5%8C%96.png",
+  "datePublished": "2026-10-14T21:40:00.000Z",
+  "dateModified": "2026-10-14T21:39:10.122Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/7a3e/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":true,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: true,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="末心的小博客" type="application/atom+xml">
+</head><body><div id="web_bg" style="background-image: url(https://bing.biturl.top/?resolution=1920&amp;format=image&amp;index=0&amp;mkt=zh-CN);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">86</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">69</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">36</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/attachments/fig3_%E9%87%87%E6%A0%B7%E4%B8%8E%E9%87%8F%E5%8C%96.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-10-14T21:40:00.000Z" title="发表于 2026-10-15 05:40:00">2026-10-15</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-10-14T21:39:10.122Z" title="更新于 2026-10-15 05:39:10">2026-10-15</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BC%96%E7%A8%8B/%E6%A6%82%E8%AE%BA/">概论</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">5.2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>17分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/attachments/fig3_%E9%87%87%E6%A0%B7%E4%B8%8E%E9%87%8F%E5%8C%96.png);"></div><article class="container post-content" id="article-container"><p>先摆三个事实，它们看起来有点矛盾。</p>
+<p>第一个。我录了三秒声音，存成 WAV，文件 517 KB。同一段声音转成 MP3，只剩 48 KB，缩小到 9.2%。用耳朵听，我听不出区别。</p>
+<p>第二个。这个 517 KB 的 WAV 文件里，真正描述”这段录音的参数”的部分只有 44 个字节。剩下的全是采样数据，一个字节都不省。</p>
+<p>第三个。如果我把采样率从 44100 改成 8000，再改成单声道，文件立刻掉到 47 KB，跟 MP3 差不多大。但这时候的音质，你一听就知道是电话里的声音。</p>
+<p>这三个事实指向同一件事：声音在电脑里怎么存，取决于三个环节。怎么把空气的振动变成电信号，怎么把电信号变成数字，怎么决定哪些数字可以丢掉。</p>
+<p>这篇文章把这三个环节从头走一遍，走到字节级别。</p>
+<hr>
+<h2 id="一、声音的本质是空气在抖"><a href="#一、声音的本质是空气在抖" class="headerlink" title="一、声音的本质是空气在抖"></a>一、声音的本质是空气在抖</h2><p>声音不是一种”东西”，它是空气的一种状态。</p>
+<p>你说话的时候，声带在振动。振动推动它旁边的空气，那层空气又被压缩，去推动下一层。这样一层推一层，一路推到你朋友的耳朵里。中间没有任何东西从你嘴里飞到对方耳朵里，传过去的只是”压缩和稀疏”这个状态。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_声波的本质.png" alt="图一：声音就是空气的疏密变化，振动把空气一层层推出去形成疏密相间的波"></p>
+<p>被压缩的区域，空气分子挤在一起，密度高，压强比周围大一点。被稀疏的区域反过来，密度低，压强小一点。这两个区域的压强差，就是麦克风能”感觉到”的东西。</p>
+<p>传播速度大概是 343 米每秒，温度会影响这个数字。频率决定音调，振幅决定响度。</p>
+<p>到这一步为止，全是物理，跟计算机一点关系没有。</p>
+<hr>
+<h2 id="二、麦克风怎么把抖动变成电压"><a href="#二、麦克风怎么把抖动变成电压" class="headerlink" title="二、麦克风怎么把抖动变成电压"></a>二、麦克风怎么把抖动变成电压</h2><p>麦克风的核心任务是：把空气压强的微小变化，变成电压的微小变化。</p>
+<h3 id="动圈式：用电磁感应"><a href="#动圈式：用电磁感应" class="headerlink" title="动圈式：用电磁感应"></a>动圈式：用电磁感应</h3><p>老式话筒、KTV 里那种，多半是动圈式的。</p>
+<p>它内部有个极薄的振膜，连着一个小线圈，线圈套在永磁铁的磁场里。空气推振膜，振膜就带着线圈前后移动。线圈在磁场里移动，两端就会产生感应电压。振膜动得快，电压变化就快；动得幅度大，电压就大。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig2_麦克风内部结构.png" alt="图二：动圈式麦克风与 MEMS 硅麦的剖面结构对比"></p>
+<p>这套结构简单可靠，不需要供电，但体积下不来，因为磁铁和线圈都占地方。</p>
+<h3 id="MEMS-硅麦：用一块会动的硅"><a href="#MEMS-硅麦：用一块会动的硅" class="headerlink" title="MEMS 硅麦：用一块会动的硅"></a>MEMS 硅麦：用一块会动的硅</h3><p>手机、笔记本、蓝牙耳机、智能音箱里几乎全是硅麦。它的大小跟一粒米差不多。</p>
+<p>硅麦的思路完全不同。它用半导体工艺在硅片上刻出两样东西：一层可以振动的硅振膜，和一层固定不动的背极板。这两层之间隔着一个很小的空隙，构成一个电容器。</p>
+<p>空气推振膜，两层之间的距离就变，电容量随之改变。旁边有个 ASIC 芯片负责把电容的变化转成电压变化，顺便做放大和模数转换。</p>
+<p>为什么手机都用它？三个原因。体积小到可以塞进边框缝隙里。功耗低到不影响续航。还有就是能用标准的芯片生产线批量做，一致性非常好，一批几万颗性能差异都很小。</p>
+<h3 id="从电压到数字，还得有人做转换"><a href="#从电压到数字，还得有人做转换" class="headerlink" title="从电压到数字，还得有人做转换"></a>从电压到数字，还得有人做转换</h3><p>不管哪种麦克风，输出的都是模拟电压，连续的、会随时间任意变化的电压。</p>
+<p>计算机要的是 0 和 1。这个转换由 ADC 完成，就是常说的模数转换器。它是下一个环节的主角。</p>
+<hr>
+<h2 id="三、采样与量化：模拟变数字的两步"><a href="#三、采样与量化：模拟变数字的两步" class="headerlink" title="三、采样与量化：模拟变数字的两步"></a>三、采样与量化：模拟变数字的两步</h2><p>一个人对着麦克风唱了 3 秒，输出电压是一条连续曲线。你怎么把它变成一列整数？</p>
+<p>分两步做。</p>
+<h3 id="第一步：采样，按固定间隔量一下"><a href="#第一步：采样，按固定间隔量一下" class="headerlink" title="第一步：采样，按固定间隔量一下"></a>第一步：采样，按固定间隔量一下</h3><p>不连续记录，改成每隔固定的时间量一次”此刻电压是多少”。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig3_采样与量化.png" alt="图三：采样与量化——真实声波如何变成有限个离散数值"></p>
+<p>这个固定间隔的倒数，就是采样率。44100 Hz 的意思是每秒量 44100 次，间隔约 22.7 微秒。</p>
+<p>采样率决定能记录多高的音。这里有个硬性限制，叫采样定理：采样率必须大于信号最高频率的两倍，否则高频信号会被”折叠”成错误的低频信号，产生一个根本不存在的音调。</p>
+<p>因为人耳能听到的上限大约 20 kHz，所以 CD 定的采样率是 44100 Hz，刚好是 20 kHz 的两倍多一点，留了点余量给滤波器。这就是这个数字的来源，不是随便定的。</p>
+<h3 id="第二步：量化，把值吸附到刻度上"><a href="#第二步：量化，把值吸附到刻度上" class="headerlink" title="第二步：量化，把值吸附到刻度上"></a>第二步：量化，把值吸附到刻度上</h3><p>量到的电压是任意实数，但存储必须用有限位数的整数。</p>
+<p>做法是把整个电压范围切成若干档，量到的值吸附到最近的档位上。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig4_参数与体积.png" alt="图四：位深决定刻度数，采样率决定频率上限；参数算出来的是体积上限"></p>
+<p>档位的个数由位深决定。位深 n 意味着有 2 的 n 次方个档位。16 bit 是 65536 档，24 bit 是 1677 万档。</p>
+<p>吸附必然带来误差。真实值是 0.50001，被记成 0.5，这个差就是量化噪声。位深每加 1，档位翻倍，误差减半。粗略地说，16 bit 的信噪比约 96 分贝，24 bit 约 144 分贝。</p>
+<h3 id="码率：每秒要存多少"><a href="#码率：每秒要存多少" class="headerlink" title="码率：每秒要存多少"></a>码率：每秒要存多少</h3><p>把参数乘起来，就是一个很简单的公式：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">码率 = 采样率 × 位深 × 声道数</span><br></pre></td></tr></tbody></table></figure>
+<p>CD 音质是 44100 × 16 × 2，算出来每秒 1,411,200 bit，也就是 1411.2 kbps。一分钟大约 10.1 MB。</p>
+<p>这个公式给出的数字，就是 WAV 存这些数据时的实际大小。它不是估出来的上限，是精确值，因为 WAV 一点不压缩。</p>
+<hr>
+<h2 id="四、从麦克风到文件：硬件和软件的接力"><a href="#四、从麦克风到文件：硬件和软件的接力" class="headerlink" title="四、从麦克风到文件：硬件和软件的接力"></a>四、从麦克风到文件：硬件和软件的接力</h2><p>麦克风采集到的数据，要经过好几手才变成你硬盘上的文件。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig5_从麦克风到文件.png" alt="图五：从空气振动到磁盘文件的完整数据通路"></p>
+<p>麦克风芯片把模拟电压送进 ADC 之后，出来的是数字流。这个流通过 I2S 总线串行送出去。I2S 是一根专门传音频的线，它会在每个采样周期里依次传左声道和右声道的数据。</p>
+<p>接下来是 DMA，直接内存访问。音频是持续不断的，如果每一帧都要 CPU 亲自去搬，CPU 就什么别的都干不了了。DMA 的作用是让数据在硬件和内存之间自动搬运，CPU 只管每隔一段时间来处理一批。</p>
+<p>数据进了内存，操作系统里的音频子系统接手。Linux 上是 ALSA 和 PulseAudio，Windows 上是 WASAPI，macOS 上是 CoreAudio。这一层的职责是协调多个程序对麦克风的访问、做重采样和混音、处理缓冲区。</p>
+<p>到了这一步，你的程序调用录音接口，拿到的已经是一列整数了。程序要做的事只剩一件：把这些整数按某种格式写进文件。</p>
+<p>这个格式，要么是 WAV，要么是 MP3。</p>
+<hr>
+<h2 id="五、WAV：44-字节的头，剩下全是数据"><a href="#五、WAV：44-字节的头，剩下全是数据" class="headerlink" title="五、WAV：44 字节的头，剩下全是数据"></a>五、WAV：44 字节的头，剩下全是数据</h2><p>WAV 是微软和 IBM 在 1991 年一起定的格式，全称是 Waveform Audio File Format。</p>
+<p>它的结构简单到有点朴素。整个文件就是一个 RIFF 容器，里面装着两个块。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig6_WAV文件结构.png" alt="图六：WAV 文件的结构，RIFF 容器里装着 fmt 块和 data 块"></p>
+<p>RIFF 是 Resource Interchange File Format 的缩写，是当时一套通用的容器规范。它的规矩是：每个块都以 4 个字节的标识开头，接着 4 个字节说明这个块有多长。</p>
+<p>WAV 只用了其中两个块。<code>fmt</code> 块描述音频参数，<code>data</code> 块装实际数据。就这么多。</p>
+<h3 id="逐字节拆一个真实的-WAV"><a href="#逐字节拆一个真实的-WAV" class="headerlink" title="逐字节拆一个真实的 WAV"></a>逐字节拆一个真实的 WAV</h3><p>光看结构图不够，我实际用代码写了一个 WAV 出来，把它的前 64 个字节打印出来看。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig7_WAV真实字节.png" alt="图七：真实 WAV 文件前 64 字节的十六进制对照与逐字段解释"></p>
+<p>对照着看，前 44 个字节是这样排的：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">偏移 0   52 49 46 46           RIFF        容器标识</span><br><span class="line">偏移 4   54 13 08 00           文件大小     小端读出 0x00081354 = 529,236</span><br><span class="line">偏移 8   57 41 56 45           WAVE        格式类型</span><br><span class="line">偏移 12  66 6D 74 20           fmt         格式块标识</span><br><span class="line">偏移 16  10 00 00 00           16          格式块长度</span><br><span class="line">偏移 20  01 00                 1           编码格式，1 表示未压缩 PCM</span><br><span class="line">偏移 22  02 00                 2           声道数</span><br><span class="line">偏移 24  44 AC 00 00           44100       采样率</span><br><span class="line">偏移 28  10 B1 02 00           176400      每秒字节数</span><br><span class="line">偏移 32  04 00                 4           每次采样占几个字节</span><br><span class="line">偏移 34  10 00                 16          位深</span><br><span class="line">偏移 36  64 61 74 61           data        数据块标识</span><br><span class="line">偏移 40  30 13 08 00           529200      数据长度</span><br></pre></td></tr></tbody></table></figure>
+<p>有几处值得停下来看一眼。</p>
+<p><strong>偏移 4 那个数字是 529,236，不是文件大小 529,244。</strong> 因为它算的是”除了标识和长度这 8 个字节之外，后面还有多少”。529,244 减 8，正好是 529,236。</p>
+<p><strong>偏移 28 的 176,400 是可以从别的字段推出来的。</strong> 44100 × 2 声道 × 2 字节（16 bit），正好 176,400。它不是独立信息，是冗余存储的，方便程序快速读取。</p>
+<p><strong>偏移 40 的 529,200 就是三秒的数据量。</strong> 44100 × 3 秒 × 2 声道 × 2 字节 = 529,200。严丝合缝。</p>
+<p><strong>所有多字节整数都是小端存放的。</strong> 44100 的十六进制是 0xAC44，但文件里写成 <code>44 AC</code>，低位在前。这是 x86 系列的字节序传统，读的时候要注意。</p>
+<h3 id="WAV-的优点是简单，缺点也是简单"><a href="#WAV-的优点是简单，缺点也是简单" class="headerlink" title="WAV 的优点是简单，缺点也是简单"></a>WAV 的优点是简单，缺点也是简单</h3><p>它不压缩。517 KB 就是 517 KB，不会因为内容简单而变小，也不会因为内容复杂而变大。</p>
+<p>这在某些场景下反而是优点。音频编辑软件要反复读写、要精确定位到某一个采样点，一个结构固定、不需要解码的文件要方便得多。所以专业录音棚里，存档用的通常还是 WAV。</p>
+<p>代价就是体积。三分钟 CD 音质要 31 MB，一张 CD 装不下几首歌。</p>
+<hr>
+<h2 id="六、软件怎么写一个-WAV"><a href="#六、软件怎么写一个-WAV" class="headerlink" title="六、软件怎么写一个 WAV"></a>六、软件怎么写一个 WAV</h2><p>写 WAV 其实不需要任何音频库，就是拼字节。</p>
+<p>Python 里有个 <code>wave</code> 模块，但为了看清楚每个字段在哪，我直接用 <code>struct</code> 手动拼了一个。</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"></span><br><span class="line">SR, BITS, CH = <span class="number">44100</span>, <span class="number">16</span>, <span class="number">2</span>          <span class="comment"># 采样率、位深、声道数</span></span><br><span class="line">samples = [<span class="number">0.0</span>] * (SR * <span class="number">3</span>)           <span class="comment"># 三秒的采样数据，这里先填静音</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 把浮点采样转成 16 位整数</span></span><br><span class="line">pcm = <span class="built_in">bytearray</span>()</span><br><span class="line"><span class="keyword">for</span> s <span class="keyword">in</span> samples:</span><br><span class="line">    v = <span class="built_in">int</span>(<span class="built_in">max</span>(-<span class="number">1.0</span>, <span class="built_in">min</span>(<span class="number">1.0</span>, s)) * <span class="number">32767</span>)</span><br><span class="line">    pcm += struct.pack(<span class="string">"&lt;h"</span>, v)      <span class="comment"># 左声道</span></span><br><span class="line">    pcm += struct.pack(<span class="string">"&lt;h"</span>, v)      <span class="comment"># 右声道</span></span><br><span class="line"></span><br><span class="line">byte_rate = SR * CH * BITS // <span class="number">8</span>      <span class="comment"># 每秒字节数</span></span><br><span class="line">block_align = CH * BITS // <span class="number">8</span>         <span class="comment"># 每次采样字节数</span></span><br><span class="line">data_size = <span class="built_in">len</span>(pcm)</span><br><span class="line">riff_size = <span class="number">36</span> + data_size           <span class="comment"># 文件总长减去 8</span></span><br><span class="line"></span><br><span class="line">header = <span class="string">b""</span></span><br><span class="line">header += <span class="string">b"RIFF"</span>                                 <span class="comment"># 容器标识</span></span><br><span class="line">header += struct.pack(<span class="string">"&lt;I"</span>, riff_size)            <span class="comment"># 块长度</span></span><br><span class="line">header += <span class="string">b"WAVE"</span>                                 <span class="comment"># 格式类型</span></span><br><span class="line">header += <span class="string">b"fmt "</span>                                 <span class="comment"># 格式块</span></span><br><span class="line">header += struct.pack(<span class="string">"&lt;I"</span>, <span class="number">16</span>)                   <span class="comment"># 格式块长度</span></span><br><span class="line">header += struct.pack(<span class="string">"&lt;H"</span>, <span class="number">1</span>)                    <span class="comment"># 编码格式，1 = PCM</span></span><br><span class="line">header += struct.pack(<span class="string">"&lt;H"</span>, CH)                   <span class="comment"># 声道数</span></span><br><span class="line">header += struct.pack(<span class="string">"&lt;I"</span>, SR)                   <span class="comment"># 采样率</span></span><br><span class="line">header += struct.pack(<span class="string">"&lt;I"</span>, byte_rate)            <span class="comment"># 每秒字节数</span></span><br><span class="line">header += struct.pack(<span class="string">"&lt;H"</span>, block_align)          <span class="comment"># 每次采样字节数</span></span><br><span class="line">header += struct.pack(<span class="string">"&lt;H"</span>, BITS)                 <span class="comment"># 位深</span></span><br><span class="line">header += <span class="string">b"data"</span>                                 <span class="comment"># 数据块</span></span><br><span class="line">header += struct.pack(<span class="string">"&lt;I"</span>, data_size)            <span class="comment"># 数据长度</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">"out.wav"</span>, <span class="string">"wb"</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(header + <span class="built_in">bytes</span>(pcm))</span><br></pre></td></tr></tbody></table></figure>
+<p><code>struct.pack</code> 的第一个参数里的 <code>&lt;</code> 表示小端，<code>I</code> 是 4 字节无符号整数，<code>H</code> 是 2 字节无符号整数，<code>h</code> 是有符号的 2 字节整数。</p>
+<p>跑完这段代码，你就得到了一个能双击播放的 WAV 文件。总共 44 个字节的头，加后面的数据，没有别的东西。</p>
+<p>真正录音时，<code>samples</code> 那部分来自音频接口。以 Python 为例，用 <code>sounddevice</code> 库可以这样录：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sounddevice <span class="keyword">as</span> sd</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line">sr = <span class="number">44100</span></span><br><span class="line">audio = sd.rec(<span class="built_in">int</span>(<span class="number">3</span> * sr), samplerate=sr, channels=<span class="number">2</span>, dtype=<span class="string">"float32"</span>)</span><br><span class="line">sd.wait()          <span class="comment"># 等三秒录完</span></span><br></pre></td></tr></tbody></table></figure>
+<p>拿到的 <code>audio</code> 是形状为 <code>(132300, 2)</code> 的数组，132300 就是 44100 乘 3。每一行是一个时刻的左右声道值，范围是 -1.0 到 1.0。把它喂给上面那段拼字节的代码，就成了一个 WAV 文件。</p>
+<hr>
+<h2 id="七、MP3-凭什么能压到十分之一"><a href="#七、MP3-凭什么能压到十分之一" class="headerlink" title="七、MP3 凭什么能压到十分之一"></a>七、MP3 凭什么能压到十分之一</h2><p>WAV 的问题是太诚实，听到什么就存什么。MP3 的思路是：<strong>有些东西你听不见，那就不存了</strong>。</p>
+<p>这个”听不见”不是拍脑袋，是有科学依据的，叫心理声学。</p>
+<h3 id="人耳有掩蔽效应"><a href="#人耳有掩蔽效应" class="headerlink" title="人耳有掩蔽效应"></a>人耳有掩蔽效应</h3><p>假设同时有两个声音。一个很响，在 1000 Hz 附近。另一个很弱，在 1300 Hz 附近。</p>
+<p>强音会把附近的弱音盖住。你的耳朵在那个频率位置上，感知不到弱音的存在，哪怕它确实在空气里。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig8_掩蔽效应.png" alt="图八：掩蔽效应——强音会把附近频率的弱音盖住"></p>
+<p>这个效应的作用范围是一条曲线，不是窄窄的一条。离强音频率越近，盖得越狠；离远了才慢慢恢复。而且这条曲线是不对称的，往高频方向盖得更宽。</p>
+<h3 id="还有一个上限"><a href="#还有一个上限" class="headerlink" title="还有一个上限"></a>还有一个上限</h3><p>人耳能听到的最高频率大约 20 kHz。超过这个频率的声音，无论多响，绝大多数人都听不见。而且这个上限随年龄下降，三四十岁的人往往只能听到 16 kHz 左右。</p>
+<p>这两个事实合起来，就给了 MP3 操作空间。凡是落在掩蔽区里的成分，凡是超过听觉上限的成分，都可以用很少的比特去表示，甚至直接丢掉。</p>
+<h3 id="编码流程"><a href="#编码流程" class="headerlink" title="编码流程"></a>编码流程</h3><p>MP3 的编码是一条流水线，每一站都在做取舍。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig9_MP3编码与帧结构.png" alt="图九：MP3 的编码流水线和帧结构"></p>
+<p><strong>滤波器组</strong>把信号切成 32 个频段，这样后面的处理可以分频段进行。</p>
+<p><strong>MDCT 变换</strong>（改进的离散余弦变换）在每个频段内部再细分成更细的谱线，粗算下来一个时间窗内能分出几百条。这一步把时域波形转成了频域表示，只有到了频域，才谈得上”哪些频率听不见”。</p>
+<p><strong>心理声学模型</strong>根据当前这一窗信号的强度分布，算出一条掩蔽阈值曲线。这条曲线告诉编码器：哪些谱线是必须保留的，哪些可以粗略表示。</p>
+<p><strong>量化</strong>是最关键的一步。量化步长按掩蔽阈值来定，每个频段都不一样。听不见的地方步长放大，误差大也无所谓；听得见的地方步长收紧，保证精度。</p>
+<p><strong>Huffman 编码</strong>是最后一道无损压缩。经常出现的数值分配短码，不常出现的分配长码。这一步不产生任何损失，纯粹是省比特。</p>
+<p><strong>打包成帧</strong>。每 1152 个样本打包成一帧，44100 Hz 下大概是 26 毫秒。一帧内所有信息打包在一起，前面加 4 个字节的帧头。</p>
+<h3 id="帧头里有什么"><a href="#帧头里有什么" class="headerlink" title="帧头里有什么"></a>帧头里有什么</h3><p>那 4 个字节的信息密度很高，塞了一个解码器需要的全部信息。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig10_MP3真实帧头.png" alt="图十：真实 MP3 文件前 150 字节，第一帧帧头 FF FB 90 00 的逐位解释"></p>
+<p>拿我实际生成的那个 128 kbps 文件来说，第一帧的帧头是 <code>FF FB 90 00</code>。</p>
+<p>前 11 位全是 1，这是同步字。解码器在文件里搜索这 11 个连续的 1，找到就认为一帧从这里开始。MP3 没有固定的帧位置表，全靠这个同步字来切分。</p>
+<p>接下来的位段依次是：MPEG 版本、层号、位率索引、采样率索引、是否填充、声道模式。我这里解出来是 MPEG1、Layer 3、位率索引 9（对应 128 kbps）、采样率索引 0（对应 44100 Hz）、立体声。</p>
+<p>这个文件的音频数据一共 48,900 字节。128 kbps 下每帧 417 字节，除下来大约 117 帧。每帧 26.12 毫秒，117 帧正好凑成 3.06 秒，跟原始的三秒音频对得上。</p>
+<p>顺带说一个自己动手时会踩的坑。如果只是简单地在文件里搜索 FF 开头、后一位的高三位也是 1 的位置，会数出一大堆候选，远多于真实帧数。因为压缩后的数据接近随机，FF 这种字节组合本来就会自然出现，属于误检。想数准，得先用帧头里的位率索引算出这一帧有多长，跳过去再找下一帧。这个判断逻辑就是解码器切分帧的方式。</p>
+<h3 id="文件头的-ID3-标签"><a href="#文件头的-ID3-标签" class="headerlink" title="文件头的 ID3 标签"></a>文件头的 ID3 标签</h3><p>你可能注意到，上面那段十六进制里，第一帧的位置是从偏移 44 开始的，前面那段是 <code>49 44 33</code>，也就是 <code>ID3</code>。</p>
+<p>这是 ID3v2 标签。歌曲名、歌手、专辑、封面图片这些信息都存在这里，跟音频数据分开。因为长度可变，它有自己的长度字段，前面那个文件里算出来是 34 字节的内容长度。</p>
+<p>这也意味着一个 MP3 文件里，音频数据的位置不是从 0 开始的。写解析器的时候要先跳过这段。</p>
+<hr>
+<h2 id="八、同一段声音，两种格式，差在哪"><a href="#八、同一段声音，两种格式，差在哪" class="headerlink" title="八、同一段声音，两种格式，差在哪"></a>八、同一段声音，两种格式，差在哪</h2><p>我把同一段三秒的声音用两种格式存了一遍，然后把它解码回来看频谱。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig11_频谱对比.png" alt="图十一：WAV 与 MP3 的频谱对比，128 kbps 在 16 kHz 处截止"></p>
+<p>左边这张图里，蓝线是 WAV，红线是 MP3 128 kbps 解码回来的。低频和中频部分两条线基本重合，几乎看不出差别。到了 16 kHz 之后，红线直接掉了下去，而蓝线一直延伸到 20 kHz。</p>
+<p>右边这张图把差值画出来。16 kHz 之前差值基本是 0，之后陡然上升。<strong>这就是 MP3 省下来的东西，它把高频砍掉了</strong>。</p>
+<p>砍掉的这部分，绝大多数人在正常听音环境下察觉不到。要听出来需要好几个条件同时满足，得有不错的耳机、安静的环境，还得是特别熟悉、高频又丰富的曲目。</p>
+<p>几个实测数字：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>格式</th>
+<th>文件大小</th>
+<th>相对 WAV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WAV（CD 音质）</td>
+<td>517 KB</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>MP3 320 kbps</td>
+<td>119 KB</td>
+<td>23.1%</td>
+</tr>
+<tr>
+<td>MP3 128 kbps</td>
+<td>48 KB</td>
+<td>9.2%</td>
+</tr>
+<tr>
+<td>MP3 VBR q2</td>
+<td>39 KB</td>
+<td>7.6%</td>
+</tr>
+<tr>
+<td>WAV（8 kHz 单声道）</td>
+<td>47 KB</td>
+<td>9.1%</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>最后一行值得看一眼。它也是 WAV，没有做任何压缩，但因为把采样率降到 8000、声道降到单声道，体积就掉到了 47 KB。</p>
+<p>这说明一件事：<strong>决定体积的有两个环节</strong>。一是采样和量化时选什么参数，二是编码时丢不丢东西。前者是”一开始就不记”，后者是”记了再扔”。WAV 和 MP3 的区别在于用不用第二招。</p>
+<hr>
+<h2 id="九、自己动手"><a href="#九、自己动手" class="headerlink" title="九、自己动手"></a>九、自己动手</h2><p>上面提到的数字都可以自己复现。需要的工具不多。</p>
+<h3 id="看自己的-WAV-文件"><a href="#看自己的-WAV-文件" class="headerlink" title="看自己的 WAV 文件"></a>看自己的 WAV 文件</h3><p>Linux 或 macOS 下，直接用 <code>xxd</code> 看前 64 个字节：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">xxd -l 64 your_file.wav</span><br></pre></td></tr></tbody></table></figure>
+<p>你会看到 <code>52 49 46 46</code> 开头，然后是文件长度、<code>57 41 56 45</code>（WAVE）、<code>66 6D 74 20</code>（fmt ）、<code>64 61 74 61</code>（data）。对照第五节的表逐个读。</p>
+<p>Windows 下可以用 PowerShell：</p>
+<figure class="highlight powershell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Format-Hex</span> <span class="literal">-Path</span> your_file.wav <span class="literal">-Count</span> <span class="number">64</span></span><br></pre></td></tr></tbody></table></figure>
+<h3 id="转格式比大小"><a href="#转格式比大小" class="headerlink" title="转格式比大小"></a>转格式比大小</h3><p>装了 ffmpeg 的话，一条命令就能对比：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 造一段测试音频，3 秒，CD 音质</span></span><br><span class="line">ffmpeg -f lavfi -i <span class="string">"sine=frequency=440:duration=3"</span> -ar 44100 -ac 2 test.wav</span><br><span class="line"></span><br><span class="line"><span class="comment"># 转成不同位率的 MP3</span></span><br><span class="line">ffmpeg -i test.wav -b:a 128k test_128k.mp3</span><br><span class="line">ffmpeg -i test.wav -b:a 320k test_320k.mp3</span><br><span class="line"></span><br><span class="line"><span class="comment"># 看大小</span></span><br><span class="line"><span class="built_in">ls</span> -l test.wav test_128k.mp3 test_320k.mp3</span><br><span class="line"></span><br><span class="line"><span class="comment"># 看看被砍掉的频谱</span></span><br><span class="line">ffmpeg -i test_128k.mp3 -lavfi showspectrumpic=s=800x400 spec.png</span><br></pre></td></tr></tbody></table></figure>
+<p>最后那条命令会生成一张频谱图，高频截止的位置一眼就能看到。</p>
+<h3 id="猜帧头"><a href="#猜帧头" class="headerlink" title="猜帧头"></a>猜帧头</h3><p>找个 MP3 文件，用 <code>xxd</code> 往后翻，找到第一个 <code>FF</code> 开头、后面一位的高三位也是 1 的位置，那就是第一帧的帧头。把 4 个字节抄下来，对照第七节解释的意思自己解一遍。</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FF F? ?? ??</span><br><span class="line">│  └─ 前 3 位为 1</span><br><span class="line">└─ 全 1</span><br></pre></td></tr></tbody></table></figure>
+<p>自己解一遍之后，这一串十六进制就不再是天书了。</p>
+<hr>
+<h2 id="十、最后"><a href="#十、最后" class="headerlink" title="十、最后"></a>十、最后</h2><p>回到开头那三个事实。</p>
+<p><strong>为什么 517 KB 能变成 48 KB？</strong> 因为 MP3 砍掉了人耳听不见的部分。掩蔽效应让一部分频率可以粗略表示，20 kHz 以上的部分直接丢掉。这两招加起来，省下了九成体积。</p>
+<p><strong>为什么 517 KB 里只有 44 字节是参数？</strong> 因为 WAV 的格式设计极度简单。一个 RIFF 容器，两个块，参数总共 44 字节，其余全是原始采样。这种简单是有意为之。1991 年定这个格式的时候，可预测性和易解析性比体积重要得多。</p>
+<p><strong>为什么改采样率能到 47 KB？</strong> 因为体积是采样率、位深、声道三个参数的乘积。任何一项降下来，体积就按比例降。这里没有魔法，就是乘法。</p>
+<p>声音从空气的振动开始，经过麦克风的转换、ADC 的采样量化、总线和驱动的搬运，最后落在磁盘上，成为一个有固定结构的字节序列。</p>
+<p>这个序列长什么样，取决于你在哪一步做了取舍。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/7a3e/">https://moxin1044.github.io/posts/7a3e/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%9F%B3%E9%A2%91/">音频</a><a class="post-meta__tags" href="/tags/WAV/">WAV</a><a class="post-meta__tags" href="/tags/MP3/">MP3</a><a class="post-meta__tags" href="/tags/%E9%87%87%E6%A0%B7/">采样</a><a class="post-meta__tags" href="/tags/%E7%BC%96%E7%A0%81/">编码</a><a class="post-meta__tags" href="/tags/%E7%A1%AC%E4%BB%B6/">硬件</a></div><div class="post-share"><div class="social-share" data-image="/attachments/fig3_%E9%87%87%E6%A0%B7%E4%B8%8E%E9%87%8F%E5%8C%96.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/posts/ffee/" title="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_%E9%AA%8C%E8%AF%81%E7%A0%81%E4%B8%8E%E5%88%87%E5%88%86.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">从图片验证码到字符识别：YOLO 模型在验证码识别中的实践</div></div><div class="info-2"><div class="info-item-1">从图片验证码到字符识别：YOLO 模型在验证码识别中的实践先看一张图。  五个字母，歪歪扭扭，中间还划过一条线。这是网站登录框里那种验证码，练手项目里非常常见的一种。 你一眼能不能认出来是 KYHXV？大概能，但可能要盯两秒。 这篇文章想做的事，是把”机器怎么做到这件事”从头讲一遍。不讲玄乎的概念，只讲它到底在干什么。写完之后你会发现，整件事的骨架简单得有点意外。 配套的两个仓库：  image-captcha-recognition-yolo：数据集准备、训练脚本、推理脚本 pyocrcaptcha：把训练好的模型打包成 pip 能装的包，带命令行   一、项目背景验证码是干什么用的网站为什么要给你看这五个歪字母？ 因为它想区分”坐在电脑前面的人”和”写脚本的机器”。人认字很轻松，程序想认字就费劲了，在深度学习普及之前尤其费劲。所以早期的思路很朴素：这个任务对机器难，对人容易，那就拿它当门槛。 这个思路在二十年前是成立的。现在不太成立了。 为什么这类验证码容易被打穿看几个数字。 这个项目用的字符集是 36 类：数字 0-9 加字母 A-Z。没有小写字母，没有区分易混字符。图片尺...</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">86</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">69</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">36</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="/atom.xml" target="_blank" title="RSS"><i class="fas fa-rss" style="color: #f26522;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%A3%B0%E9%9F%B3%E7%9A%84%E6%9C%AC%E8%B4%A8%E6%98%AF%E7%A9%BA%E6%B0%94%E5%9C%A8%E6%8A%96"><span class="toc-number">1.</span> <span class="toc-text">一、声音的本质是空气在抖</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E9%BA%A6%E5%85%8B%E9%A3%8E%E6%80%8E%E4%B9%88%E6%8A%8A%E6%8A%96%E5%8A%A8%E5%8F%98%E6%88%90%E7%94%B5%E5%8E%8B"><span class="toc-number">2.</span> <span class="toc-text">二、麦克风怎么把抖动变成电压</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%A8%E5%9C%88%E5%BC%8F%EF%BC%9A%E7%94%A8%E7%94%B5%E7%A3%81%E6%84%9F%E5%BA%94"><span class="toc-number">2.1.</span> <span class="toc-text">动圈式：用电磁感应</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MEMS-%E7%A1%85%E9%BA%A6%EF%BC%9A%E7%94%A8%E4%B8%80%E5%9D%97%E4%BC%9A%E5%8A%A8%E7%9A%84%E7%A1%85"><span class="toc-number">2.2.</span> <span class="toc-text">MEMS 硅麦：用一块会动的硅</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E%E7%94%B5%E5%8E%8B%E5%88%B0%E6%95%B0%E5%AD%97%EF%BC%8C%E8%BF%98%E5%BE%97%E6%9C%89%E4%BA%BA%E5%81%9A%E8%BD%AC%E6%8D%A2"><span class="toc-number">2.3.</span> <span class="toc-text">从电压到数字，还得有人做转换</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%87%87%E6%A0%B7%E4%B8%8E%E9%87%8F%E5%8C%96%EF%BC%9A%E6%A8%A1%E6%8B%9F%E5%8F%98%E6%95%B0%E5%AD%97%E7%9A%84%E4%B8%A4%E6%AD%A5"><span class="toc-number">3.</span> <span class="toc-text">三、采样与量化：模拟变数字的两步</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%9A%E9%87%87%E6%A0%B7%EF%BC%8C%E6%8C%89%E5%9B%BA%E5%AE%9A%E9%97%B4%E9%9A%94%E9%87%8F%E4%B8%80%E4%B8%8B"><span class="toc-number">3.1.</span> <span class="toc-text">第一步：采样，按固定间隔量一下</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E6%AD%A5%EF%BC%9A%E9%87%8F%E5%8C%96%EF%BC%8C%E6%8A%8A%E5%80%BC%E5%90%B8%E9%99%84%E5%88%B0%E5%88%BB%E5%BA%A6%E4%B8%8A"><span class="toc-number">3.2.</span> <span class="toc-text">第二步：量化，把值吸附到刻度上</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A0%81%E7%8E%87%EF%BC%9A%E6%AF%8F%E7%A7%92%E8%A6%81%E5%AD%98%E5%A4%9A%E5%B0%91"><span class="toc-number">3.3.</span> <span class="toc-text">码率：每秒要存多少</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%BB%8E%E9%BA%A6%E5%85%8B%E9%A3%8E%E5%88%B0%E6%96%87%E4%BB%B6%EF%BC%9A%E7%A1%AC%E4%BB%B6%E5%92%8C%E8%BD%AF%E4%BB%B6%E7%9A%84%E6%8E%A5%E5%8A%9B"><span class="toc-number">4.</span> <span class="toc-text">四、从麦克风到文件：硬件和软件的接力</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81WAV%EF%BC%9A44-%E5%AD%97%E8%8A%82%E7%9A%84%E5%A4%B4%EF%BC%8C%E5%89%A9%E4%B8%8B%E5%85%A8%E6%98%AF%E6%95%B0%E6%8D%AE"><span class="toc-number">5.</span> <span class="toc-text">五、WAV：44 字节的头，剩下全是数据</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%90%E5%AD%97%E8%8A%82%E6%8B%86%E4%B8%80%E4%B8%AA%E7%9C%9F%E5%AE%9E%E7%9A%84-WAV"><span class="toc-number">5.1.</span> <span class="toc-text">逐字节拆一个真实的 WAV</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#WAV-%E7%9A%84%E4%BC%98%E7%82%B9%E6%98%AF%E7%AE%80%E5%8D%95%EF%BC%8C%E7%BC%BA%E7%82%B9%E4%B9%9F%E6%98%AF%E7%AE%80%E5%8D%95"><span class="toc-number">5.2.</span> <span class="toc-text">WAV 的优点是简单，缺点也是简单</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E8%BD%AF%E4%BB%B6%E6%80%8E%E4%B9%88%E5%86%99%E4%B8%80%E4%B8%AA-WAV"><span class="toc-number">6.</span> <span class="toc-text">六、软件怎么写一个 WAV</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81MP3-%E5%87%AD%E4%BB%80%E4%B9%88%E8%83%BD%E5%8E%8B%E5%88%B0%E5%8D%81%E5%88%86%E4%B9%8B%E4%B8%80"><span class="toc-number">7.</span> <span class="toc-text">七、MP3 凭什么能压到十分之一</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%BA%E8%80%B3%E6%9C%89%E6%8E%A9%E8%94%BD%E6%95%88%E5%BA%94"><span class="toc-number">7.1.</span> <span class="toc-text">人耳有掩蔽效应</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%98%E6%9C%89%E4%B8%80%E4%B8%AA%E4%B8%8A%E9%99%90"><span class="toc-number">7.2.</span> <span class="toc-text">还有一个上限</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%96%E7%A0%81%E6%B5%81%E7%A8%8B"><span class="toc-number">7.3.</span> <span class="toc-text">编码流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B8%A7%E5%A4%B4%E9%87%8C%E6%9C%89%E4%BB%80%E4%B9%88"><span class="toc-number">7.4.</span> <span class="toc-text">帧头里有什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E5%A4%B4%E7%9A%84-ID3-%E6%A0%87%E7%AD%BE"><span class="toc-number">7.5.</span> <span class="toc-text">文件头的 ID3 标签</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E5%90%8C%E4%B8%80%E6%AE%B5%E5%A3%B0%E9%9F%B3%EF%BC%8C%E4%B8%A4%E7%A7%8D%E6%A0%BC%E5%BC%8F%EF%BC%8C%E5%B7%AE%E5%9C%A8%E5%93%AA"><span class="toc-number">8.</span> <span class="toc-text">八、同一段声音，两种格式，差在哪</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E8%87%AA%E5%B7%B1%E5%8A%A8%E6%89%8B"><span class="toc-number">9.</span> <span class="toc-text">九、自己动手</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9C%8B%E8%87%AA%E5%B7%B1%E7%9A%84-WAV-%E6%96%87%E4%BB%B6"><span class="toc-number">9.1.</span> <span class="toc-text">看自己的 WAV 文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BD%AC%E6%A0%BC%E5%BC%8F%E6%AF%94%E5%A4%A7%E5%B0%8F"><span class="toc-number">9.2.</span> <span class="toc-text">转格式比大小</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8C%9C%E5%B8%A7%E5%A4%B4"><span class="toc-number">9.3.</span> <span class="toc-text">猜帧头</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E3%80%81%E6%9C%80%E5%90%8E"><span class="toc-number">10.</span> <span class="toc-text">十、最后</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/7a3e/" title="计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig3_%E9%87%87%E6%A0%B7%E4%B8%8E%E9%87%8F%E5%8C%96.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理"></a><div class="content"><a class="title" href="/posts/7a3e/" title="计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理">计算机是怎么记录声音的？详解 mp3 与 wav 格式文件和录音的原理</a><time datetime="2026-10-14T21:40:00.000Z" title="发表于 2026-10-15 05:40:00">2026-10-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/ffee/" title="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_%E9%AA%8C%E8%AF%81%E7%A0%81%E4%B8%8E%E5%88%87%E5%88%86.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践"></a><div class="content"><a class="title" href="/posts/ffee/" title="从图片验证码到字符识别：YOLO 模型在验证码识别中的实践">从图片验证码到字符识别：YOLO 模型在验证码识别中的实践</a><time datetime="2026-10-14T14:40:00.000Z" title="发表于 2026-10-14 22:40:00">2026-10-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/879d/" title="ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig4_ZIP%E7%BB%93%E6%9E%84.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限"></a><div class="content"><a class="title" href="/posts/879d/" title="ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限">ZIP 为什么能让文件变小？—— 压缩的原理、格式与极限</a><time datetime="2026-10-13T21:25:08.000Z" title="发表于 2026-10-14 05:25:08">2026-10-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/6254/" title="什么是均摊复杂度？均摊分析？"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_%E9%80%90%E6%AC%A1%E8%80%97%E6%97%B6.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="什么是均摊复杂度？均摊分析？"></a><div class="content"><a class="title" href="/posts/6254/" title="什么是均摊复杂度？均摊分析？">什么是均摊复杂度？均摊分析？</a><time datetime="2026-10-13T21:16:57.000Z" title="发表于 2026-10-14 05:16:57">2026-10-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/6751/" title="时间复杂度与空间复杂度详解"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/fig1_%E5%A4%8D%E6%9D%82%E5%BA%A6%E9%98%B6%E6%A2%AF.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="时间复杂度与空间复杂度详解"></a><div class="content"><a class="title" href="/posts/6751/" title="时间复杂度与空间复杂度详解">时间复杂度与空间复杂度详解</a><time datetime="2026-10-13T20:58:06.000Z" title="发表于 2026-10-14 04:58:06">2026-10-14</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
