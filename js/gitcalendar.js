@@ -1,5 +1,5 @@
 /*  @Moxin1044 2026-10-16
-    GitHub 贡献热力图（首页卡片）
+    GitHub 贡献热力图（侧栏卡片，挂在作者卡下面的那个大卡片下方）
 
     为什么不用 hexo-filter-gitcalendar
     网上流传的那套教程（zsyyblog.com/a29f1c7b.html）依赖 hexo-filter-gitcalendar 插件
@@ -11,13 +11,20 @@
     access-control-allow-origin: *，可以跨域直取。渲染全部在浏览器里做，所以不需要装
     任何插件，也不需要重新构建，接口哪天数据变了页面上自动跟着变。
 
-    降级
-    这个接口在国外。取不到就退到 ghchart.rshah.org 的 SVG 图（一张静态贡献图）；
-    还是失败就把卡片整个拿掉，不留一个空框在那。
+    挂载位置
+    优先插到右侧栏作者卡（#aside-content .card-info）的后面；侧栏没渲染出来
+    （手机端折叠、或主题改了结构）就退回主栏 #recent-posts 顶部。
+    两个都没有就什么都不做。
 
-    挂在哪儿
-    首页 #recent-posts 的第一个位置，也就是文章列表上方。只在首页渲染，
-    其他页面（文章页、归档、分类）直接跳过。
+    格子尺寸按容器实宽算
+    侧栏内容区只有 241px 上下，53 列摊下来一格只能 4px 左右；主栏有 800 多 px，
+    一格能到 11px。所以格子边长不写死，渲染后按滚动容器的实宽反解，并挂 resize 重算。
+    格子小于 7px 时把月份和星期标签收掉（那么小的字号只会糊成一团），
+    改在下面用一行日期范围交代跨度。
+
+    降级
+    接口在国外。取不到就退到 ghchart.rshah.org 的 SVG 图（一张静态贡献图）；
+    还是失败就把卡片整个拿掉，不留一个空框在那。
 */
 (function () {
   'use strict';
@@ -31,14 +38,8 @@
   var CACHE_MS  = 6 * 60 * 60 * 1000;                              // 6 小时，够避免反复打接口
   var TIMEOUT   = 9000;
   var WEEK_CN   = ['日', '一', '二', '三', '四', '五', '六'];
-
-  /* 本地日期 YYYY-MM-DD。不能用 toISOString，那是 UTC，东八区早上会算成昨天 */
-  function todayKey() {
-    var d = new Date();
-    return d.getFullYear() + '-' +
-           ('0' + (d.getMonth() + 1)).slice(-2) + '-' +
-           ('0' + d.getDate()).slice(-2);
-  }
+  var CELL_MIN  = 3, CELL_MAX = 11;
+  var COMPACT_AT = 7;                                              // 小于这个就进紧凑模式
 
   function lsGet(k) {
     try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; }
@@ -63,17 +64,17 @@
     var title = el('div', 'gc-title');
     title.appendChild(el('i', 'fas fa-calendar-check gc-icon'));
     title.appendChild(el('span', null, 'GitHub 贡献'));
-    var meta = el('span', 'gc-total', '');
-    meta.id = 'gc-total';
-    title.appendChild(meta);
     head.appendChild(title);
+    card.appendChild(head);
 
+    var meta = el('div', 'gc-meta');
+    meta.appendChild(el('span', 'gc-total', ''));
     var link = el('a', 'gc-link', 'GitHub');
     link.href = HTML_URL;
     link.target = '_blank';
     link.rel = 'noopener';
-    head.appendChild(link);
-    card.appendChild(head);
+    meta.appendChild(link);
+    card.appendChild(meta);
 
     var body = el('div', 'gc-body');
     body.id = 'gc-body';
@@ -87,6 +88,30 @@
     return card;
   }
 
+  /* 按容器实宽反解格子边长，尽量用大格子；宁可再小一格也不横向溢出 */
+  function fit(card) {
+    var scroll = card.querySelector('.gc-scroll');
+    if (!scroll) return;
+    var avail = scroll.clientWidth;
+    if (avail < 80) avail = 265;                    // 侧栏被折叠时量不到，按侧栏实宽估
+
+    var row = card.querySelector('.gc-row');
+    var weeks = row ? row.children.length : 53;
+
+    /* 先试松 gap（主栏放得下就用 3px），放不下换 1px */
+    var gap = 3, cell = Math.floor((avail + gap) / weeks) - gap;
+    if (cell < 8) {
+      gap = 1;
+      cell = Math.floor((avail + gap) / weeks) - gap;
+    }
+    if (cell > CELL_MAX) { cell = CELL_MAX; gap = 3; }
+    while (cell > CELL_MIN && (weeks * cell + (weeks - 1) * gap) > avail) cell--;
+
+    card.style.setProperty('--gc-cell', cell + 'px');
+    card.style.setProperty('--gc-gap', gap + 'px');
+    card.classList.toggle('gc-compact', cell < COMPACT_AT);
+  }
+
   /* 月份标签 + 星期标签 + 格子网格 */
   function render(payload, card) {
     var days = payload.contributions || [];
@@ -96,8 +121,9 @@
     body.innerHTML = '';
 
     var total = payload.total && payload.total.lastYear != null ? payload.total.lastYear : null;
-    if (total != null) {
-      card.querySelector('#gc-total').textContent = '近一年 ' + total + ' 次';
+    var totalEl = card.querySelector('.gc-total');
+    if (total != null && totalEl) {
+      totalEl.textContent = '近一年 ' + total + ' 次';
     }
 
     /* 首日补空格，让每一列都对齐到周日那一行 */
@@ -113,16 +139,15 @@
     var wrap = el('div', 'gc-scroll');
     var grid = el('div', 'gc-grid');
 
-    /* 星期标签列 */
+    /* 星期标签列，紧凑模式下由 CSS 隐藏 */
     var wk = el('div', 'gc-weekdays');
     for (i = 0; i < 7; i++) {
-      var lab = el('div', 'gc-weekday', (i === 1 || i === 3 || i === 5) ? WEEK_CN[i] : '');
-      wk.appendChild(lab);
+      wk.appendChild(el('div', 'gc-weekday',
+        (i === 1 || i === 3 || i === 5) ? WEEK_CN[i] : ''));
     }
     grid.appendChild(wk);
 
     var cols = el('div', 'gc-cols');
-    /* 月份标签行 */
     var months = el('div', 'gc-months');
     var lastMonth = -1;
     for (var w = 0; w < weeks; w++) {
@@ -160,16 +185,22 @@
     }
     cols.appendChild(gridRows);
     grid.appendChild(cols);
-    body.appendChild(wrap);
     wrap.appendChild(grid);
+    body.appendChild(wrap);
 
-    /* 图例 */
+    /* 图例 + 日期跨度。紧凑模式下月份标签没了，跨度更有用 */
+    var foot = el('div', 'gc-foot');
+    foot.appendChild(el('span', 'gc-range',
+      days[0].date.replace(/-/g, '.') + ' - ' +
+      days[days.length - 1].date.replace(/-/g, '.')));
     var legend = el('div', 'gc-legend');
     legend.appendChild(el('span', null, '少'));
     for (var L = 0; L < 5; L++) legend.appendChild(el('span', 'gc-cell gc-lv' + L));
     legend.appendChild(el('span', null, '多'));
-    body.appendChild(legend);
+    foot.appendChild(legend);
+    body.appendChild(foot);
 
+    fit(card);
     bindTip(card);
     return true;
   }
@@ -204,8 +235,7 @@
       if (card.parentNode) card.parentNode.removeChild(card);
     };
     body.appendChild(img);
-    var note = el('div', 'gc-note', '交互图取不到数据，已退到静态图');
-    body.appendChild(note);
+    body.appendChild(el('div', 'gc-note', '交互图取不到数据，已退到静态图'));
   }
 
   function fetchJSON(url, ms) {
@@ -222,19 +252,45 @@
     });
   }
 
+  /* 找落点：作者卡后面优先，其次主栏文章列表顶部 */
+  function pickSlot() {
+    var aside = document.getElementById('aside-content');
+    var info = aside ? aside.querySelector('.card-info') : null;
+    if (info && info.parentNode === aside) {
+      return { parent: aside, after: info };
+    }
+    var recent = document.getElementById('recent-posts');
+    if (recent) return { parent: recent, after: null };
+    return null;
+  }
+
   function mount() {
-    /* 只挂首页：有 #recent-posts 才是首页 */
-    var host = document.getElementById('recent-posts');
-    if (!host || document.getElementById(CARD_ID)) return;
+    if (document.getElementById(CARD_ID)) return;
+    var slot = pickSlot();
+    if (!slot) return;
 
     var card = buildCard();
-    host.insertBefore(card, host.firstChild);
+    if (slot.after) {
+      if (slot.after.nextSibling) slot.parent.insertBefore(card, slot.after.nextSibling);
+      else slot.parent.appendChild(card);
+    } else {
+      slot.parent.insertBefore(card, slot.parent.firstChild);
+    }
 
-    /* 命中缓存就直接渲染，不打接口 */
+    /* 窗口尺寸变了要重算格子，侧栏在窄屏会被折叠 */
+    var rt = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(rt);
+      rt = setTimeout(function () { fit(card); }, 200);
+    });
+
+    /* 命中缓存就直接渲染，不打接口。缓存数据万一坏了要兜住，不能让异常把渲染中断 */
     var cached = lsGet(LS_KEY);
     var now = Date.now();
     if (cached && cached.at && (now - cached.at) < CACHE_MS && cached.data) {
-      if (render(cached.data, card)) return;
+      try {
+        if (render(cached.data, card)) return;
+      } catch (e) { /* 缓存有问题就往下走网络 */ }
     }
 
     fetchJSON(API, TIMEOUT)
