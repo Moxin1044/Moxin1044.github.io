@@ -1,0 +1,190 @@
+/*  @Moxin1044 2026-10-16
+    GitHub 贡献热力图卡片的样式（配合 source/js/gitcalendar.js）
+
+    颜色和底色都走 Butterfly 自己的 CSS 变量（--card-bg / --card-box-shadow /
+    --text-highlight-color / --card-meta），这样卡片在亮色和暗色主题下都能自动跟随，
+    不用维护两套色值。只有格子本身用固定色阶，因为 GitHub 那套绿是最容易认的。
+
+    格子 10px、间距 3px，53 列约 689px；窄屏放不下就让容器横向滚动，不缩格子。
+*/
+
+.gc-card {
+  position: relative;
+  background: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: var(--card-box-shadow);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  transition: all 0.3s;
+}
+
+.gc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.gc-title {
+  font-size: 1.02rem;
+  font-weight: 500;
+  color: var(--text-highlight-color);
+}
+
+.gc-icon {
+  margin-right: 7px;
+  color: #40c463;
+}
+
+.gc-total {
+  margin-left: 10px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--card-meta);
+}
+
+.gc-link {
+  font-size: 0.85rem;
+  color: var(--card-meta);
+}
+
+.gc-link:hover {
+  color: var(--btn-hover-color);
+}
+
+.gc-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.gc-grid {
+  display: flex;
+  gap: 5px;
+  min-width: max-content;
+}
+
+.gc-weekdays {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 17px;
+}
+
+.gc-weekday {
+  width: 16px;
+  height: 10px;
+  line-height: 10px;
+  font-size: 9px;
+  color: var(--card-meta);
+}
+
+.gc-cols {
+  display: flex;
+  flex-direction: column;
+}
+
+.gc-months {
+  display: flex;
+  height: 14px;
+  font-size: 9px;
+  color: var(--card-meta);
+}
+
+.gc-month {
+  flex: 0 0 13px;
+  width: 13px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+.gc-grid-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gc-row {
+  display: flex;
+  gap: 3px;
+}
+
+.gc-cell {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.gc-empty {
+  background: transparent;
+}
+
+.gc-lv0 { background: #ebedf0; }
+.gc-lv1 { background: #9be9a8; }
+.gc-lv2 { background: #40c463; }
+.gc-lv3 { background: #30a14e; }
+.gc-lv4 { background: #216e39; }
+
+.gc-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--card-meta);
+}
+
+.gc-legend > span:first-child { margin-right: 3px; }
+.gc-legend > span:last-child  { margin-left: 3px; }
+
+.gc-tip {
+  display: none;
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.gc-tip-on {
+  display: block;
+}
+
+.gc-loading,
+.gc-note {
+  padding: 10px 0;
+  font-size: 0.85rem;
+  color: var(--card-meta);
+  text-align: center;
+}
+
+.gc-fallback {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* 暗色主题下换一套绿，亮色那套在深底上会发灰 */
+[data-theme="dark"] .gc-lv0 { background: #2d333b; }
+[data-theme="dark"] .gc-lv1 { background: #0e4429; }
+[data-theme="dark"] .gc-lv2 { background: #006d32; }
+[data-theme="dark"] .gc-lv3 { background: #26a641; }
+[data-theme="dark"] .gc-lv4 { background: #39d353; }
+
+/* 手机端把卡片内边距收一点，留出更多横向空间给格子 */
+@media screen and (max-width: 768px) {
+  .gc-card {
+    padding: 14px 12px;
+  }
+  .gc-head {
+    margin-bottom: 10px;
+  }
+}
