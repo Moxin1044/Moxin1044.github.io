@@ -2,6 +2,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://moxin1044.github.io/posts/9b2f/</loc>
+    
+    <lastmod>2026-10-16</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://moxin1044.github.io/posts/5d17/</loc>
     
     <lastmod>2026-10-16</lastmod>
@@ -1821,6 +1830,20 @@
   
   <url>
     <loc>https://moxin1044.github.io/tags/%E5%91%8A%E8%AD%A6%E7%96%B2%E5%8A%B3/</loc>
+    <lastmod>2026-10-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://moxin1044.github.io/tags/%E5%BF%83%E7%90%86%E5%AD%A6/</loc>
+    <lastmod>2026-10-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://moxin1044.github.io/tags/%E5%AE%89%E5%85%A8%E7%AE%A1%E7%90%86/</loc>
     <lastmod>2026-10-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>

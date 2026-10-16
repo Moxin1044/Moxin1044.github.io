@@ -1,0 +1,349 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>社会工程学：人性的漏洞 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="如果一个系统在技术层面已经被加固，事件为什么还会发生？本文把「人性的漏洞」这个说法拆开，指出它指的是四个东西的叠加而不是人的脆弱，逐条分析恐惧、贪小便宜、好奇、从众、权威、虚荣、省力、互惠、紧迫和侥幸这十条机制，说明它们各自压缩了什么，并给出对应的四个干预点。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="社会工程学：人性的漏洞">
+<meta property="og:url" content="https://moxin1044.github.io/posts/9b2f/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="如果一个系统在技术层面已经被加固，事件为什么还会发生？本文把「人性的漏洞」这个说法拆开，指出它指的是四个东西的叠加而不是人的脆弱，逐条分析恐惧、贪小便宜、好奇、从众、权威、虚荣、省力、互惠、紧迫和侥幸这十条机制，说明它们各自压缩了什么，并给出对应的四个干预点。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/figSU1_%E5%9B%9B%E8%A6%81%E7%B4%A0%E5%8F%A0%E5%8A%A0.png">
+<meta property="article:published_time" content="2026-10-16T20:25:00.000Z">
+<meta property="article:modified_time" content="2026-10-16T20:29:15.067Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="信息安全意识">
+<meta property="article:tag" content="安全管理">
+<meta property="article:tag" content="心理学">
+<meta property="article:tag" content="社会工程学">
+<meta property="article:tag" content="认知偏差">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/figSU1_%E5%9B%9B%E8%A6%81%E7%B4%A0%E5%8F%A0%E5%8A%A0.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "社会工程学：人性的漏洞",
+  "url": "https://moxin1044.github.io/posts/9b2f/",
+  "image": "https://moxin1044.github.io/attachments/figSU1_%E5%9B%9B%E8%A6%81%E7%B4%A0%E5%8F%A0%E5%8A%A0.png",
+  "datePublished": "2026-10-16T20:25:00.000Z",
+  "dateModified": "2026-10-16T20:29:15.067Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/9b2f/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":true,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: true,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '社会工程学：人性的漏洞',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><script src="/js/bing-wallpaper.js"></script><script src="/js/cover.js"></script><link rel="stylesheet" href="/css/gitcalendar.css"><meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="末心的小博客" type="application/atom+xml">
+</head><body><div id="web_bg" style="background: linear-gradient(135deg, #eef4fc 0%, #e8eef8 48%, #eae6f6 100%);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">100</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">129</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">45</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/attachments/figSU1_%E5%9B%9B%E8%A6%81%E7%B4%A0%E5%8F%A0%E5%8A%A0.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">社会工程学：人性的漏洞</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">社会工程学：人性的漏洞</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-10-16T20:25:00.000Z" title="发表于 2026-10-17 04:25:00">2026-10-17</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-10-16T20:29:15.067Z" title="更新于 2026-10-17 04:29:15">2026-10-17</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AE%89%E5%85%A8/">安全</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AE%89%E5%85%A8/%E7%A4%BE%E4%BC%9A%E5%B7%A5%E7%A8%8B%E5%AD%A6/">社会工程学</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">3k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>8分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/attachments/figSU1_%E5%9B%9B%E8%A6%81%E7%B4%A0%E5%8F%A0%E5%8A%A0.png);"></div><article class="container post-content" id="article-container"><p>在网络安全领域，我们习惯于寻找漏洞。</p>
+<p>一个开放的端口、一段存在缺陷的代码、一个配置错误的服务，都可能成为入口。我们通过扫描、审计、测试和修复，不断缩小技术系统中那些可以被利用的薄弱环节。</p>
+<p>但如果一个系统没有明显的技术漏洞呢？</p>
+<p>服务器经过加固，身份认证已经启用，安全设备持续运行，日志也在被实时监控。此时，一个人收到了一封看似正常的工作邮件，接到了一个自称来自管理部门的电话，或者面对一项要求立即完成的任务。</p>
+<p>他没有破解密码，没有绕过防火墙，也没有执行任何看起来明显危险的操作。他只是相信了某个身份，接受了一个解释，并按照自己认为合理的方式完成了工作。</p>
+<p>问题可能就从这里开始。</p>
+<p>把这类事件归结为安全意识不足是最省事的做法，也是最没有用的一种。它的潜台词是：只要员工足够谨慎、足够专业，就能避免。但现实中的人不是始终保持高度警觉的分析仪器。我们依赖经验理解世界，依赖信任维持协作，也会在时间压力和信息不完整的情况下作出判断。这些能力让日常生活得以正常运转，却不意味着每一次判断都能得到正确的结果。</p>
+<p>社会工程学研究的，就是人与信息、信任和行为之间的关系。它提醒我们，安全风险不只存在于代码和配置之中，也可能存在于一个请求被接受、一项身份被相信、一次异常被忽略的过程里。</p>
+<h2 id="「人性的漏洞」这个说法指的是什么"><a href="#「人性的漏洞」这个说法指的是什么" class="headerlink" title="「人性的漏洞」这个说法指的是什么"></a>「人性的漏洞」这个说法指的是什么</h2><p>这三个字容易被误读，先把它说清楚。</p>
+<p>它不是指人天生脆弱。上面那些机制，在日常生活里每一条都在正常工作，而且是必要的。如果人不能凭经验快速判断、不能对熟悉的人放松警惕，日常协作根本无法进行。</p>
+<p>它也不是用来归咎受害者的。一次事件成立，往往需要好几个条件同时满足，其中大部分条件不在当事人手里。</p>
+<p>真正值得研究的，是这几个条件的叠加方式。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSU1_四要素叠加.png" alt="图一 一次事件是怎么叠加出来的"></p>
+<p>一次看起来合理的决定，通常由四个东西叠出来：当事人的认知机制、对方按他处境设计的信息、当时的紧迫情境，以及组织流程里的缺口。写成一句话：</p>
+<script type="math/tex; mode=display">\text{事件成立} = f(\text{认知机制},\ \text{被设计的信息},\ \text{紧迫的情境},\ \text{流程的缺口})</script><blockquote>
+<p>说人话：四个条件里去掉任何一个，事件都很难发生。只有第一个在人身上，而且它本身没有坏。</p>
+</blockquote>
+<p>这个拆法有一个实际用处：它把「加强安全意识」从一个笼统的口号，变成了四个可以分别动手的位置。</p>
+<h2 id="十条常被借用的机制"><a href="#十条常被借用的机制" class="headerlink" title="十条常被借用的机制"></a>十条常被借用的机制</h2><p>下面这 10 条按它借用的东西分成 4 组。分组的意义在于，同一条防线常常可以同时挡住一组里的好几条。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSU2_十条机制分四组.png" alt="图二 十条机制分四组"></p>
+<h3 id="第一组：对损失的回避"><a href="#第一组：对损失的回避" class="headerlink" title="第一组：对损失的回避"></a>第一组：对损失的回避</h3><h4 id="恐惧心理"><a href="#恐惧心理" class="headerlink" title="恐惧心理"></a>恐惧心理</h4><p>生活里很常见。收到一条短信说银行卡即将被冻结，第一反应是担心钱出问题，于是急着按提示操作。短信里的链接指向一个仿冒登录页，域名和真实的只差 1 个字符。</p>
+<p>放到安全场景里，冒充银行、平台客服或者企业管理人员，说账号异常、账户即将停用，目的就是让人从「先核实」跳到「先处理」。</p>
+<p>这条机制压缩的是核验时间。对损失的担忧一旦上来，核实这一步就被排到了后面，甚至被当成耽误事。</p>
+<h4 id="紧迫感"><a href="#紧迫感" class="headerlink" title="紧迫感"></a>紧迫感</h4><p>促销页面挂着倒计时，人担心错过，没看完条款就付了款。工作里也一样，「10 分钟内处理」「马上停号」「今天 18:00 前必须完成」，这些话的作用是取消比较的过程。</p>
+<p>时间压力真正影响的不是判断力，是可用的判断时间。人在被压缩到只有一条路可走的时候，选择本身就消失了。</p>
+<h3 id="第二组：对收益的期待"><a href="#第二组：对收益的期待" class="headerlink" title="第二组：对收益的期待"></a>第二组：对收益的期待</h3><h4 id="贪小便宜"><a href="#贪小便宜" class="headerlink" title="贪小便宜"></a>贪小便宜</h4><p>免费领取、扫码领红包、内部员工专享，这些说法的共同点是收益在前面、代价在后面，而且代价那一栏是空的。</p>
+<p>安全场景里，仿冒的抽奖会要求填个人信息、授权第三方应用，或者下载所谓的领奖软件。人关注的是奖品，那些授权在这一刻看起来只是流程。</p>
+<h4 id="好奇心理"><a href="#好奇心理" class="headerlink" title="好奇心理"></a>好奇心理</h4><p>群聊里出现「看看谁被曝光了」「这份名单里有你」，附件只有 200 KB，即使不认识发送者，也有人会点开。好奇心是探索世界的动力，但它不区分信息的来源。</p>
+<p>这条机制压缩的是操作前的停顿。对结果的期待会让人先点开，再考虑该不该点。</p>
+<h4 id="虚荣与认同需求"><a href="#虚荣与认同需求" class="headerlink" title="虚荣与认同需求"></a>虚荣与认同需求</h4><p>希望被看见、被认可，这本身很正常。问题在于，虚假的奖励机制专门对着这一点设计：专属认证、荣誉称号、稀缺资格，让人为了拿到一个称号主动填写本不必要的资料。</p>
+<p>这类场景里，被利用的是接受条件的意愿。人对「被选中」的状态会放松标准。</p>
+<h3 id="第三组：对社会信号的依赖"><a href="#第三组：对社会信号的依赖" class="headerlink" title="第三组：对社会信号的依赖"></a>第三组：对社会信号的依赖</h3><h4 id="从众心理"><a href="#从众心理" class="headerlink" title="从众心理"></a>从众心理</h4><p>看到群里 30 多个人都在转发同一条通知，就默认内容是真的。信息不足的时候，参考别人的行为是合理的做法，问题在于，行为本身不构成真实性证据。</p>
+<p>伪造起来也不难。一个群、几条附和、一个「大家都已完成」的说法，就够了。</p>
+<h4 id="权威心理"><a href="#权威心理" class="headerlink" title="权威心理"></a>权威心理</h4><p>职位、专业头衔、制服和正式措辞，都会影响判断。头像和昵称被换成领导的样子，在企业微信里发来一条消息要求立即处理一项特殊事务，接听的人往往因为担心影响工作而不敢质疑。</p>
+<p>这一条的核心是用对权威的尊重替代了一次独立的身份核验，而身份本身是可以被声称的。冒充 IT 运维人员索取账号信息或 MFA 验证码，用的就是这一点。</p>
+<h4 id="信任与互惠"><a href="#信任与互惠" class="headerlink" title="信任与互惠"></a>信任与互惠</h4><p>人际关系依赖互相帮助，但帮助请求本身不天然可信。有人先帮你解决一个小问题，之后提出一个看起来顺理成章的额外请求，你不好意思拒绝。</p>
+<p>安全场景里，冒充熟人或者同事，以借用账号、代收验证码、临时处理文件为由，要求越过正常流程。「帮我收一下验证码，我手机在会议室」这类说法很常见。被利用的是人情压力，它盖过了「这个请求本身合不合理」这个问题。</p>
+<h3 id="第四组：对省力的默认"><a href="#第四组：对省力的默认" class="headerlink" title="第四组：对省力的默认"></a>第四组：对省力的默认</h3><h4 id="懒惰与认知省力"><a href="#懒惰与认知省力" class="headerlink" title="懒惰与认知省力"></a>懒惰与认知省力</h4><p>更准确的说法是：人倾向于采用省力的判断方式，这跟性格上的懒惰不是一回事。多个网站用同一个密码，软件权限说明直接点同意，浏览器报证书异常点继续，都是同一个原因。</p>
+<p>省力本身是合理的策略，一天要做几百个决定，不可能每个都展开分析。问题在于，安全相关的决定恰好是那种一旦省力就容易出事的类型。</p>
+<h4 id="侥幸心理"><a href="#侥幸心理" class="headerlink" title="侥幸心理"></a>侥幸心理</h4><p>一个密码用了 3 年没换，但觉得自己账号里没什么重要东西；系统提示更新拖了半年，但觉得不会刚好轮到自己。</p>
+<p>侥幸不是无知，它是主观概率的偏差。人对自己身上发生坏事的概率估计普遍偏低，于是防护措施被一次次推迟。这一条最安静，也最难通过培训改变，因为它在平时确实是对的。</p>
+<h2 id="把这十条连起来看"><a href="#把这十条连起来看" class="headerlink" title="把这十条连起来看"></a>把这十条连起来看</h2><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSU3_核心机制汇总.png" alt="图三 十条机制各自压缩了什么"></p>
+<p>十条机制表面上各不相同，把它们的核心机制摆在一起，压缩的东西其实只有三样：核验的时间、可用的注意力、独立判断的空间。</p>
+<p>十条里有九条，最后都是让核验这一步没有发生，或者发生了但只剩下形式。这句话对防守方是有用的：与其逐条去记这十种心理，不如盯住一件事，核验在哪一步被取消了。</p>
+<h2 id="为什么这不是性格问题"><a href="#为什么这不是性格问题" class="headerlink" title="为什么这不是性格问题"></a>为什么这不是性格问题</h2><p>有几点需要说明，否则这套分析容易变成对人的指责。</p>
+<p>每条机制在正常生活里都是有用的。相信权威让组织能运转，互惠让协作能持续，省力让一天几百个决定变得可行，对损失的敏感让人避开真正的危险。它们被利用，是因为攻击者把这些机制对准了一个具体的动作，而不是因为这些机制本身有问题。</p>
+<p>单条机制通常不足以致事。真正出事的时候，往往是两三条叠在一起：恐惧加上紧迫感，让人没时间核验；从众加上权威，让人不需要核验；省力加上侥幸，让人推迟核验。前面那张四要素的图说的就是这个。</p>
+<p>所以「这个人不够谨慎」这个结论既不公平，也没什么用。它解释不了为什么同一个谨慎的人在其他场合判断得很好，也指不出下一次该改哪里。</p>
+<h2 id="四个可以动手的地方"><a href="#四个可以动手的地方" class="headerlink" title="四个可以动手的地方"></a>四个可以动手的地方</h2><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSU4_四个干预点.png" alt="图四 对应四个要素的干预点"></p>
+<p>对应前面那四个要素，有四个位置可以动。</p>
+<p>认知机制这一层，能做的是把临场判断换成事先定好的动作。规则在忙的时候也能执行，判断不能。这是个人能自己做主的部分。</p>
+<p>信息这一层，把正规入口写死：只用内部系统、只用官方域名。凡是绕开入口来的，一律回到入口重来。</p>
+<p>情境这一层，定一条时间压力规则：越急的请求越要复核。「十分钟内处理」这句话本身就应当是一条拦下来的理由，而不是加快的理由。</p>
+<p>流程这一层，把核验写成一个必填动作，而不是可选项。关键操作安排双人复核，第二个人独立看材料，不看前一个人的结论。</p>
+<p>这四层里，越往下越有效，也越不依赖个人的记性。培训当然要继续做，但要清楚它管的是第一层，后面三层得靠组织去设计。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>回到最开始那个问题：当正常的认知机制遇上经过设计的信息、紧迫的情境和存在缺陷的管理流程时，为什么一个看似合理的决定，也可能成为安全链条中最薄弱的一环？</p>
+<p>因为「合理」是在那些条件下算出来的。信息是对方按你的处境挑过的，时间是当时被压出来的，流程是没有给核验留位置的。在这些条件里，当事人做的每一个判断都是正常的，合起来的结果却不是。</p>
+<p>所谓人性的漏洞，说的是这件事。它不是人的错，但它确实是攻击面，而且是技术加固之后剩下的那一片。</p>
+<p>理解这一点，比记住这 10 个名字更重要。名字会忘，这个拆法可以拿来改流程。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/9b2f/">https://moxin1044.github.io/posts/9b2f/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%A4%BE%E4%BC%9A%E5%B7%A5%E7%A8%8B%E5%AD%A6/">社会工程学</a><a class="post-meta__tags" href="/tags/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8%E6%84%8F%E8%AF%86/">信息安全意识</a><a class="post-meta__tags" href="/tags/%E8%AE%A4%E7%9F%A5%E5%81%8F%E5%B7%AE/">认知偏差</a><a class="post-meta__tags" href="/tags/%E5%BF%83%E7%90%86%E5%AD%A6/">心理学</a><a class="post-meta__tags" href="/tags/%E5%AE%89%E5%85%A8%E7%AE%A1%E7%90%86/">安全管理</a></div><div class="post-share"><div class="social-share" data-image="/attachments/figSU1_%E5%9B%9B%E8%A6%81%E7%B4%A0%E5%8F%A0%E5%8A%A0.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/posts/5d17/" title="社会工程学：人为什么会忽略安全警告"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSW1_%E7%9F%A5%E9%81%93%E5%88%B0%E5%81%9A%E5%88%B0%E7%9A%84%E6%96%AD%E7%82%B9.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">社会工程学：人为什么会忽略安全警告</div></div><div class="info-2"><div class="info-item-1">公司今年做了两次安全意识培训。第二次的考试，小李考了 96 分，还剩 4 分扣在一道关于附件的多选题上。 同一个月的某天上午，他在会议室里听汇报，手机上收到一条提醒，说他的身份验证令牌今天到期，需要重新绑定一下。他点开了。 事后他自己也说不清为什么。他知道这类提醒可能是伪造的，考试里那道类似的题他做对了，培训上讲过的案例他还记得。 这就是本文要回答的问题：知道风险存在，为什么仍然可能做出不安全的选择？ 知道和做到之间隔着四步把这件事拆开看，从「知道有风险」到「做出动作」，中间有四个环节。  第一步是知道这个风险。这一步是培训能覆盖的部分，也是唯一能被考试测出来的部分。 后面三步都是条件问题。当时的场景里有没有想起来；想起来了会不会被别的东西压住；判断的时候依据对不对；判断本身有没有足够的注意力支撑。 四个断点里，第二个最容易在事后被当成道德问题。「他明知道还这么做」，听起来像不在乎。实际上更常见的情况是，在当时那几秒钟里，另一个东西的分量更大：客户在等答复、领导站在旁边、手上三件事同时到期。 四个断点合起来可以写成一句话： \text{是否做出不安全的选择} = f(\text{...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/posts/7d3e/" title="社会工程学：提问的艺术"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-17</div><div class="info-item-2">社会工程学：提问的艺术</div></div><div class="info-2"><div class="info-item-1">下面这段对话一共 6 轮，从头到尾没出现过任何敏感词。  对方：您好，我是集团 IT 服务中心的，最近在做一次网络设备清点。您这边是行政前台吧？前台：对，是我。对方：麻烦帮我确认一下，你们 3 号楼机柜上的路由器是什么型号？上面应该贴了标签。前台：这个我不清楚，得问我们网管。对方：没关系。那您能把网管的联系方式给我吗？我们系统里登记的那个好像过期了。前台：他姓王，电话我找一下……  从头到尾，没人问密码，没人问内网地址，没人问系统名称。前台也没有被威胁、被催促，甚至觉得帮了个小忙。 但对方拿到了 2 样东西：网管的姓氏和电话。再叠上前面那句「办公区机柜上有路由器、上面贴了标签」，一个外部的人就已经知道该找谁、怎么开口了。 这就是社会工程学里提问的基本形态：用问题引导，让对方自己说。  图里右边那一列，是每一轮对话之后对方手上多了什么。可以看到信息是分三轮给出的，每一轮比上一轮更靠近他真正想拿的东西。 信息是怎么在对话里流动的要理解这件事，得先接受一个事实：对话里双方都在补充信息，只是目的不同。 接电话的前台想的是「帮他把事情办完」，提问题的人想的是「这段对话能换来什么」。两个人都...</div></div></div></a><a class="pagination-related" href="/posts/2c9a/" title="社会工程学：信任是如何被建立的"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figST1_%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E5%B1%82.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-17</div><div class="info-item-2">社会工程学：信任是如何被建立的</div></div><div class="info-2"><div class="info-item-1">一个人站在机房门口。工牌是对的，制服是对的，说辞也对得上流程，还顺口提了一句 8 月中旬来装过空调。保安登记了一下，前后 4 分钟，放他进去了。 事后查出来，工牌是印的，制服是网上买的，流程是他自己打听来的。 这类事情里，最容易被忽略的地方在于：那个请求从头到尾都很合理。他没有提任何奇怪的要求，没有催，没有吓人，也没有说错话。他做的只是让自己看起来像那么个人，然后提了一个在这个场景下本来就该被提出来的请求。 所以核心问题是这样的：为什么一个看起来合理的请求，不一定是一个可信的请求？ 合理不等于可信要回答这个问题，得先看清一个请求里其实有两层信息。  业务层回答的是：这件事本身说得通吗。资产盘点、系统升级、合同归档、设备巡检，这些都是真实存在的流程，一个外部的人只要稍微了解这行的常识，就能把话说得像模像样。 身份层回答的是另外两个问题：提这件事的人，是他说的那个人吗；这件事情，该不该由他提。 这两层可以写成一句话： \text{一个请求} = \text{事情（说得通吗）} + \text{来源（是他吗、有资格提吗）} 说人话：一件事合不合理，和提这件事的人是谁，是两套互不相干的判...</div></div></div></a><a class="pagination-related" href="/posts/5d17/" title="社会工程学：人为什么会忽略安全警告"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSW1_%E7%9F%A5%E9%81%93%E5%88%B0%E5%81%9A%E5%88%B0%E7%9A%84%E6%96%AD%E7%82%B9.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-17</div><div class="info-item-2">社会工程学：人为什么会忽略安全警告</div></div><div class="info-2"><div class="info-item-1">公司今年做了两次安全意识培训。第二次的考试，小李考了 96 分，还剩 4 分扣在一道关于附件的多选题上。 同一个月的某天上午，他在会议室里听汇报，手机上收到一条提醒，说他的身份验证令牌今天到期，需要重新绑定一下。他点开了。 事后他自己也说不清为什么。他知道这类提醒可能是伪造的，考试里那道类似的题他做对了，培训上讲过的案例他还记得。 这就是本文要回答的问题：知道风险存在，为什么仍然可能做出不安全的选择？ 知道和做到之间隔着四步把这件事拆开看，从「知道有风险」到「做出动作」，中间有四个环节。  第一步是知道这个风险。这一步是培训能覆盖的部分，也是唯一能被考试测出来的部分。 后面三步都是条件问题。当时的场景里有没有想起来；想起来了会不会被别的东西压住；判断的时候依据对不对；判断本身有没有足够的注意力支撑。 四个断点里，第二个最容易在事后被当成道德问题。「他明知道还这么做」，听起来像不在乎。实际上更常见的情况是，在当时那几秒钟里，另一个东西的分量更大：客户在等答复、领导站在旁边、手上三件事同时到期。 四个断点合起来可以写成一句话： \text{是否做出不安全的选择} = f(\text{...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">100</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">129</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">45</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="/atom.xml" target="_blank" title="RSS"><i class="fas fa-rss" style="color: #f26522;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E3%80%8C%E4%BA%BA%E6%80%A7%E7%9A%84%E6%BC%8F%E6%B4%9E%E3%80%8D%E8%BF%99%E4%B8%AA%E8%AF%B4%E6%B3%95%E6%8C%87%E7%9A%84%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">1.</span> <span class="toc-text">「人性的漏洞」这个说法指的是什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E6%9D%A1%E5%B8%B8%E8%A2%AB%E5%80%9F%E7%94%A8%E7%9A%84%E6%9C%BA%E5%88%B6"><span class="toc-number">2.</span> <span class="toc-text">十条常被借用的机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E7%BB%84%EF%BC%9A%E5%AF%B9%E6%8D%9F%E5%A4%B1%E7%9A%84%E5%9B%9E%E9%81%BF"><span class="toc-number">2.1.</span> <span class="toc-text">第一组：对损失的回避</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%81%90%E6%83%A7%E5%BF%83%E7%90%86"><span class="toc-number">2.1.1.</span> <span class="toc-text">恐惧心理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%B4%A7%E8%BF%AB%E6%84%9F"><span class="toc-number">2.1.2.</span> <span class="toc-text">紧迫感</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E7%BB%84%EF%BC%9A%E5%AF%B9%E6%94%B6%E7%9B%8A%E7%9A%84%E6%9C%9F%E5%BE%85"><span class="toc-number">2.2.</span> <span class="toc-text">第二组：对收益的期待</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%B4%AA%E5%B0%8F%E4%BE%BF%E5%AE%9C"><span class="toc-number">2.2.1.</span> <span class="toc-text">贪小便宜</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A5%BD%E5%A5%87%E5%BF%83%E7%90%86"><span class="toc-number">2.2.2.</span> <span class="toc-text">好奇心理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%99%9A%E8%8D%A3%E4%B8%8E%E8%AE%A4%E5%90%8C%E9%9C%80%E6%B1%82"><span class="toc-number">2.2.3.</span> <span class="toc-text">虚荣与认同需求</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E7%BB%84%EF%BC%9A%E5%AF%B9%E7%A4%BE%E4%BC%9A%E4%BF%A1%E5%8F%B7%E7%9A%84%E4%BE%9D%E8%B5%96"><span class="toc-number">2.3.</span> <span class="toc-text">第三组：对社会信号的依赖</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BB%8E%E4%BC%97%E5%BF%83%E7%90%86"><span class="toc-number">2.3.1.</span> <span class="toc-text">从众心理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9D%83%E5%A8%81%E5%BF%83%E7%90%86"><span class="toc-number">2.3.2.</span> <span class="toc-text">权威心理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BF%A1%E4%BB%BB%E4%B8%8E%E4%BA%92%E6%83%A0"><span class="toc-number">2.3.3.</span> <span class="toc-text">信任与互惠</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E5%9B%9B%E7%BB%84%EF%BC%9A%E5%AF%B9%E7%9C%81%E5%8A%9B%E7%9A%84%E9%BB%98%E8%AE%A4"><span class="toc-number">2.4.</span> <span class="toc-text">第四组：对省力的默认</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%87%92%E6%83%B0%E4%B8%8E%E8%AE%A4%E7%9F%A5%E7%9C%81%E5%8A%9B"><span class="toc-number">2.4.1.</span> <span class="toc-text">懒惰与认知省力</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BE%A5%E5%B9%B8%E5%BF%83%E7%90%86"><span class="toc-number">2.4.2.</span> <span class="toc-text">侥幸心理</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8A%8A%E8%BF%99%E5%8D%81%E6%9D%A1%E8%BF%9E%E8%B5%B7%E6%9D%A5%E7%9C%8B"><span class="toc-number">3.</span> <span class="toc-text">把这十条连起来看</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E4%B8%8D%E6%98%AF%E6%80%A7%E6%A0%BC%E9%97%AE%E9%A2%98"><span class="toc-number">4.</span> <span class="toc-text">为什么这不是性格问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E4%B8%AA%E5%8F%AF%E4%BB%A5%E5%8A%A8%E6%89%8B%E7%9A%84%E5%9C%B0%E6%96%B9"><span class="toc-number">5.</span> <span class="toc-text">四个可以动手的地方</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-number">6.</span> <span class="toc-text">结语</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/9b2f/" title="社会工程学：人性的漏洞"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSU1_%E5%9B%9B%E8%A6%81%E7%B4%A0%E5%8F%A0%E5%8A%A0.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="社会工程学：人性的漏洞"></a><div class="content"><a class="title" href="/posts/9b2f/" title="社会工程学：人性的漏洞">社会工程学：人性的漏洞</a><time datetime="2026-10-16T20:25:00.000Z" title="发表于 2026-10-17 04:25:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/5d17/" title="社会工程学：人为什么会忽略安全警告"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSW1_%E7%9F%A5%E9%81%93%E5%88%B0%E5%81%9A%E5%88%B0%E7%9A%84%E6%96%AD%E7%82%B9.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="社会工程学：人为什么会忽略安全警告"></a><div class="content"><a class="title" href="/posts/5d17/" title="社会工程学：人为什么会忽略安全警告">社会工程学：人为什么会忽略安全警告</a><time datetime="2026-10-16T20:08:00.000Z" title="发表于 2026-10-17 04:08:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/2c9a/" title="社会工程学：信任是如何被建立的"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figST1_%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E5%B1%82.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="社会工程学：信任是如何被建立的"></a><div class="content"><a class="title" href="/posts/2c9a/" title="社会工程学：信任是如何被建立的">社会工程学：信任是如何被建立的</a><time datetime="2026-10-16T19:50:00.000Z" title="发表于 2026-10-17 03:50:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/7d3e/" title="社会工程学：提问的艺术"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="社会工程学：提问的艺术"></a><div class="content"><a class="title" href="/posts/7d3e/" title="社会工程学：提问的艺术">社会工程学：提问的艺术</a><time datetime="2026-10-16T19:37:00.000Z" title="发表于 2026-10-17 03:37:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/fe2b/" title="飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figFD1_%E4%B8%89%E4%B8%AA%E5%8F%82%E6%95%B0%E5%8F%AA%E6%A0%A1%E9%AA%8C%E4%B8%80%E4%B8%AA.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计"></a><div class="content"><a class="title" href="/posts/fe2b/" title="飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计">飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计</a><time datetime="2026-10-16T17:00:00.000Z" title="发表于 2026-10-17 01:00:00">2026-10-17</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/gitcalendar.js"></script><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
