@@ -1,0 +1,403 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>社会工程学：信任是如何被建立的 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一个看起来合理的请求，为什么不一定是一个可信的请求？本文拆开一个请求里的业务层与身份层，分析权威、互惠、熟悉感和过往合作这四条线索是怎么在几秒钟内把信任建立起来的，并用一段贴近日常的对话逐轮标注线索出现的位置，最后给出核验要做的三件事。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="社会工程学：信任是如何被建立的">
+<meta property="og:url" content="https://moxin1044.github.io/posts/2c9a/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="一个看起来合理的请求，为什么不一定是一个可信的请求？本文拆开一个请求里的业务层与身份层，分析权威、互惠、熟悉感和过往合作这四条线索是怎么在几秒钟内把信任建立起来的，并用一段贴近日常的对话逐轮标注线索出现的位置，最后给出核验要做的三件事。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/figST1_%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E5%B1%82.png">
+<meta property="article:published_time" content="2026-10-16T19:50:00.000Z">
+<meta property="article:modified_time" content="2026-10-16T19:52:36.156Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="互惠">
+<meta property="article:tag" content="信任">
+<meta property="article:tag" content="信息安全意识">
+<meta property="article:tag" content="权威">
+<meta property="article:tag" content="社会工程学">
+<meta property="article:tag" content="认知偏差">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/figST1_%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E5%B1%82.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "社会工程学：信任是如何被建立的",
+  "url": "https://moxin1044.github.io/posts/2c9a/",
+  "image": "https://moxin1044.github.io/attachments/figST1_%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E5%B1%82.png",
+  "datePublished": "2026-10-16T19:50:00.000Z",
+  "dateModified": "2026-10-16T19:52:36.156Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/2c9a/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":true,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: true,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '社会工程学：信任是如何被建立的',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><script src="/js/bing-wallpaper.js"></script><script src="/js/cover.js"></script><link rel="stylesheet" href="/css/gitcalendar.css"><meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="末心的小博客" type="application/atom+xml">
+</head><body><div id="web_bg" style="background: linear-gradient(135deg, #eef4fc 0%, #e8eef8 48%, #eae6f6 100%);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">98</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">124</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">45</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/attachments/figST1_%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E5%B1%82.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">社会工程学：信任是如何被建立的</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">社会工程学：信任是如何被建立的</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-10-16T19:50:00.000Z" title="发表于 2026-10-17 03:50:00">2026-10-17</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-10-16T19:52:36.156Z" title="更新于 2026-10-17 03:52:36">2026-10-17</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AE%89%E5%85%A8/">安全</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AE%89%E5%85%A8/%E7%A4%BE%E4%BC%9A%E5%B7%A5%E7%A8%8B%E5%AD%A6/">社会工程学</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">3.8k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>10分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/attachments/figST1_%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E5%B1%82.png);"></div><article class="container post-content" id="article-container"><p>一个人站在机房门口。工牌是对的，制服是对的，说辞也对得上流程，还顺口提了一句 8 月中旬来装过空调。保安登记了一下，前后 4 分钟，放他进去了。</p>
+<p>事后查出来，工牌是印的，制服是网上买的，流程是他自己打听来的。</p>
+<p>这类事情里，最容易被忽略的地方在于：那个请求从头到尾都很合理。他没有提任何奇怪的要求，没有催，没有吓人，也没有说错话。他做的只是让自己看起来像那么个人，然后提了一个在这个场景下本来就该被提出来的请求。</p>
+<p>所以核心问题是这样的：为什么一个看起来合理的请求，不一定是一个可信的请求？</p>
+<h2 id="合理不等于可信"><a href="#合理不等于可信" class="headerlink" title="合理不等于可信"></a>合理不等于可信</h2><p>要回答这个问题，得先看清一个请求里其实有两层信息。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figST1_请求的两层.png" alt="图一 一个请求里的两层信息"></p>
+<p>业务层回答的是：这件事本身说得通吗。资产盘点、系统升级、合同归档、设备巡检，这些都是真实存在的流程，一个外部的人只要稍微了解这行的常识，就能把话说得像模像样。</p>
+<p>身份层回答的是另外两个问题：提这件事的人，是他说的那个人吗；这件事情，该不该由他提。</p>
+<p>这两层可以写成一句话：</p>
+<script type="math/tex; mode=display">\text{一个请求} = \text{事情（说得通吗）} + \text{来源（是他吗、有资格提吗）}</script><blockquote>
+<p>说人话：一件事合不合理，和提这件事的人是谁，是两套互不相干的判断。把前面那一套的答案，当成后面那一套的答案，就会出错。</p>
+</blockquote>
+<p>出错的机制很清楚。判断业务层的成本很低，1 到 2 秒就能完成：我听说过资产盘点这回事，所以这个请求听起来正常。判断身份层的成本高得多，要换个渠道、要打电话、要花几分钟，还可能让对方觉得你不信任他。</p>
+<p>于是人自然选择了便宜的那条路。</p>
+<p>下面这 5 行把常被混用的判断列在一起。左边一栏是你在对话里真正看到的东西，中间是它确实能说明的事，右边是它说明不了的事。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>你看到的</th>
+<th>它说明什么</th>
+<th>它说明不了什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>说辞合理</td>
+<td>这件事确实存在</td>
+<td>提出这件事的人，就是他说的那个人</td>
+</tr>
+<tr>
+<td>头衔对得上</td>
+<td>这个岗位确实有</td>
+<td>他就在这个岗位上</td>
+</tr>
+<tr>
+<td>名字听过</td>
+<td>这个单位确实有这个人</td>
+<td>跟你说话的就是他本人</td>
+</tr>
+<tr>
+<td>流程说得对</td>
+<td>流程本身没有问题</td>
+<td>这一次是按流程走的</td>
+</tr>
+<tr>
+<td>上次办过</td>
+<td>上次确实办成了</td>
+<td>这次跟前一次是同一件事</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>这 5 行的规律是一样的：左边一栏都能被伪造，因为要伪造它们只需要知道一些公开的常识。右边一栏只能靠核验拿到，因为核验要花时间和人情。</p>
+<h2 id="信任最常从-4-条线索上被借走"><a href="#信任最常从-4-条线索上被借走" class="headerlink" title="信任最常从 4 条线索上被借走"></a>信任最常从 4 条线索上被借走</h2><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figST2_四条线索.png" alt="图二 信任最常从四条线索上被借走"></p>
+<h3 id="权威：职位和专业身份"><a href="#权威：职位和专业身份" class="headerlink" title="权威：职位和专业身份"></a>权威：职位和专业身份</h3><p>头衔最大的作用，是替对方把核验这一步省掉。</p>
+<p>「我是总部信息中心的」「我是这次审计组的」「平台方的技术对接人」，这几句话一出来，听的人脑子里那条线就从「他凭什么问我」切到了「我该怎么配合他」。这跟人是不是愚蠢没有关系。日常生活里岗位和职责确实是挂钩的，我们只是把这条经验直接搬到了这段对话里。</p>
+<p>专业身份比头衔更管用。信息中心的人问电脑型号、财务的人问发票编号、法务的人问合同条款，这些搭配听起来天然合理。专业身份自带一层豁免：他本来就该知道这些，所以问他显得多余，不配合反而显得你外行。</p>
+<p>问题在于，这些身份都只是说法。工牌可以印，邮箱签名可以改，制服可以买，工作群里那句「我是新来的对接人」也可以随便谁说。判断一个专业身份，看的是他能不能拿出一条来自组织内部的证据，比如一个能在系统里查到的工单号，一处能对上的内部编号。</p>
+<h3 id="互惠：先把东西给出去"><a href="#互惠：先把东西给出去" class="headerlink" title="互惠：先把东西给出去"></a>互惠：先把东西给出去</h3><p>互惠的常见做法是先给一点小的好处，再提要求。</p>
+<p>「我帮你查了一下，你们那台设备确实快到期了」「这个风险我提前跟你们说一声，免得你们被点名」，这些话在听的人这边都记了一笔。等对方开口要东西的时候，你欠的那点人情会参与决策。</p>
+<p>还有一种更隐蔽的互惠：对方替你把事情办了。前面那句话里的「我已经跟你们主管打过招呼了」，就是这种。他替你做了一件本该由你做的事，你除了配合，不好再说什么。</p>
+<p>互惠本身是正常的社交习惯，同事之间每天都在互相帮忙。它的风险在于，帮忙这个动作的成本极低，而人情带来的压力很实在。</p>
+<h3 id="熟悉感：熟人关系为什么更难防"><a href="#熟悉感：熟人关系为什么更难防" class="headerlink" title="熟悉感：熟人关系为什么更难防"></a>熟悉感：熟人关系为什么更难防</h3><p>熟悉感是 4 条里最容易被低估的 1 条，因为它不带任何压迫感。</p>
+<p>「我同事上周去过你们那儿」「咱们在一个群里」「我是张工介绍我来的」，三句话里的任何一句，都能让一段陌生的对话变得像续上了前文。人对熟人的默认值是信任，所以熟悉感的作用是让你觉得不需要被说服，它并不会去说服你。</p>
+<p>这里有两种常见的借用方式。</p>
+<p>一种是直接冒充。账号被拿到之后，用真人真名发消息，这时候连熟悉感都是真的，只是坐在对面的人换了。</p>
+<p>另一种是转述。我是张工介绍来的、李经理让我找你、你们领导让我跟你对接。这类关系的共同点是：被提到的第三个人全程没有参与对话。关系链推理里有一个默认规则需要写清楚，你同事的同事不是你的同事，你领导认识的人也不是你领导。</p>
+<h3 id="先例：过往合作"><a href="#先例：过往合作" class="headerlink" title="先例：过往合作"></a>先例：过往合作</h3><p>先例起作用的方式是让核验显得多余。</p>
+<p>「上次也是这么走的」「一直是这个流程」「之前那个对接人也是这么让我发的」，这几句话把这次请求接到了上一次成功上。上一次平安无事，于是这一次也不必细查。</p>
+<p>先例的逻辑漏洞在于：上一次顺利，说明的是上一次没有人查过，或者上一次查了但没查出来。它没有说明这一次没有问题。一个稳定的攻击面往往就是这么形成的，第一次没人拦，后面就都按第一次的规矩来办。</p>
+<p>反过来，这也说明第一次的价值。第一次把核验做扎实，后面所有的后续请求会被同一套标准约束着。</p>
+<h2 id="拆解一段对话"><a href="#拆解一段对话" class="headerlink" title="拆解一段对话"></a>拆解一段对话</h2><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figST3_对话逐轮拆解.png" alt="图三 一段对话里线索是怎么一层层加上去的"></p>
+<p>下面这段对话一共 8 轮，从接起电话到答应配合，全程没有一句强硬的话。对方最后要的是一份合同的首页编号。</p>
+<blockquote>
+<p>对方：喂，是财务的小陈吗？我是总部信息中心的，姓李。上周你们报过一台电脑蓝屏，我同事去过。<br>小陈：哦，好像是有。<br>对方：集团在做资产盘点，你们部门那几台机器的采购信息我这边对不上，想跟你核一下。<br>小陈：可以，你问吧。<br>对方：那你能帮我拍一下合同首页的编号吗？我这边要做个台账。<br>小陈：这个我要不要跟我们主管说一声？<br>对方：方主管那边我刚刚打过招呼了，他说让你配合一下就行。下午要给审计。<br>小陈：行，你稍等。</p>
+</blockquote>
+<p>逐轮看线索的出现位置。</p>
+<p>第 1 轮同时上了两条。身份是权威（总部信息中心），理由是熟悉感（上周报修过一台电脑，我同事去过）。那件报修的小事多半是真的，正因为是真的，它比任何编造的话都更像证据。</p>
+<p>第 2 轮的「好像是有」是关键一步。小陈没有确认，也没有否认，只是顺着接了下去。到这儿，双方在这段对话里的关系已经被认下来了：我们是打过交道的。</p>
+<p>第 3 轮把请求放到了业务层。「资产盘点」是一件真事，而且跟财务的职责天然相关，所以这个请求听起来完全正常。注意这一轮里没有人提身份，也没人要求身份被核验。</p>
+<p>第 4 轮的「可以，你问吧」，是在身份没有核验的前提下直接进了业务。这一步走得非常自然，因为上一轮已经把话题切换到公事上了。</p>
+<p>第 5 轮开始要东西。对方把请求切得很小：不是要合同，不是要整份文件，只是拍一张首页的编号。单看这件事，它确实不像敏感信息。这是这类对话里最值得注意的技术动作，把一个较大的索取拆成看起来无害的一小步。</p>
+<p>第 6 轮是全段里唯一一次核验。小陈的直觉是对的，她问了一句要不要跟主管说一声。到这一步，只要她真的去打那个电话，整段对话就停了。</p>
+<p>第 7 轮的处理方式就是前面说的互惠加权威背书，再加上时间压力。「方主管那边我刚刚打过招呼了」这句话同时做了三件事：替小陈完成了核验、把主管也拉进来当背书、让小陈再去问一次显得多余。后面那句「下午要给审计」把选择范围进一步压窄，从「要不要给」变成了「现在给还是马上给」。</p>
+<p>第 8 轮就是结果了。核验被一句话挡回去，然后没有再回来。</p>
+<p>这段对话里没有任何一处是编得很拙劣的。它之所以能走完，是因为每一步都踩在正常的社交反应上。</p>
+<h2 id="为什么会这样"><a href="#为什么会这样" class="headerlink" title="为什么会这样"></a>为什么会这样</h2><p>前面这些机制，日常生活里本来就在用，只是它们的指向换了一下。</p>
+<p>认知捷径。 判断一个人可不可信，在原始环境里靠的是长期相处，成本很高。于是大脑发展出一套便宜的替代指标：头衔、熟脸、口音、圈子。这套指标在大部分时候是准的，所以它一直被用着。社会工程学做的事情，是直接伪造这些替代指标本身。</p>
+<p>权威偏误。 人在面对权威时，会把判断责任往外转移。1961 年的米尔格拉姆服从实验是这方面最常被引用的研究，它说明的是普通人在指令下会做出自己本来不会做的事。放到日常场景里，这条偏误表现为：对方一报身份，我们问「为什么」的意愿就下降了。</p>
+<p>互惠规范。 收到好处之后想回报，是社会能运转的基础之一，几乎是本能的。这条规范不管好处是怎么来的，也不管给好处的人打的什么主意。</p>
+<p>承诺一致。 一个人前面顺着答了几句话，后面拒绝起来就费力。小陈承认了自己是行政前台、承认了报修那件事，到第 6 轮想停下的时候，前面几轮已经在给她施加惯性了。</p>
+<p>单纯曝光效应。 听过一次的名字，会比完全陌生的名字更容易让人产生好感。名字、单位、工号这种碎片，只要重复出现过一次，就会被记成「我好像知道这个人」。</p>
+<p>这些机制都是正常心理功能，不是缺陷。需要调整的地方在于：它们是关于人的判断，而我们需要的是关于请求的判断。两件事的判断依据不一样。</p>
+<h2 id="核验要做-3-件事"><a href="#核验要做-3-件事" class="headerlink" title="核验要做 3 件事"></a>核验要做 3 件事</h2><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figST4_核验三个动作.png" alt="图四 核验要做三件事"></p>
+<p>回到开头那个问题，落地到具体动作上是 3 步。</p>
+<p>第一，换个渠道回拨。不要用对方提供给你的号码、链接或者二维码。从内部通讯录、工单系统里找，或者当面问一句。这个过程大概花 2 分钟，但它把判断身份这件事从对方手里拿回到自己手里。</p>
+<p>第二，检查权限匹配。这件事该不该由他来做？总部信息中心核采购台账、财务对接合同编号、审计组查设备清单，这些搭配需要能对上。如果对不上，单是这一个理由就够停下来了。</p>
+<p>第三，把事和人拆开。事情合理，只说明这件事存在；要单独回答的是提这件事的人有没有资格提、走没走正规流程。这两句话在心里拆成两个格子，前面那些线索的作用就会小很多。</p>
+<p>这套动作背后的道理可以写成一句话：</p>
+<script type="math/tex; mode=display">\text{请求被接受的可能} = f(\text{线索有多显眼},\ \text{核验有多麻烦})</script><blockquote>
+<p>说人话：线索越显眼、核验越麻烦，请求就越容易被接受。反过来，把核验变简单，就是最省事的防线。</p>
+</blockquote>
+<p>有几句话可以直接用。</p>
+<p>「这个我需要先核实一下，稍后回复您。」</p>
+<p>「麻烦您把需求发到我们的服务邮箱，走工单我来跟进。」</p>
+<p>「您那边工单号是多少？我这边登记一下。」</p>
+<p>这几句的共同点是把核验的成本挪回给提出请求的一方。真正的同事和合作方遇到这种回复，基本不会有情绪，走一遍流程就是了。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>回到核心问题：为什么一个看起来合理的请求，不一定是一个可信的请求？</p>
+<p>因为「合理」说的是事情，「可信」说的是人。事情可以从公开信息里拼出来，人也一样可以被包装成那个样子。两者需要的判断依据不同，成本也不同，而人在赶时间的时候会选便宜的那个。</p>
+<p>把判断改过来只需要一句话：这件事说得通，跟这个人该不该提这件事，是两回事。前一句你能在几秒钟内判断，后一句需要你花几分钟去核验。</p>
+<p>需要核验的那部分，才是真正决定要不要答应的部分。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/2c9a/">https://moxin1044.github.io/posts/2c9a/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%A4%BE%E4%BC%9A%E5%B7%A5%E7%A8%8B%E5%AD%A6/">社会工程学</a><a class="post-meta__tags" href="/tags/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8%E6%84%8F%E8%AF%86/">信息安全意识</a><a class="post-meta__tags" href="/tags/%E8%AE%A4%E7%9F%A5%E5%81%8F%E5%B7%AE/">认知偏差</a><a class="post-meta__tags" href="/tags/%E4%BF%A1%E4%BB%BB/">信任</a><a class="post-meta__tags" href="/tags/%E6%9D%83%E5%A8%81/">权威</a><a class="post-meta__tags" href="/tags/%E4%BA%92%E6%83%A0/">互惠</a></div><div class="post-share"><div class="social-share" data-image="/attachments/figST1_%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E5%B1%82.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/posts/7d3e/" title="社会工程学：提问的艺术"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">社会工程学：提问的艺术</div></div><div class="info-2"><div class="info-item-1">下面这段对话一共 6 轮，从头到尾没出现过任何敏感词。  对方：您好，我是集团 IT 服务中心的，最近在做一次网络设备清点。您这边是行政前台吧？前台：对，是我。对方：麻烦帮我确认一下，你们 3 号楼机柜上的路由器是什么型号？上面应该贴了标签。前台：这个我不清楚，得问我们网管。对方：没关系。那您能把网管的联系方式给我吗？我们系统里登记的那个好像过期了。前台：他姓王，电话我找一下……  从头到尾，没人问密码，没人问内网地址，没人问系统名称。前台也没有被威胁、被催促，甚至觉得帮了个小忙。 但对方拿到了 2 样东西：网管的姓氏和电话。再叠上前面那句「办公区机柜上有路由器、上面贴了标签」，一个外部的人就已经知道该找谁、怎么开口了。 这就是社会工程学里提问的基本形态：用问题引导，让对方自己说。  图里右边那一列，是每一轮对话之后对方手上多了什么。可以看到信息是分三轮给出的，每一轮比上一轮更靠近他真正想拿的东西。 信息是怎么在对话里流动的要理解这件事，得先接受一个事实：对话里双方都在补充信息，只是目的不同。 接电话的前台想的是「帮他把事情办完」，提问题的人想的是「这段对话能换来什么」。两个人都...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/posts/7d3e/" title="社会工程学：提问的艺术"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-17</div><div class="info-item-2">社会工程学：提问的艺术</div></div><div class="info-2"><div class="info-item-1">下面这段对话一共 6 轮，从头到尾没出现过任何敏感词。  对方：您好，我是集团 IT 服务中心的，最近在做一次网络设备清点。您这边是行政前台吧？前台：对，是我。对方：麻烦帮我确认一下，你们 3 号楼机柜上的路由器是什么型号？上面应该贴了标签。前台：这个我不清楚，得问我们网管。对方：没关系。那您能把网管的联系方式给我吗？我们系统里登记的那个好像过期了。前台：他姓王，电话我找一下……  从头到尾，没人问密码，没人问内网地址，没人问系统名称。前台也没有被威胁、被催促，甚至觉得帮了个小忙。 但对方拿到了 2 样东西：网管的姓氏和电话。再叠上前面那句「办公区机柜上有路由器、上面贴了标签」，一个外部的人就已经知道该找谁、怎么开口了。 这就是社会工程学里提问的基本形态：用问题引导，让对方自己说。  图里右边那一列，是每一轮对话之后对方手上多了什么。可以看到信息是分三轮给出的，每一轮比上一轮更靠近他真正想拿的东西。 信息是怎么在对话里流动的要理解这件事，得先接受一个事实：对话里双方都在补充信息，只是目的不同。 接电话的前台想的是「帮他把事情办完」，提问题的人想的是「这段对话能换来什么」。两个人都...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">98</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">124</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">45</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="/atom.xml" target="_blank" title="RSS"><i class="fas fa-rss" style="color: #f26522;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%88%E7%90%86%E4%B8%8D%E7%AD%89%E4%BA%8E%E5%8F%AF%E4%BF%A1"><span class="toc-number">1.</span> <span class="toc-text">合理不等于可信</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BF%A1%E4%BB%BB%E6%9C%80%E5%B8%B8%E4%BB%8E-4-%E6%9D%A1%E7%BA%BF%E7%B4%A2%E4%B8%8A%E8%A2%AB%E5%80%9F%E8%B5%B0"><span class="toc-number">2.</span> <span class="toc-text">信任最常从 4 条线索上被借走</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9D%83%E5%A8%81%EF%BC%9A%E8%81%8C%E4%BD%8D%E5%92%8C%E4%B8%93%E4%B8%9A%E8%BA%AB%E4%BB%BD"><span class="toc-number">2.1.</span> <span class="toc-text">权威：职位和专业身份</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%92%E6%83%A0%EF%BC%9A%E5%85%88%E6%8A%8A%E4%B8%9C%E8%A5%BF%E7%BB%99%E5%87%BA%E5%8E%BB"><span class="toc-number">2.2.</span> <span class="toc-text">互惠：先把东西给出去</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%86%9F%E6%82%89%E6%84%9F%EF%BC%9A%E7%86%9F%E4%BA%BA%E5%85%B3%E7%B3%BB%E4%B8%BA%E4%BB%80%E4%B9%88%E6%9B%B4%E9%9A%BE%E9%98%B2"><span class="toc-number">2.3.</span> <span class="toc-text">熟悉感：熟人关系为什么更难防</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%88%E4%BE%8B%EF%BC%9A%E8%BF%87%E5%BE%80%E5%90%88%E4%BD%9C"><span class="toc-number">2.4.</span> <span class="toc-text">先例：过往合作</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8B%86%E8%A7%A3%E4%B8%80%E6%AE%B5%E5%AF%B9%E8%AF%9D"><span class="toc-number">3.</span> <span class="toc-text">拆解一段对话</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E8%BF%99%E6%A0%B7"><span class="toc-number">4.</span> <span class="toc-text">为什么会这样</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B8%E9%AA%8C%E8%A6%81%E5%81%9A-3-%E4%BB%B6%E4%BA%8B"><span class="toc-number">5.</span> <span class="toc-text">核验要做 3 件事</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-number">6.</span> <span class="toc-text">结语</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/2c9a/" title="社会工程学：信任是如何被建立的"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figST1_%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E5%B1%82.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="社会工程学：信任是如何被建立的"></a><div class="content"><a class="title" href="/posts/2c9a/" title="社会工程学：信任是如何被建立的">社会工程学：信任是如何被建立的</a><time datetime="2026-10-16T19:50:00.000Z" title="发表于 2026-10-17 03:50:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/7d3e/" title="社会工程学：提问的艺术"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="社会工程学：提问的艺术"></a><div class="content"><a class="title" href="/posts/7d3e/" title="社会工程学：提问的艺术">社会工程学：提问的艺术</a><time datetime="2026-10-16T19:37:00.000Z" title="发表于 2026-10-17 03:37:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/fe2b/" title="飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figFD1_%E4%B8%89%E4%B8%AA%E5%8F%82%E6%95%B0%E5%8F%AA%E6%A0%A1%E9%AA%8C%E4%B8%80%E4%B8%AA.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计"></a><div class="content"><a class="title" href="/posts/fe2b/" title="飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计">飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计</a><time datetime="2026-10-16T17:00:00.000Z" title="发表于 2026-10-17 01:00:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/fe1a/" title="飞秋（FeiQ）3.0.0.2 协议缺陷分析：设备名册伪造与消息缓冲残留"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figFQ1_%E6%8A%A5%E6%96%87%E7%BB%93%E6%9E%84%E4%B8%8E%E5%85%B3%E9%94%AE%E5%AD%97%E6%AE%B5.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="飞秋（FeiQ）3.0.0.2 协议缺陷分析：设备名册伪造与消息缓冲残留"></a><div class="content"><a class="title" href="/posts/fe1a/" title="飞秋（FeiQ）3.0.0.2 协议缺陷分析：设备名册伪造与消息缓冲残留">飞秋（FeiQ）3.0.0.2 协议缺陷分析：设备名册伪造与消息缓冲残留</a><time datetime="2026-10-16T07:32:00.000Z" title="发表于 2026-10-16 15:32:00">2026-10-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/f0a3/" title="用 Python 从零实现一个 SSH 蜜罐"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figHP1_%E8%9C%9C%E7%BD%90%E7%BB%93%E6%9E%84.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="用 Python 从零实现一个 SSH 蜜罐"></a><div class="content"><a class="title" href="/posts/f0a3/" title="用 Python 从零实现一个 SSH 蜜罐">用 Python 从零实现一个 SSH 蜜罐</a><time datetime="2026-10-16T03:45:00.000Z" title="发表于 2026-10-16 11:45:00">2026-10-16</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/gitcalendar.js"></script><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
