@@ -1,0 +1,371 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>用 Python 从零实现一个 SSH 蜜罐 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一个能记下爆破用户名、口令和来源 IP 的 SSH 蜜罐。重点在两头：怎么让它在容器里安全地跑，以及经过转发之后怎么把真实来源 IP 拿回来。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="用 Python 从零实现一个 SSH 蜜罐">
+<meta property="og:url" content="https://moxin1044.github.io/posts/f0a3/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="一个能记下爆破用户名、口令和来源 IP 的 SSH 蜜罐。重点在两头：怎么让它在容器里安全地跑，以及经过转发之后怎么把真实来源 IP 拿回来。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/figHP1_%E8%9C%9C%E7%BD%90%E7%BB%93%E6%9E%84.png">
+<meta property="article:published_time" content="2026-10-15T23:05:00.000Z">
+<meta property="article:modified_time" content="2026-10-15T23:04:48.578Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="Docker">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="SSH">
+<meta property="article:tag" content="安全加固">
+<meta property="article:tag" content="蜜罐">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/figHP1_%E8%9C%9C%E7%BD%90%E7%BB%93%E6%9E%84.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "用 Python 从零实现一个 SSH 蜜罐",
+  "url": "https://moxin1044.github.io/posts/f0a3/",
+  "image": "https://moxin1044.github.io/attachments/figHP1_%E8%9C%9C%E7%BD%90%E7%BB%93%E6%9E%84.png",
+  "datePublished": "2026-10-15T23:05:00.000Z",
+  "dateModified": "2026-10-15T23:04:48.578Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/f0a3/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":true,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: true,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '用 Python 从零实现一个 SSH 蜜罐',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><script src="/js/lolia.js"></script><link rel="stylesheet" href="/css/gitcalendar.css"><meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="末心的小博客" type="application/atom+xml">
+</head><body><div id="web_bg" style="background: linear-gradient(135deg, #eef4fc 0%, #e8eef8 48%, #eae6f6 100%);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">94</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">108</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">43</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/attachments/figHP1_%E8%9C%9C%E7%BD%90%E7%BB%93%E6%9E%84.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">用 Python 从零实现一个 SSH 蜜罐</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">用 Python 从零实现一个 SSH 蜜罐</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-10-15T23:05:00.000Z" title="发表于 2026-10-16 07:05:00">2026-10-16</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-10-15T23:04:48.578Z" title="更新于 2026-10-16 07:04:48">2026-10-16</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AE%89%E5%85%A8/">安全</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AE%89%E5%85%A8/%E8%9C%9C%E7%BD%90/">蜜罐</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">2.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>8分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/attachments/figHP1_%E8%9C%9C%E7%BD%90%E7%BB%93%E6%9E%84.png);"></div><article class="container post-content" id="article-container"><p>把一台机器的 SSH 端口放到公网上，过不了多久日志里就会开始有东西。半夜的登录失败、来自好几个国家的地址、每隔十几秒试一次。你不需要去惹谁，扫描器本来就在全网扫这个端口。</p>
+<p>这些尝试绝大多数是无差别的，但里面有信息。它们猜哪些用户名、用什么口令、进去以后第一件事做什么。把这些记下来，比一条条翻 sshd 日志有意思得多。</p>
+<p>这篇文章写一个能记这些东西的蜜罐。功能本身不复杂，值得花时间想清楚的是另外两件事：怎么保证它什么都不会真的执行，以及经过转发之后怎么把来源 IP 拿回来。</p>
+<h2 id="先定清楚要拿到什么"><a href="#先定清楚要拿到什么" class="headerlink" title="先定清楚要拿到什么"></a>先定清楚要拿到什么</h2><p>三样是基本盘：用户名、口令、来源 IP。再加两样进阶的：登录成功后执行的命令、客户端的版本串。版本串能认出对方用的是什么工具，有时候比口令本身更能说明问题。</p>
+<p>整个数据流是这样：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figHP1_蜜罐结构.png" alt="图一 蜜罐的组成与数据流"></p>
+<p>图一 蜜罐的组成与数据流。攻击流量进到容器里，能走的最远一步就是被记录。</p>
+<h2 id="一个反直觉的决定：口令一律放行"><a href="#一个反直觉的决定：口令一律放行" class="headerlink" title="一个反直觉的决定：口令一律放行"></a>一个反直觉的决定：口令一律放行</h2><p>正常的服务遇到错口令要拒绝，蜜罐反过来，全部接受。</p>
+<p>原因在 SSH 的认证机制：一次连接只提交一组凭证。爆破工具的做法是连一次、试一组、断开、再连。所以两种策略拿到的数据完全不同。</p>
+<p>一律拒绝的话，每次连接只能记下一组凭证，而且永远看不到认证成功之后发生了什么。一律接受的话，每次连接同样记一组凭证，工具试完整份字典，我们就拿到整份字典；同时还多了一条通道，能进到会话里看它接下来干什么。</p>
+<p>放行的代价是得自己实现一个假 shell，不能让对方真的登进任何东西。这是下一节的事。</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">check_auth_password</span>(<span class="params">self, username, password</span>):</span><br><span class="line">    <span class="variable language_">self</span>.meta[<span class="string">"username"</span>] = username</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="variable language_">self</span>.log.write(<span class="built_in">type</span>=<span class="string">"auth"</span>, method=<span class="string">"password"</span>,</span><br><span class="line">                       password=password, **<span class="variable language_">self</span>.meta)</span><br><span class="line">    <span class="keyword">except</span> Exception:</span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line">    <span class="keyword">if</span> <span class="variable language_">self</span>.table:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="variable language_">self</span>.table.add(<span class="variable language_">self</span>.meta.get(<span class="string">"src_ip"</span>, <span class="string">"?"</span>), username, password)</span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line">    <span class="keyword">return</span> paramiko.AUTH_SUCCESSFUL</span><br></pre></td></tr></tbody></table></figure>
+<p>这段里有个容易写漏的地方：日志和表格的写入都包了 try 除错。蜜罐的核心职责是永远接受并记录，磁盘写满、权限不对这类意外不该让它拒绝认证，那等于自己把自己关掉了。我第一版忘了包，结果一次参数重复就抛异常、认证直接失败，客户端看到的是连接被断开，而表面上蜜罐还在正常运行。</p>
+<h2 id="假-shell：难点在于看起来对"><a href="#假-shell：难点在于看起来对" class="headerlink" title="假 shell：难点在于看起来对"></a>假 shell：难点在于看起来对</h2><p>认证过了要给对方一个 shell。这里要盯住的是怎么保证它什么都不会真的执行。</p>
+<p>原则很简单，所有回显都是写死的字符串。没有 os.system，没有 subprocess，没有 eval，不碰真实文件系统，不实现 SFTP 和 SCP 子系统，对方传文件会直接失败。整个程序不派生任何子进程，这条性质让「它只可能输出这些字符串」变成一个可以断言的事实，而不是靠代码审查去赌。</p>
+<p>内置的命令按对方关心的顺序排，先是身份和配置，再是下载：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">answer</span>(<span class="params">cmd</span>):</span><br><span class="line">    low = cmd.strip().lower()</span><br><span class="line">    <span class="keyword">if</span> low <span class="keyword">in</span> (<span class="string">"id"</span>, <span class="string">"whoami"</span>) <span class="keyword">or</span> low.startswith(<span class="string">"id "</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"uid=0(root) gid=0(root) groups=0(root)"</span>, <span class="literal">False</span></span><br><span class="line">    <span class="keyword">if</span> low.startswith(<span class="string">"uname"</span>):</span><br><span class="line">        <span class="keyword">return</span> FAKE_KERNEL, <span class="literal">False</span></span><br><span class="line">    <span class="keyword">if</span> low.startswith(<span class="string">"nproc"</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"2"</span>, <span class="literal">False</span></span><br><span class="line">    <span class="keyword">if</span> low.startswith(<span class="string">"wget"</span>) <span class="keyword">or</span> low.startswith(<span class="string">"curl"</span>):</span><br><span class="line">        <span class="keyword">return</span> FAKE_WGET_OUTPUT, <span class="literal">False</span></span><br><span class="line">    <span class="keyword">if</span> low <span class="keyword">in</span> (<span class="string">"exit"</span>, <span class="string">"logout"</span>, <span class="string">"quit"</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="string">""</span>, <span class="literal">True</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">""</span>, <span class="literal">False</span></span><br></pre></td></tr></tbody></table></figure>
+<p>最后一行是个刻意的选择。未知命令返回空，而不是 <code>bash: xxx: command not found</code>。后者会让对方意识到环境不对，直接断开走人；空输出更像一条正常的、只是没有输出的命令，会话能继续下去，我们也就多收几条命令。</p>
+<p><code>wget</code> 那条也有讲究：假回显写成下载成功，而不是失败。对方下载不成往往就撤了，回一个成功它才愿意继续走到 <code>chmod +x</code> 和执行那一步，那才是真正想看的东西。</p>
+<h2 id="用容器把风险关起来"><a href="#用容器把风险关起来" class="headerlink" title="用容器把风险关起来"></a>用容器把风险关起来</h2><p>蜜罐是一个主动邀请攻击者进来的服务，这决定了它比普通服务更需要隔离。Docker 的默认配置不够，得显式收紧：</p>
+<figure class="highlight yaml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">read_only:</span> <span class="literal">true</span>                     <span class="comment"># 根文件系统只读</span></span><br><span class="line"><span class="attr">tmpfs:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">/tmp:size=16m,mode=1777</span></span><br><span class="line"><span class="attr">cap_drop:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">ALL</span>                             <span class="comment"># 一个 capability 都不给</span></span><br><span class="line"><span class="attr">security_opt:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="literal">no</span><span class="string">-new-privileges:true</span>          <span class="comment"># 禁止提权</span></span><br><span class="line"><span class="attr">user:</span> <span class="string">"1000:1000"</span>                   <span class="comment"># 非 root</span></span><br><span class="line"><span class="attr">pids_limit:</span> <span class="number">256</span></span><br><span class="line"><span class="attr">mem_limit:</span> <span class="string">256m</span></span><br><span class="line"><span class="attr">cpus:</span> <span class="number">1.0</span></span><br></pre></td></tr></tbody></table></figure>
+<p>逐条说为什么。</p>
+<p>根文件系统设成只读。攻击者即使在容器里找到办法写文件，也没地方写。确实需要写的两个目录单独挂出来，其余全部只读。</p>
+<p>丢弃全部 capability。这一条能成立，前提是蜜罐监听一个大于 1024 的端口，用不上 CAP_NET_BIND_SERVICE。换成一个必须绑 22 端口的实现，就得把这个能力加回来，隔离性直接降一档。这也是我一开始就选高端口的原因。</p>
+<p>进程以非 root 身份跑，并且把容器内的 uid 对齐宿主机用户。这样挂出来的日志和表格在宿主机上属主就是登录用户本人，不用 sudo 就能直接打开看。</p>
+<p>资源和进程数都设上限。蜜罐会吸引大量连接，这两个限制是防止别人拿它把你的宿主机拖垮。程序自身再加一层并发上限，超过就直接断开，不让队列堆起来。</p>
+<p>只挂两个目录，产出的目录和主机密钥。其余一律不碰宿主机。</p>
+<p>还有一件事不在配置里，在代码里：主机密钥由容器入口用 <code>ssh-keygen</code> 生成，而不是让 Python 程序自己生成。这样程序仍然保持着不派生任何进程的性质。</p>
+<h2 id="两份产出"><a href="#两份产出" class="headerlink" title="两份产出"></a>两份产出</h2><p>一份全量事件日志，一行一个 JSON，连接、认证、命令、断开都记，留给分析脚本。另一份是实时表格，四列，可以直接用表格软件打开：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>IP</th>
+<th>用户名</th>
+<th>密码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>203.0.113.10</td>
+<td>root</td>
+<td>123456</td>
+</tr>
+<tr>
+<td>2</td>
+<td>198.51.100.22</td>
+<td>admin</td>
+<td>admin888</td>
+</tr>
+<tr>
+<td>3</td>
+<td>192.0.2.77</td>
+<td>oracle</td>
+<td>oracle123</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>每来一次认证尝试就追加一行并立即刷盘，表格软件里刷新一下就能看到新记录。序号在程序重启之后接着往下数，不会重头来。文件开头写 UTF-8 BOM，中文列名在 Excel 和 WPS 里打开不会乱码。</p>
+<h2 id="一个容易漏掉的坑：转发之后-IP-就不是攻击者的了"><a href="#一个容易漏掉的坑：转发之后-IP-就不是攻击者的了" class="headerlink" title="一个容易漏掉的坑：转发之后 IP 就不是攻击者的了"></a>一个容易漏掉的坑：转发之后 IP 就不是攻击者的了</h2><p>这是我实测里踩到的。</p>
+<p>蜜罐如果放在端口转发或者反向代理后面，它看到的对端地址是转发器自己，而不是攻击者。在容器里还会再差一层，变成 Docker 网关地址。结果是成百上千个攻击者全被记成同一个 IP，而记录来源 IP 正是蜜罐的核心产出，这一列错了整份数据就没有意义。</p>
+<p>解法是 PROXY protocol。转发侧打开之后，真实来源地址会在 SSH 握手之前，以一个小包头先发过来，蜜罐在开始解析 SSH 之前把它读掉再往下走。逻辑大概二十行：</p>
+<figure class="highlight python"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">PROXY_V2_SIG = <span class="string">b"\r\n\r\n\x00\r\nQUIT\n"</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">maybe_proxy_v2</span>(<span class="params">sock</span>):</span><br><span class="line">    head = sock.recv(<span class="number">16</span>, socket.MSG_PEEK)</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(head) &lt; <span class="number">16</span> <span class="keyword">or</span> <span class="keyword">not</span> head.startswith(PROXY_V2_SIG):</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span>                      <span class="comment"># 不是 PROXY 头，正常连接，什么都不做</span></span><br><span class="line">    header = sock.recv(<span class="number">16</span>)</span><br><span class="line">    alen = (header[<span class="number">14</span>] &lt;&lt; <span class="number">8</span>) | header[<span class="number">15</span>]</span><br><span class="line">    body = <span class="string">b""</span></span><br><span class="line">    <span class="keyword">while</span> <span class="built_in">len</span>(body) &lt; alen:</span><br><span class="line">        body += sock.recv(alen - <span class="built_in">len</span>(body))</span><br><span class="line">    <span class="keyword">if</span> header[<span class="number">13</span>] == <span class="number">0x11</span>:               <span class="comment"># TCP over IPv4</span></span><br><span class="line">        <span class="keyword">return</span> socket.inet_ntoa(body[<span class="number">0</span>:<span class="number">4</span>]), (body[<span class="number">8</span>] &lt;&lt; <span class="number">8</span>) | body[<span class="number">9</span>]</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">None</span></span><br></pre></td></tr></tbody></table></figure>
+<p>用它的时候有个顺序问题必须注意：这段解析要在记录 connect 事件之前做完。我第一版是先记 connect 再剥头，结果汇总时「按 IP 排行」用的是转发器地址，而凭证明细里用的是真实地址，两份数据自己打自己。改完之后才对上。</p>
+<h2 id="实测"><a href="#实测" class="headerlink" title="实测"></a>实测</h2><p>跑一轮模拟爆破，23 条连接、20 次认证尝试、6 个来源地址、9 次进入会话、78 条命令。</p>
+<p>用户名猜得最多的是 root，口令是 123456：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figHP2_凭证分布.png" alt="图二 被尝试的用户名与口令分布"></p>
+<p>图二 被尝试的用户名与口令分布。这是无差别扫描的典型形状，不是针对谁，就是字典前几行。</p>
+<p>进到会话之后的命令集中在几类：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figHP3_命令分布.png" alt="图三 进入会话后执行的命令分布"></p>
+<p>图三 进入会话后执行的命令分布。</p>
+<p>先看 cpuinfo、nproc、free，确认机器配置；然后 wget 拉一个脚本、chmod 加执行位、跑起来。这是挖矿木马的标准动作序列，先判断这台机器值不值得占，再投载荷。我这版蜜罐的假回显里有 2 核和不到 2G 内存，按这个配置去挑目标的脚本，大概会继续往下走。</p>
+<h2 id="边界"><a href="#边界" class="headerlink" title="边界"></a>边界</h2><p>几件事得说清楚。</p>
+<p>蜜罐是观测手段，不是防护手段。装了这个不等于安全了，该关的口令登录、该上的密钥认证、该限制的访问来源，一个都不能省。它的价值在于让你知道外面在发生什么，而不是让外面进不来。</p>
+<p>抓到的用户名口令不要去别的机器上试。拿别人撞你的字典去撞第三方，性质就从防守变成撞库了。这一步跨过去，整件事的立场就反了。</p>
+<p>日志里会有别人的凭证明文。虽然都是攻击者自己发过来的，它终究是一份明文口令集合，别随手丢在公网可读的目录里。</p>
+<p>最后，别指望它替你挡掉什么。它只是一个很听话的记录器。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>一个能用的 SSH 蜜罐大概三百行：全部接受凭证、给一个写死回显的假 shell、把事件落成 JSONL 和实时表格。功能部分写起来很快，真正要反复确认的是两头，一头是它绝对不执行任何东西，另一头是来源 IP 确实拿到了攻击者的。这两条哪条没做到，剩下的都白记。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/f0a3/">https://moxin1044.github.io/posts/f0a3/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Python/">Python</a><a class="post-meta__tags" href="/tags/%E8%9C%9C%E7%BD%90/">蜜罐</a><a class="post-meta__tags" href="/tags/SSH/">SSH</a><a class="post-meta__tags" href="/tags/Docker/">Docker</a><a class="post-meta__tags" href="/tags/%E5%AE%89%E5%85%A8%E5%8A%A0%E5%9B%BA/">安全加固</a></div><div class="post-share"><div class="social-share" data-image="/attachments/figHP1_%E8%9C%9C%E7%BD%90%E7%BB%93%E6%9E%84.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/posts/7f3a/" title="高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figC1_%E8%AF%B7%E6%B1%82%E8%B7%AF%E5%BE%84%E4%B8%8E%E7%AD%89%E5%BE%85%E7%82%B9.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压</div></div><div class="info-2"><div class="info-item-1">一个 API 服务在低负载下跑得好好的。请求量涨上来，吞吐量跟着涨；再涨，吞吐量不动了，P99 开始往上爬。继续加压，超时、连接池耗尽、503 接连出现。 这时候最自然的反应是去调参数：线程数加一点，连接池开大一点，事件循环换个更快的实现。这些调整有时候确实管用，有时候只是把问题挪了个位置，还有时候会让情况更糟。 本文要回答的是一个前置问题：在动手之前，怎么知道瓶颈在哪一层。至于「参数该设多少」，那是找到瓶颈之后的事。为了让结论可检验，我在一台 4 核虚拟机上搭了一个模拟下游处理时间的服务，把连接池、并发度、worker 数、队列容量逐个拉出来单独改，记录每一次的吞吐量、延迟分位数、队列深度和错误码。文中所有数字都是这台机器上跑出来的，环境和复现脚本放在文末。 先说一个贯穿全文的结论，它由后面的实验支撑： 系统的容量由「能并行执行多少工作」乘以「每份工作多快」决定，这个数在你改代码之前就定死了。超过它的那些请求不会让系统做更多事，只会去某个队列里排队。而排队这件事，在平均响应时间这个指标上是看不出来的。 一、问题的本质：并发增加，为什么延迟反而越来越高？先看一组实测数字。服务端配...</div></div></div></a><a class="pagination-related" href="/posts/5b21/" title="一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figR1_%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">一次 read() 调用究竟经历了什么？从系统调用追踪 Linux 文件读取路径</div></div><div class="info-2"><div class="info-item-1">有个现象几乎人人都遇到过，但很少有人说清为什么会这样。 同一个文件，第一次读要几百毫秒，第二次读只要几十毫秒。time 命令给出的数字摆在那里，于是结论就写成了「第二次命中了页缓存」。 这个结论对不对？对。但它不是一个被证明的结论，只是一个被观察到的相关性。耗时短的原因有很多：磁盘刚好不忙、CPU 频率刚好上去了、别的进程刚好没抢内存。耗时是结果的投影，不是原因本身。 要真的证明「数据来自页缓存」，得拿出缓存层自己的计数。这篇文章就是把这件事做完整：先拆数据路径，再给出四类互相独立的证据，然后回答一个更实际的问题，这些证据能推出什么，推不出什么。 所有数据都来自一台真实的 KVM 虚拟机，本机实测，可复现。实验环境、程序源码和原始输出都在文末。 目录 第一章 一次 read() 的完整数据路径 第二章 用什么证明数据来自页缓存 第三章 冷读与热读的完整对照 第四章 read、mmap、O_DIRECT 的三条路径 第五章 一个意外发现：缺页次数不等于访问页数 第六章 证据能推出什么，推不出什么 第七章 实现：把分析沉淀成工具 第八章 一套可复用的诊断流程   第一章 一次 rea...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/posts/4c9e/" title="异步环境下的条件竞争：为什么单线程的协程也会有并发问题"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figA1_await%E6%98%AF%E6%8A%A2%E5%8D%A0%E7%82%B9.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-16</div><div class="info-item-2">异步环境下的条件竞争：为什么单线程的协程也会有并发问题</div></div><div class="info-2"><div class="info-item-1">先看一段代码。 123async def worker():    if counter is None:        counter = await load_counter() 这是异步项目里到处都是的写法：如果还没加载过，就加载一次。逻辑上无懈可击：先检查，再使用，顺序清楚。在没有并发的世界里，这段代码是正确的。 但把它放进事件循环，跑 16 个并发请求，实测结果是： 16 个请求全都执行了一遍 load_counter()。 不是偶尔，是每一轮。我把这个场景跑了 100 轮，0 轮出现「只加载一次」的期望行为。 这就是异步环境下的条件竞争。它和线程模型里的竞争有相同的内核（检查与使用之间被撕开），但产生方式完全不同：这里没有抢占式调度，没有多核，只有一个线程。真正的竞争者是同一线程里的另一个协程，趁你 await 的时候插了进来。 一、一个反直觉的事实：单线程也会有竞争asyncio 是单线程的。事件循环跑在一个线程里，所有协程都在这个线程上执行。既然只有一条执行流，为什么两个协程会互相干扰？ 答案在 await。 把「有没有 await」做成唯一变量，看两个任务的执行...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">94</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">108</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">43</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="/atom.xml" target="_blank" title="RSS"><i class="fas fa-rss" style="color: #f26522;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%88%E5%AE%9A%E6%B8%85%E6%A5%9A%E8%A6%81%E6%8B%BF%E5%88%B0%E4%BB%80%E4%B9%88"><span class="toc-number">1.</span> <span class="toc-text">先定清楚要拿到什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E4%B8%AA%E5%8F%8D%E7%9B%B4%E8%A7%89%E7%9A%84%E5%86%B3%E5%AE%9A%EF%BC%9A%E5%8F%A3%E4%BB%A4%E4%B8%80%E5%BE%8B%E6%94%BE%E8%A1%8C"><span class="toc-number">2.</span> <span class="toc-text">一个反直觉的决定：口令一律放行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%81%87-shell%EF%BC%9A%E9%9A%BE%E7%82%B9%E5%9C%A8%E4%BA%8E%E7%9C%8B%E8%B5%B7%E6%9D%A5%E5%AF%B9"><span class="toc-number">3.</span> <span class="toc-text">假 shell：难点在于看起来对</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8%E5%AE%B9%E5%99%A8%E6%8A%8A%E9%A3%8E%E9%99%A9%E5%85%B3%E8%B5%B7%E6%9D%A5"><span class="toc-number">4.</span> <span class="toc-text">用容器把风险关起来</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%A4%E4%BB%BD%E4%BA%A7%E5%87%BA"><span class="toc-number">5.</span> <span class="toc-text">两份产出</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E4%B8%AA%E5%AE%B9%E6%98%93%E6%BC%8F%E6%8E%89%E7%9A%84%E5%9D%91%EF%BC%9A%E8%BD%AC%E5%8F%91%E4%B9%8B%E5%90%8E-IP-%E5%B0%B1%E4%B8%8D%E6%98%AF%E6%94%BB%E5%87%BB%E8%80%85%E7%9A%84%E4%BA%86"><span class="toc-number">6.</span> <span class="toc-text">一个容易漏掉的坑：转发之后 IP 就不是攻击者的了</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E6%B5%8B"><span class="toc-number">7.</span> <span class="toc-text">实测</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BE%B9%E7%95%8C"><span class="toc-number">8.</span> <span class="toc-text">边界</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-number">9.</span> <span class="toc-text">小结</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/a1b2/" title="对 Dataman 的代码审计分析"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figDM4_%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="对 Dataman 的代码审计分析"></a><div class="content"><a class="title" href="/posts/a1b2/" title="对 Dataman 的代码审计分析">对 Dataman 的代码审计分析</a><time datetime="2026-10-16T13:00:00.000Z" title="发表于 2026-10-16 21:00:00">2026-10-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/4d7b/" title="同一个像素数，为什么小 CMOS 拍不清晰：单像素面积、衍射极限与通光孔径"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figC1_%E5%8D%95%E5%83%8F%E7%B4%A0%E9%9D%A2%E7%A7%AF.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="同一个像素数，为什么小 CMOS 拍不清晰：单像素面积、衍射极限与通光孔径"></a><div class="content"><a class="title" href="/posts/4d7b/" title="同一个像素数，为什么小 CMOS 拍不清晰：单像素面积、衍射极限与通光孔径">同一个像素数，为什么小 CMOS 拍不清晰：单像素面积、衍射极限与通光孔径</a><time datetime="2026-10-16T12:00:00.000Z" title="发表于 2026-10-16 20:00:00">2026-10-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/4c9e/" title="异步环境下的条件竞争：为什么单线程的协程也会有并发问题"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figA1_await%E6%98%AF%E6%8A%A2%E5%8D%A0%E7%82%B9.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="异步环境下的条件竞争：为什么单线程的协程也会有并发问题"></a><div class="content"><a class="title" href="/posts/4c9e/" title="异步环境下的条件竞争：为什么单线程的协程也会有并发问题">异步环境下的条件竞争：为什么单线程的协程也会有并发问题</a><time datetime="2026-10-16T12:00:00.000Z" title="发表于 2026-10-16 20:00:00">2026-10-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/7f3a/" title="高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figC1_%E8%AF%B7%E6%B1%82%E8%B7%AF%E5%BE%84%E4%B8%8E%E7%AD%89%E5%BE%85%E7%82%B9.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压"></a><div class="content"><a class="title" href="/posts/7f3a/" title="高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压">高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压</a><time datetime="2026-10-16T02:00:00.000Z" title="发表于 2026-10-16 10:00:00">2026-10-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/f0a3/" title="用 Python 从零实现一个 SSH 蜜罐"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figHP1_%E8%9C%9C%E7%BD%90%E7%BB%93%E6%9E%84.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="用 Python 从零实现一个 SSH 蜜罐"></a><div class="content"><a class="title" href="/posts/f0a3/" title="用 Python 从零实现一个 SSH 蜜罐">用 Python 从零实现一个 SSH 蜜罐</a><time datetime="2026-10-15T23:05:00.000Z" title="发表于 2026-10-16 07:05:00">2026-10-16</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/gitcalendar.js"></script><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
