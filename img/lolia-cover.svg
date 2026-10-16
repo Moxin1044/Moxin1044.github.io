@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- @Moxin1044 2026-10-15
-     缺省封面占位图。lolia.js 会在页面加载后把这张图换成随机的 Lolia 二次元图。
+     缺省封面占位图。cover.js 会在页面加载后把这张图换成随机的 Lolia 二次元图。
      JS 没跑起来时（禁用脚本、网络异常）就显示这个渐变，不会出现裂图。 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
   <defs>
