@@ -1,0 +1,445 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>社会工程学：提问的艺术 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="社会工程学里的提问，目的不是拿到一个答案，而是让对方在自然交流中主动说出信息。本文拆解提问的五个层次、四个技巧，用两段贴近日常的对话逐轮分析信息是怎么流出去的，并给出演练时该观察什么、以及日常遇到这类索取时该怎么核验和拒绝。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="社会工程学：提问的艺术">
+<meta property="og:url" content="https://moxin1044.github.io/posts/7d3e/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="社会工程学里的提问，目的不是拿到一个答案，而是让对方在自然交流中主动说出信息。本文拆解提问的五个层次、四个技巧，用两段贴近日常的对话逐轮分析信息是怎么流出去的，并给出演练时该观察什么、以及日常遇到这类索取时该怎么核验和拒绝。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png">
+<meta property="article:published_time" content="2026-10-16T19:37:00.000Z">
+<meta property="article:modified_time" content="2026-10-16T19:40:32.686Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="信息安全意识">
+<meta property="article:tag" content="提问">
+<meta property="article:tag" content="沟通">
+<meta property="article:tag" content="社会工程学">
+<meta property="article:tag" content="认知偏差">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "社会工程学：提问的艺术",
+  "url": "https://moxin1044.github.io/posts/7d3e/",
+  "image": "https://moxin1044.github.io/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png",
+  "datePublished": "2026-10-16T19:37:00.000Z",
+  "dateModified": "2026-10-16T19:40:32.686Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/7d3e/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":true,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: true,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '社会工程学：提问的艺术',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><script src="/js/bing-wallpaper.js"></script><script src="/js/cover.js"></script><link rel="stylesheet" href="/css/gitcalendar.css"><meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="末心的小博客" type="application/atom+xml">
+</head><body><div id="web_bg" style="background: linear-gradient(135deg, #eef4fc 0%, #e8eef8 48%, #eae6f6 100%);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">97</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">121</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">45</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">社会工程学：提问的艺术</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">社会工程学：提问的艺术</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-10-16T19:37:00.000Z" title="发表于 2026-10-17 03:37:00">2026-10-17</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-10-16T19:40:32.686Z" title="更新于 2026-10-17 03:40:32">2026-10-17</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AE%89%E5%85%A8/">安全</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AE%89%E5%85%A8/%E7%A4%BE%E4%BC%9A%E5%B7%A5%E7%A8%8B%E5%AD%A6/">社会工程学</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">4.5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>12分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png);"></div><article class="container post-content" id="article-container"><p>下面这段对话一共 6 轮，从头到尾没出现过任何敏感词。</p>
+<blockquote>
+<p>对方：您好，我是集团 IT 服务中心的，最近在做一次网络设备清点。您这边是行政前台吧？<br>前台：对，是我。<br>对方：麻烦帮我确认一下，你们 3 号楼机柜上的路由器是什么型号？上面应该贴了标签。<br>前台：这个我不清楚，得问我们网管。<br>对方：没关系。那您能把网管的联系方式给我吗？我们系统里登记的那个好像过期了。<br>前台：他姓王，电话我找一下……</p>
+</blockquote>
+<p>从头到尾，没人问密码，没人问内网地址，没人问系统名称。前台也没有被威胁、被催促，甚至觉得帮了个小忙。</p>
+<p>但对方拿到了 2 样东西：网管的姓氏和电话。再叠上前面那句「办公区机柜上有路由器、上面贴了标签」，一个外部的人就已经知道该找谁、怎么开口了。</p>
+<p>这就是社会工程学里提问的基本形态：用问题引导，让对方自己说。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSE3_一次对话的信息流.png" alt="图一 这段对话里信息是怎么流出去的"></p>
+<p>图里右边那一列，是每一轮对话之后对方手上多了什么。可以看到信息是分三轮给出的，每一轮比上一轮更靠近他真正想拿的东西。</p>
+<h2 id="信息是怎么在对话里流动的"><a href="#信息是怎么在对话里流动的" class="headerlink" title="信息是怎么在对话里流动的"></a>信息是怎么在对话里流动的</h2><p>要理解这件事，得先接受一个事实：对话里双方都在补充信息，只是目的不同。</p>
+<p>接电话的前台想的是「帮他把事情办完」，提问题的人想的是「这段对话能换来什么」。两个人都在正常说话，可两边记录下来的东西不一样。</p>
+<p>提问题的一方是有预算的。问一句话，可能换来信息，也可能让对方察觉你在打听。两边都要算：</p>
+<script type="math/tex; mode=display">\text{一次提问的净收益} = (\text{对方新说出的信息}) - (\text{你因此暴露的意图})</script><blockquote>
+<p>说人话：问一句话，你既可能拿到东西，也可能让对方起疑。所以问题要挑那种「听起来跟闲事一样、但其实有信息量」的。</p>
+</blockquote>
+<p>这条式子也解释了为什么水平高的提问者很少直接问。直接问「你们内网地址是多少」，信息量确实大，但意图也全暴露了，对方一句「你哪位」就把话题堵死了。反而是「我先问个小的、合理的」，意图暴露得少，信息还能一条条攒。</p>
+<p>信息在这类对话里通过 3 条路径流出去。</p>
+<p>第一条，问题本身提供了框架。你问「你们的安全工作是怎么做的」，对方的回答就会被这个问题框住：他会去讲制度、讲流程、讲工具，而不会想到「我为什么要跟你说这些」。问题的措辞，决定了对方从哪个抽屉里找答案。</p>
+<p>第二条，回答自带上下文。人回答问题的时候，往往顺手补上前因后果。问「路由器在哪」，答的可能是「在机柜里，不过那个锁的钥匙在网管手上」。「钥匙在网管手上」这句话没人问，是赠送的。</p>
+<p>第三条，核验成本被转嫁。正常沟通里，核验对方身份这件事默认由提问者负责，回答的人往往不承担。前台不需要先确认打电话的人是不是真在 IT 服务中心，她只需要确认这件事自己能不能办。这个默认，是整条链条里最省力的一环，也是最脆弱的一环。</p>
+<h2 id="提问的五个层次"><a href="#提问的五个层次" class="headerlink" title="提问的五个层次"></a>提问的五个层次</h2><p>提问可以分为 5 个层次，越往上，对方参与得越多，你拿到的东西性质也越不一样。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSE1_提问的五个层次.png" alt="图二 提问的五个层次"></p>
+<h3 id="第一层：封闭式提问"><a href="#第一层：封闭式提问" class="headerlink" title="第一层：封闭式提问"></a>第一层：封闭式提问</h3><p>目标：确认一个事实。</p>
+<p>「你们公司使用的是 Windows 系统吗？」</p>
+<p>对方只需要回答是或不是。这类问题适合快速确认，但连着问几个，对方容易觉得在被盘问。所以它的作用通常是收尾，用来验证前面聊出来的东西，而不是开场。</p>
+<h3 id="第二层：开放式提问"><a href="#第二层：开放式提问" class="headerlink" title="第二层：开放式提问"></a>第二层：开放式提问</h3><p>目标：让对方主动描述。</p>
+<p>「你们平时的办公环境和 IT 系统是怎么运作的？」</p>
+<p>这个问题没有预设答案，对方可以自己决定说哪些。他选择说什么、跳过了什么、先说哪一块，这些本身就是信息。开放式的另一个好处是气氛松，不容易引起警惕。</p>
+<h3 id="第三层：探索式提问"><a href="#第三层：探索式提问" class="headerlink" title="第三层：探索式提问"></a>第三层：探索式提问</h3><p>目标：挖细节和原因。</p>
+<p>「你刚才提到需要经过审批，通常是什么情况下会触发审批？」</p>
+<p>注意这里有个「你刚才提到」。这一层的关键是顺着对方自己刚说过的话往下问。因为话题是对方起的，他解释起来没有防备，也不会觉得被追问。</p>
+<h3 id="第四层：关联式提问"><a href="#第四层：关联式提问" class="headerlink" title="第四层：关联式提问"></a>第四层：关联式提问</h3><p>目标：理解信息之间的关系。</p>
+<p>「这个流程涉及哪些部门？如果其中一个环节出问题，通常由谁协调？」</p>
+<p>到这一层，你问的不再是单个事实，而是部门怎么衔接、谁对什么负责、哪里容易卡住。这些是组织内部的骨架，一般不写在对外材料里。</p>
+<h3 id="第五层：反思式提问"><a href="#第五层：反思式提问" class="headerlink" title="第五层：反思式提问"></a>第五层：反思式提问</h3><p>目标：了解判断依据和风险意识。</p>
+<p>「你觉得这个流程中，最容易出现误操作的环节是什么？为什么？」</p>
+<p>这一层对方往往会讲得最多，因为人被问到「你觉得」的时候，容易进入分享状态。他讲的是自己的判断、经验，顺带也把之前几层没说透的东西补完了。</p>
+<p>这 5 个层次不必按顺序走完，把它当成一条判断线就够了：现在该问多深，取决于对方刚才那句话说到了哪。</p>
+<h2 id="开放式提问的-4-个技巧"><a href="#开放式提问的-4-个技巧" class="headerlink" title="开放式提问的 4 个技巧"></a>开放式提问的 4 个技巧</h2><h3 id="用「什么、如何、为什么、哪些」代替「是不是」"><a href="#用「什么、如何、为什么、哪些」代替「是不是」" class="headerlink" title="用「什么、如何、为什么、哪些」代替「是不是」"></a>用「什么、如何、为什么、哪些」代替「是不是」</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>封闭式</th>
+<th>开放式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>你们有安全培训吗？</td>
+<td>你们平时是如何开展安全培训的？</td>
+</tr>
+<tr>
+<td>你们使用 MFA 吗？</td>
+<td>你们是如何管理账号登录和身份验证的？</td>
+</tr>
+<tr>
+<td>这个系统安全吗？</td>
+<td>你认为这个系统目前面临哪些安全挑战？</td>
+</tr>
+<tr>
+<td>出过安全事故吗？</td>
+<td>过去遇到过哪些值得复盘的安全问题？</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>左栏的问题只能换来是或不是，右栏的问题让对方有空间组织回答。同一件事，右边这种问法能拿到的东西多得多。</p>
+<h3 id="用漏斗式顺序，先宽泛再具体"><a href="#用漏斗式顺序，先宽泛再具体" class="headerlink" title="用漏斗式顺序，先宽泛再具体"></a>用漏斗式顺序，先宽泛再具体</h3><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSE2_漏斗式提问四步.png" alt="图三 漏斗式提问四步"></p>
+<p>第一步问全局，拿到全貌；第二步从对方提到的内容里挑一个聚焦；第三步问到具体的动作和判据；第四步问到纠错机制。</p>
+<p>这里要强调一点：每一步问什么，取决于上一步答了什么。 照着问题清单念，遇到答非所问就只能硬着头皮往下问，也问不出清单之外的东西。漏斗的价值不在四个问题本身，在它的顺序是活的。</p>
+<h3 id="学会沉默"><a href="#学会沉默" class="headerlink" title="学会沉默"></a>学会沉默</h3><p>提问之后，先把嘴闭上。</p>
+<blockquote>
+<p>提问：你认为目前最大的安全挑战是什么？<br>对方：可能是人员意识方面吧。<br>（停两秒）<br>对方：比如说钓鱼邮件，我们去年做过一次测试，点的人比预期多。<br>追问：那次测试之后你们改了什么？</p>
+</blockquote>
+<p>如果第一句回答完就急着接下一问，第二句就不会出现。人对沉默有点不适应，会本能地想填补空白，而填进去的往往才是真正想说的。同理，一次别抛好几个问题，对方只会挑最好答的那个回答。</p>
+<h3 id="追问事实，不要暗示答案"><a href="#追问事实，不要暗示答案" class="headerlink" title="追问事实，不要暗示答案"></a>追问事实，不要暗示答案</h3><blockquote>
+<p>带暗示的问法：你们是不是经常因为员工乱点邮件而出问题？<br>中性的追问：你提到邮件安全比较重要，能具体谈谈原因吗？</p>
+</blockquote>
+<p>上面那句把答案写在问题里了，对方顺着你点头就行，你拿到的是自己的猜测被复述了一遍。下面那句没有预设，对方得自己想，说出来的东西才可验证。</p>
+<h2 id="拆解一段办公室闲聊"><a href="#拆解一段办公室闲聊" class="headerlink" title="拆解一段办公室闲聊"></a>拆解一段办公室闲聊</h2><p>再来看一段日常场景。一个人刚入职 2 周，坐在隔壁工位，用的是 OA 上那个报销入口。</p>
+<blockquote>
+<p>新同事：王哥，问一下，咱们内网那个报销系统从哪个地址进？我 OA 里没找着入口。<br>老员工：你找张工开权限了吗？VPN 拨上之后应该能看到。<br>新同事：开了，他就让我自己找网址。<br>老员工：那你记一下，10 点开头的那个，走 ERP 那台机器，具体我一会儿微信发你。<br>新同事：行。对了，那系统是只有咱部门能用，还是全公司都能进？<br>老员工：全公司都能进。不过审批那块只有我们组有权限点。</p>
+</blockquote>
+<p>把这段对话拆成 6 轮来看。</p>
+<p>第 1 句问的是入口地址，理由充分（新来的找不到），要的东西很小。老员工没给地址，而是反问了一句「开权限了吗」。这一步其实是老员工在做核验，问的是流程走没走。</p>
+<p>新同事答「开了，张工让我自己找网址」。这句话的作用是把自己放进「走流程的人」这个位置，同时把张工搬出来当背书。到这里，老员工已经不再核验了。</p>
+<p>第 3 句老员工给了网段前缀（「10 点开头的那个」），并且承诺稍后发具体地址。前半句的信息是没人要求他给的，他为了让对方听懂，主动把网段特征说出来了。</p>
+<p>第 4 句是新同事真正想问的。前面 3 句搭好了「我在办正事」的氛围，这句权限问题就显得很自然。老员工答出了两件事：系统的访问范围是全公司，审批权限集中在他们组。</p>
+<p>这 6 轮下来，新同事要拼的画像已经差不多了：内网网段大致范围、一个内部系统的名字和用途、谁管权限、权限怎么分布。这些单独看都不算敏感，凑在一起就是一张内部结构图。</p>
+<p>这就是信息拼接。单个片段无害，是因为判断它有没有害需要上下文，而上下文在你手里。</p>
+<h2 id="为什么这些手法有效"><a href="#为什么这些手法有效" class="headerlink" title="为什么这些手法有效"></a>为什么这些手法有效</h2><p>影响力研究把这类做法归纳成 6 条原则，下面这几条跟信息索取的关系最近。</p>
+<p>权威默认。 「我是集团 IT 服务中心的」这句话本身没有经过任何核验，但人在听到身份声明时，默认会先接受再怀疑。信息在流转里被外包出去的成本很低，接受它的成本更低。</p>
+<p>互惠。 先说一句「您这边是行政前台吧」确认对方身份，或者主动解释「我们系统里登记的那个好像过期了」，都是先给对方一点东西（理解、理由、客气），再提要求。人接受了好意，回一个小忙会觉得自然。</p>
+<p>一致性。 一个人一旦答应了小请求，就很难拒绝后面稍大一点的。前台先承认了自己是行政前台，再承认自己不清楚型号，到第三步拒绝起来就费力了，因为前面两轮她都在配合。</p>
+<p>被需要的错觉。忙碌的人往往愿意用最快的方式结束一段对话。「他姓王，电话我找一下」比「我需要先确认您的身份」省事得多。信息泄露的原因往往只是说一句最省事。</p>
+<p>确认偏误。 反过来，提问题的人也会确认偏误：他更愿意记住支持自己猜测的答案，忽略不适配的部分。这一点在自我核查时很有用，如果你发现自己在拼命把对方的话往某个结论上凑，很可能结论已经在你心里了。</p>
+<p>这些机制都不神秘，日常沟通里本来就在用。社会工程学做的事只是把它们对着信息这个目标调了一下。</p>
+<h2 id="演练时要观察什么"><a href="#演练时要观察什么" class="headerlink" title="演练时要观察什么"></a>演练时要观察什么</h2><p>如果把这些方法用在安全意识培训或授权的演练里，不该以「套出真东西」为成功标准。判断一次演练做得好不好，看的是有没有观察到下面 4 个维度。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>观察维度</th>
+<th>关注的问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>信息披露</td>
+<td>对方是否主动透露了不必要的内部信息？</td>
+</tr>
+<tr>
+<td>身份信任</td>
+<td>对方依据什么判断提问者值得信任？</td>
+</tr>
+<tr>
+<td>流程认知</td>
+<td>对方是否清楚信息披露、审批和核验的边界？</td>
+</tr>
+<tr>
+<td>风险判断</td>
+<td>面对异常请求，对方会核实、拒绝还是直接执行？</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>比如模拟一个 IT 支持来电的场景，重点在于观察员工会不会在没有核验的情况下说出内部信息、接受异常指令，或者干脆绕开既有流程。</p>
+<p>这两件事的差别很大。前者是在拿别人的凭据，后者是在测一条流程的强度。演练报告里该写的是「在第几轮、以什么理由、对方交出了什么类型的信息」，不该写成「拿到了谁的密码」。</p>
+<h2 id="一道练习题"><a href="#一道练习题" class="headerlink" title="一道练习题"></a>一道练习题</h2><p>假设你在做一次企业安全意识访谈，对面是 IT 管理员。他先说了这么一句：</p>
+<p>「我们公司平时的安全工作主要还是靠员工自己注意，技术系统会提供一些辅助。」</p>
+<p>下面 4 个追问，哪一个更合适？</p>
+<p>A. 所以你们没有完善的安全管理制度，对吗？<br>B. 你们通常通过哪些方式帮助员工识别和处理安全风险？<br>C. 具体有哪些员工账号没有开启安全保护？<br>D. 为什么你们不把所有安全工作都交给技术系统？</p>
+<p>A 把结论塞进了问题里，对方只要承认或否认就行，而且「对吗」这种问法让人有压力，容易得到敷衍的回答。</p>
+<p>C 是在索取具体的安全缺口清单。这类信息即使拿到了，对一个访谈也没有用处，反而让你越过了不该越的线。</p>
+<p>D 带着责问的语气，对方会进入防守状态，接下来讲的全是辩解。</p>
+<p>B 顺着对方刚说过的「靠员工自己注意」往下问，问题开放，没有预设答案，也没有索取敏感信息。对方会讲培训、讲宣传、讲测试，这些内容足以让你判断这家单位的安全意识建设做到哪一层。</p>
+<h2 id="遇到这类索取怎么办"><a href="#遇到这类索取怎么办" class="headerlink" title="遇到这类索取怎么办"></a>遇到这类索取怎么办</h2><p>前面讲的是提问者怎么做。换到被问的一方，需要的东西更简单：在回答之前过 4 道闸门。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSE4_核验闸门.png" alt="图四 信息披露的核验闸门"></p>
+<p>对方是谁，这个身份是核验过的还是他自己说的；这件事按流程该不该由他来做，有没有对应的工单或通知；他走的是正规渠道，还是绕开流程直接找到你个人；他要的这条信息，是不是完成这件事所必需的。</p>
+<p>这 4 道里只要有一条答不上来，现在就不适合提供信息。可以记下对方的要求，换个渠道回拨确认，或者把请求转给对应的负责人。</p>
+<p>这四道闸门可以写成一个约束：</p>
+<script type="math/tex; mode=display">\text{可披露的信息} \le f(\text{身份已核验的程度},\ \text{事由的合理性},\ \text{渠道的正规性})</script><blockquote>
+<p>说人话：能说什么，不取决于对方问得多有礼貌，取决于他是谁、这事该不该他做、走的是不是正规路子。三样都不清楚，就该先停下。</p>
+</blockquote>
+<p>有几句话可以直接用。</p>
+<p>「这个我需要先跟我们负责人确认一下，稍后回复您。」</p>
+<p>「麻烦您把需求发到我们的服务邮箱，走工单我来跟进，工单号我登记一下。」</p>
+<p>「您方便留一下工号或者部门吗？我这边登记一下。」</p>
+<p>这几句的共同点是不拒绝、不承诺，把核验的成本挪回给提出请求的一方。真正的同事或合作方遇到这种回复，一般不会有情绪，走一遍流程就是了。急着让你别问、催你「就一句话的事」的，往往就是需要停下来的信号。</p>
+<p>核验身份、走流程，本身是工作的一部分。把这件事当成麻烦的人不多，把它当成冒犯的人更少。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>回到最开始那个问题。为什么一个人不用被直接询问，也可能主动说出大量信息？</p>
+<p>因为人和人说话的时候，第一目标是把这段对话顺畅地进行下去。顺畅需要提供背景、解释理由、补全上下文，还有一点客气的配合。信息就是在这种配合里流出去的。</p>
+<p>而提问者的工作，是让每一次配合看起来都只是一件小事。</p>
+<p>所以真正需要练的不是识破某一种话术。话术会换，理由会换，身份会换。需要练的是两件事：一是知道自己在什么情况下不该回答，二是知道对方问这句话到底想要什么。</p>
+<p>好的提问，每个问题都有明确目的，问几个反倒是次要的。好的回答也一样。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/7d3e/">https://moxin1044.github.io/posts/7d3e/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%A4%BE%E4%BC%9A%E5%B7%A5%E7%A8%8B%E5%AD%A6/">社会工程学</a><a class="post-meta__tags" href="/tags/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8%E6%84%8F%E8%AF%86/">信息安全意识</a><a class="post-meta__tags" href="/tags/%E6%8F%90%E9%97%AE/">提问</a><a class="post-meta__tags" href="/tags/%E6%B2%9F%E9%80%9A/">沟通</a><a class="post-meta__tags" href="/tags/%E8%AE%A4%E7%9F%A5%E5%81%8F%E5%B7%AE/">认知偏差</a></div><div class="post-share"><div class="social-share" data-image="/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/posts/fe2b/" title="飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figFD1_%E4%B8%89%E4%B8%AA%E5%8F%82%E6%95%B0%E5%8F%AA%E6%A0%A1%E9%AA%8C%E4%B8%80%E4%B8%AA.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计</div></div><div class="info-2"><div class="info-item-1">飞秋 3.0.0.2 在处理图片和文件的分片接收时，会用三个取自网络报文的数值做内存操作：分配大小、目的偏移、拷贝长度。这三项都没有边界校验。任意一台与目标网络可达的主机发送一个构造报文，就能造成堆越界写，进程随后以 0xC0000374（STATUS_HEAP_CORRUPTION）终止。 审计在受控实验网络内完成，目标是自己搭建的同一版本样本，没有涉及第三方资产。     项目 结论     漏洞类型 堆缓冲区溢出（CWE-787 / CWE-122）   触发前提 无。不需要认证、不需要交互、不需要目标侧任何操作   网络条件 与目标网段可达即可，走 UDP 2425   打击面 4 个 UDP 报文，合计约 32 KB   失效耗时 远程实测 2.9 秒   崩溃表现 0xC0000374，目标机事件日志可查   恢复方式 只能人工重启，飞秋没有自愈或自动重启机制   可否持续压制 可以，目标恢复后 8 秒内可再次打掉     样本    项 值     文件名 FeiQ.3.0.0.2.exe   格式 PE32（x86），GUI 子系统   编译器 MSVC 10.0...</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">97</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">121</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">45</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="/atom.xml" target="_blank" title="RSS"><i class="fas fa-rss" style="color: #f26522;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BF%A1%E6%81%AF%E6%98%AF%E6%80%8E%E4%B9%88%E5%9C%A8%E5%AF%B9%E8%AF%9D%E9%87%8C%E6%B5%81%E5%8A%A8%E7%9A%84"><span class="toc-number">1.</span> <span class="toc-text">信息是怎么在对话里流动的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1"><span class="toc-number">2.</span> <span class="toc-text">提问的五个层次</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E5%B1%82%EF%BC%9A%E5%B0%81%E9%97%AD%E5%BC%8F%E6%8F%90%E9%97%AE"><span class="toc-number">2.1.</span> <span class="toc-text">第一层：封闭式提问</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E5%B1%82%EF%BC%9A%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8F%90%E9%97%AE"><span class="toc-number">2.2.</span> <span class="toc-text">第二层：开放式提问</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E5%B1%82%EF%BC%9A%E6%8E%A2%E7%B4%A2%E5%BC%8F%E6%8F%90%E9%97%AE"><span class="toc-number">2.3.</span> <span class="toc-text">第三层：探索式提问</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E5%9B%9B%E5%B1%82%EF%BC%9A%E5%85%B3%E8%81%94%E5%BC%8F%E6%8F%90%E9%97%AE"><span class="toc-number">2.4.</span> <span class="toc-text">第四层：关联式提问</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%BA%94%E5%B1%82%EF%BC%9A%E5%8F%8D%E6%80%9D%E5%BC%8F%E6%8F%90%E9%97%AE"><span class="toc-number">2.5.</span> <span class="toc-text">第五层：反思式提问</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8F%90%E9%97%AE%E7%9A%84-4-%E4%B8%AA%E6%8A%80%E5%B7%A7"><span class="toc-number">3.</span> <span class="toc-text">开放式提问的 4 个技巧</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%94%A8%E3%80%8C%E4%BB%80%E4%B9%88%E3%80%81%E5%A6%82%E4%BD%95%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E3%80%81%E5%93%AA%E4%BA%9B%E3%80%8D%E4%BB%A3%E6%9B%BF%E3%80%8C%E6%98%AF%E4%B8%8D%E6%98%AF%E3%80%8D"><span class="toc-number">3.1.</span> <span class="toc-text">用「什么、如何、为什么、哪些」代替「是不是」</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%94%A8%E6%BC%8F%E6%96%97%E5%BC%8F%E9%A1%BA%E5%BA%8F%EF%BC%8C%E5%85%88%E5%AE%BD%E6%B3%9B%E5%86%8D%E5%85%B7%E4%BD%93"><span class="toc-number">3.2.</span> <span class="toc-text">用漏斗式顺序，先宽泛再具体</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%A6%E4%BC%9A%E6%B2%89%E9%BB%98"><span class="toc-number">3.3.</span> <span class="toc-text">学会沉默</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%BD%E9%97%AE%E4%BA%8B%E5%AE%9E%EF%BC%8C%E4%B8%8D%E8%A6%81%E6%9A%97%E7%A4%BA%E7%AD%94%E6%A1%88"><span class="toc-number">3.4.</span> <span class="toc-text">追问事实，不要暗示答案</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8B%86%E8%A7%A3%E4%B8%80%E6%AE%B5%E5%8A%9E%E5%85%AC%E5%AE%A4%E9%97%B2%E8%81%8A"><span class="toc-number">4.</span> <span class="toc-text">拆解一段办公室闲聊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E4%BA%9B%E6%89%8B%E6%B3%95%E6%9C%89%E6%95%88"><span class="toc-number">5.</span> <span class="toc-text">为什么这些手法有效</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%BC%94%E7%BB%83%E6%97%B6%E8%A6%81%E8%A7%82%E5%AF%9F%E4%BB%80%E4%B9%88"><span class="toc-number">6.</span> <span class="toc-text">演练时要观察什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E9%81%93%E7%BB%83%E4%B9%A0%E9%A2%98"><span class="toc-number">7.</span> <span class="toc-text">一道练习题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%81%87%E5%88%B0%E8%BF%99%E7%B1%BB%E7%B4%A2%E5%8F%96%E6%80%8E%E4%B9%88%E5%8A%9E"><span class="toc-number">8.</span> <span class="toc-text">遇到这类索取怎么办</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-number">9.</span> <span class="toc-text">结语</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/7d3e/" title="社会工程学：提问的艺术"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="社会工程学：提问的艺术"></a><div class="content"><a class="title" href="/posts/7d3e/" title="社会工程学：提问的艺术">社会工程学：提问的艺术</a><time datetime="2026-10-16T19:37:00.000Z" title="发表于 2026-10-17 03:37:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/fe2b/" title="飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figFD1_%E4%B8%89%E4%B8%AA%E5%8F%82%E6%95%B0%E5%8F%AA%E6%A0%A1%E9%AA%8C%E4%B8%80%E4%B8%AA.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计"></a><div class="content"><a class="title" href="/posts/fe2b/" title="飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计">飞秋（FeiQ）3.0.0.2 远程拒绝服务漏洞审计</a><time datetime="2026-10-16T17:00:00.000Z" title="发表于 2026-10-17 01:00:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/fe1a/" title="飞秋（FeiQ）3.0.0.2 协议缺陷分析：设备名册伪造与消息缓冲残留"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figFQ1_%E6%8A%A5%E6%96%87%E7%BB%93%E6%9E%84%E4%B8%8E%E5%85%B3%E9%94%AE%E5%AD%97%E6%AE%B5.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="飞秋（FeiQ）3.0.0.2 协议缺陷分析：设备名册伪造与消息缓冲残留"></a><div class="content"><a class="title" href="/posts/fe1a/" title="飞秋（FeiQ）3.0.0.2 协议缺陷分析：设备名册伪造与消息缓冲残留">飞秋（FeiQ）3.0.0.2 协议缺陷分析：设备名册伪造与消息缓冲残留</a><time datetime="2026-10-16T07:32:00.000Z" title="发表于 2026-10-16 15:32:00">2026-10-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/f0a3/" title="用 Python 从零实现一个 SSH 蜜罐"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figHP1_%E8%9C%9C%E7%BD%90%E7%BB%93%E6%9E%84.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="用 Python 从零实现一个 SSH 蜜罐"></a><div class="content"><a class="title" href="/posts/f0a3/" title="用 Python 从零实现一个 SSH 蜜罐">用 Python 从零实现一个 SSH 蜜罐</a><time datetime="2026-10-16T03:45:00.000Z" title="发表于 2026-10-16 11:45:00">2026-10-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/7f3a/" title="高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figC1_%E8%AF%B7%E6%B1%82%E8%B7%AF%E5%BE%84%E4%B8%8E%E7%AD%89%E5%BE%85%E7%82%B9.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压"></a><div class="content"><a class="title" href="/posts/7f3a/" title="高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压">高并发 API 服务的瓶颈究竟在哪里：连接池、线程池、事件循环与背压</a><time datetime="2026-10-16T02:00:00.000Z" title="发表于 2026-10-16 10:00:00">2026-10-16</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/gitcalendar.js"></script><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
