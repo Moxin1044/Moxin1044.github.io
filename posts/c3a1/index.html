@@ -1,0 +1,338 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>用淀粉自制葡萄糖：糖苷键的三种断法与产率 | 末心的小博客</title><meta name="author" content="末心"><meta name="copyright" content="末心"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="网上教人用淀粉加醋煮糖浆的配方很多，但煮出来的甜味主要不是葡萄糖。本文从淀粉的两种糖苷键讲起，说明酸、α-淀粉酶、糖化酶三种断法分别切在哪里、各给出什么产物，给出理论产率的计算和一条能跑通的双酶法流程，并交代怎么用碘液和斐林试剂判断做成了没有。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="用淀粉自制葡萄糖：糖苷键的三种断法与产率">
+<meta property="og:url" content="https://moxin1044.github.io/posts/c3a1/index.html">
+<meta property="og:site_name" content="末心的小博客">
+<meta property="og:description" content="网上教人用淀粉加醋煮糖浆的配方很多，但煮出来的甜味主要不是葡萄糖。本文从淀粉的两种糖苷键讲起，说明酸、α-淀粉酶、糖化酶三种断法分别切在哪里、各给出什么产物，给出理论产率的计算和一条能跑通的双酶法流程，并交代怎么用碘液和斐林试剂判断做成了没有。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://moxin1044.github.io/attachments/figGL1_%E4%B8%A4%E7%A7%8D%E7%B3%96%E8%8B%B7%E9%94%AE.png">
+<meta property="article:published_time" content="2026-10-17T06:23:00.000Z">
+<meta property="article:modified_time" content="2026-10-17T06:26:18.666Z">
+<meta property="article:author" content="末心">
+<meta property="article:tag" content="淀粉">
+<meta property="article:tag" content="糖苷键">
+<meta property="article:tag" content="葡萄糖">
+<meta property="article:tag" content="酶解">
+<meta property="article:tag" content="食品化学">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://moxin1044.github.io/attachments/figGL1_%E4%B8%A4%E7%A7%8D%E7%B3%96%E8%8B%B7%E9%94%AE.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "用淀粉自制葡萄糖：糖苷键的三种断法与产率",
+  "url": "https://moxin1044.github.io/posts/c3a1/",
+  "image": "https://moxin1044.github.io/attachments/figGL1_%E4%B8%A4%E7%A7%8D%E7%B3%96%E8%8B%B7%E9%94%AE.png",
+  "datePublished": "2026-10-17T06:23:00.000Z",
+  "dateModified": "2026-10-17T06:26:18.666Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "末心",
+      "url": "https://moxin1044.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640"><link rel="canonical" href="https://moxin1044.github.io/posts/c3a1/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"><link rel="preconnect" href="//busuanzi.ibruce.info"><link rel="stylesheet" href="/css/index.css?v=5.5.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"简"},
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":true,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"top-center"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: true,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '用淀粉自制葡萄糖：糖苷键的三种断法与产率',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/modify.css"><script src="/js/bing-wallpaper.js"></script><script src="/js/cover.js"></script><link rel="stylesheet" href="/css/gitcalendar.css"><meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="末心的小博客" type="application/atom+xml">
+</head><body><div id="web_bg" style="background: linear-gradient(135deg, #eef4fc 0%, #e8eef8 48%, #eae6f6 100%);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">101</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">134</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">46</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/attachments/figGL1_%E4%B8%A4%E7%A7%8D%E7%B3%96%E8%8B%B7%E9%94%AE.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">末心的小博客</span></a><a class="nav-page-title" href="/"><span class="site-name">用淀粉自制葡萄糖：糖苷键的三种断法与产率</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">用淀粉自制葡萄糖：糖苷键的三种断法与产率</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-10-17T06:23:00.000Z" title="发表于 2026-10-17 14:23:00">2026-10-17</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-10-17T06:26:18.666Z" title="更新于 2026-10-17 14:26:18">2026-10-17</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%A7%91%E6%99%AE/">科普</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%A7%91%E6%99%AE/%E5%8C%96%E5%AD%A6/">化学</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">2.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>7分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img" style="background-image: url(/attachments/figGL1_%E4%B8%A4%E7%A7%8D%E7%B3%96%E8%8B%B7%E9%94%AE.png);"></div><article class="container post-content" id="article-container"><p>厨房里能拿到的淀粉只有玉米淀粉和土豆淀粉两种。网上那些「自制糖浆」的配方都差不多：淀粉加水调开，倒点白醋，小火煮一两个小时，煮到挂勺，尝一口是甜的。</p>
+<p>甜是真的。但你尝到的那个甜，主要不是葡萄糖。</p>
+<p>这个结论一开始我也不信。醋是酸，淀粉是糖链，酸把糖链断开，断出来不就是葡萄糖吗。后来把三种断法摊开看，才知道问题出在断的位置上，而且这个差别是可以用一杯碘液验证的。</p>
+<h2 id="淀粉是葡萄糖串起来的链，串法有两种"><a href="#淀粉是葡萄糖串起来的链，串法有两种" class="headerlink" title="淀粉是葡萄糖串起来的链，串法有两种"></a>淀粉是葡萄糖串起来的链，串法有两种</h2><p>淀粉的分子式写作 (C₆H₁₀O₅)ₙ，那只是记账用的写法。它的真实结构是几百到几千个葡萄糖分子首尾连起来，连接的地方叫糖苷键。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figGL1_两种糖苷键.png" alt="图一 淀粉的两种糖苷键"></p>
+<p>连接有两种。一种是一个葡萄糖的第 1 位碳连着下一个的第 4 位碳，叫 α-1,4 键，这样连出来是一条直链。另一种是一个葡萄糖的第 1 位碳连着链上另一个葡萄糖的第 6 位碳，叫 α-1,6 键，这样连出来是分叉。</p>
+<p>玉米淀粉里，直链部分大约占 27%，剩下的 73% 是带分支的支链淀粉，平均每 20 到 25 个残基分一次叉。</p>
+<p>水解就是把这两种键一个一个加水拆开：</p>
+<script type="math/tex; mode=display">\mathrm{(C_6H_{10}O_5)_n} + n\,\mathrm{H_2O} \rightarrow n\,\mathrm{C_6H_{12}O_6}</script><blockquote>
+<p>说人话：每拆开一个连接，就要吃掉一个水分子。所以淀粉加水煮，重量会变多，不是变少。</p>
+</blockquote>
+<p>每个葡萄糖残基在链上的分子量是 162.14，拆下来单独成分子是 180.16。比值算出来是 1.1111，也就是 100 g 纯淀粉理论上最多能出 111.1 g 葡萄糖。</p>
+<p>这个 111% 是理论值。实际到不了，因为水解不会百分之百完成，高温下还有一部分糖会继续反应变成别的带颜色的东西。</p>
+<h2 id="三种断法，切的位置不一样"><a href="#三种断法，切的位置不一样" class="headerlink" title="三种断法，切的位置不一样"></a>三种断法，切的位置不一样</h2><p>淀粉能不能变成葡萄糖，取决于刀下在哪儿。三种断法，三种产物。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figGL2_三种切法.png" alt="图二 三种断法"></p>
+<p>酸是随机断的。氢离子让糖苷键上的氧原子质子化，键就松了。它不挑位置，撞上哪根断哪根，所以先断出来的是长短不一的糊精，再往下才是麦芽糖，最后才轮到单个葡萄糖。要让它走到最后一步，得有足够的酸浓度和足够高的温度，工业上是 0.3 MPa 的蒸汽配稀盐酸，十几分钟就完事。家里那点白醋的酸度，煮一下午也到不了那一步。</p>
+<p>α-淀粉酶是从链中间切的。它专门认 α-1,4 键，在链的内部下刀，一刀下去断成两截，产物是糊精和麦芽糖。葡萄糖只会以极少量出现，因为它切一刀至少留下两个葡萄糖连在一起。</p>
+<p>糖化酶是从末端一个一个啃的。它认的是链的非还原端，每啃一下掉下来一个葡萄糖，所以它才是真正出葡萄糖的酶。分支点上的 α-1,6 键它也能啃，只是慢一些。</p>
+<p>这三种断法的差别，有一个日常现象可以印证：馒头嚼久了会变甜。那个甜味来自唾液里的 α-淀粉酶，它把淀粉切成麦芽糖。如果你以为那是在「消化成葡萄糖」，那嚼再久也不会更甜，因为唾液里没有糖化酶。</p>
+<h2 id="糖化酶从哪里来"><a href="#糖化酶从哪里来" class="headerlink" title="糖化酶从哪里来"></a>糖化酶从哪里来</h2><p>要葡萄糖，必须有糖化酶。家里能拿到的来源有三个。</p>
+<p>食品级酶制剂最直接。卖烘焙原料和酿酒原料的地方有 α-淀粉酶和糖化酶，一般是粉剂或者液剂，按说明用量加进去就行。这是三条路里唯一能在半天之内做完的。</p>
+<p>甜酒曲是传统做法。酒曲里的根霉会分泌糖化酶，把米饭里的淀粉变成葡萄糖，这就是醪糟甜味的来源。它的问题是慢，30 ℃ 左右要放 36 到 48 小时。</p>
+<p>麦芽不行。发芽的谷物里是 α-淀粉酶和 β-淀粉酶，两者产物都是麦芽糖。啤酒酿造走的就是这条路，酿出来的是麦芽糖，再交给酵母去发酵。</p>
+<p>所以「用淀粉做葡萄糖」这句话，落到操作上其实是「找一种能单个切糖苷键的酶，或者用足够强的酸和足够高的温度」。醋和麦芽都不在这个名单里。</p>
+<h2 id="一条能跑通的流程"><a href="#一条能跑通的流程" class="headerlink" title="一条能跑通的流程"></a>一条能跑通的流程</h2><p>以 100 g 玉米淀粉为例，走双酶法。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figGL3_双酶法流程.png" alt="图三 双酶法流程"></p>
+<p>第一步是糊化。淀粉 100 g 加冷水 400 mL 调匀，别让它结块，然后加热到 90 到 95 ℃，一边加热一边搅，保持 20 分钟。这一步是让淀粉颗粒吸水膨胀、把结晶区打开，否则酶进不去。做完是一锅很稠的糊。</p>
+<p>第二步是液化。温度稳在 90 ℃ 左右，pH 调到 5.5 到 6.5，加 α-淀粉酶。这一步你会看到粘度肉眼可见地降下来，从一锅浆糊变成能流动的液体。搅 30 到 60 分钟，终点看碘液：滴一滴在瓷板上，颜色不再变成蓝黑就差不多了。</p>
+<p>第三步是糖化。降温到 58 到 62 ℃，用柠檬酸把 pH 调到 4.0 到 4.5，加糖化酶，保温。这一步是整个流程里最慢的，家里酶量给足、温度稳住，三四个小时能到七八成的转化率。工业上要 40 到 60 小时才能到 95% 以上，因为糖化酶越往后越难啃，剩下的都是靠近分支点的硬骨头。</p>
+<p>第四步是灭酶。升到 85 ℃ 保持 10 分钟，把酶煮死，反应就停住了。不灭酶的话它会一直慢慢啃下去，糖浆会越来越甜也越来越难控制。</p>
+<p>第五步是过滤。趁热用纱布或者滤纸过一遍，去掉没水解完的残渣。想要颜色浅一点可以加一点食品级活性炭搅一搅再滤。滤液就是糖浆，冷却后会更稠，装瓶冷藏。</p>
+<p>酶用量不要照抄别人的「一勺」。不同厂家的酶活力差好几倍，按产品说明书上的活力单位算，或者从推荐量的下限开始，看液化阶段粘度降得快不快再调整。</p>
+<h2 id="怎么知道做成了"><a href="#怎么知道做成了" class="headerlink" title="怎么知道做成了"></a>怎么知道做成了</h2><p>有三个办法，从粗到细。</p>
+<p>碘液是最省事的进度条。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figGL4_碘液显色.png" alt="图四 碘液显色（示意图）"></p>
+<p>淀粉遇碘会变蓝黑，这是淀粉链卷成螺旋把碘分子裹在里面的结果。链越短，能裹住的碘越少，颜色就越浅，紫红、红棕，一直到麦芽糖和葡萄糖基本不上色。所以取一滴糖液在白瓷板上加一滴碘液，看颜色就知道淀粉断到什么程度了。</p>
+<p>要注意的是，碘液只能告诉你「淀粉还剩多少」，不能告诉你「出来的是葡萄糖还是麦芽糖」。颜色浅了只能说明链短了，两个葡萄糖一组的麦芽糖同样不上色。</p>
+<p>斐林试剂能补上这个缺口。它是硫酸铜的碱性溶液，加热时会把还原糖氧化，自己析出砖红色的氧化亚铜沉淀。葡萄糖和麦芽糖都是还原糖，会出沉淀；蔗糖不是还原糖，不出。所以这一步能区分「真的水解出了还原糖」和「只是淀粉溶解了」。</p>
+<p>甜度可以做个粗判。以蔗糖为 1 的常用参照里，葡萄糖大约 0.7，麦芽糖大约 0.4。同样是 20% 的糖液，纯葡萄糖的甜度明显高于一半麦芽糖一半葡萄糖的混合物。这个判断不需要仪器，但需要你事先知道自己在比什么。</p>
+<h2 id="几个安全上的边界"><a href="#几个安全上的边界" class="headerlink" title="几个安全上的边界"></a>几个安全上的边界</h2><p>沸腾的糖浆比开水危险。它比热容大、粘在皮肤上不容易流走，热量会持续往组织里传，烫伤往往比开水重。全程用长柄勺，别把脸凑到锅口上方看。</p>
+<p>不要盖严实盖子。糖液在煮的过程中会持续产生水蒸气，密封加热就是给自己做压力容器。</p>
+<p>酸性糖液不要用铝锅和铁锅。长时间沸腾会腐蚀锅壁，把金属离子带进糖液里。用不锈钢锅或者玻璃锅。</p>
+<p>不要用高压锅做这个。高压确实能把温度抬到 115 ℃ 以上、让酸水解快很多，但酸性糖液在高压下更容易焦化，而且糖浆一旦堵住排气孔就是事故。工业上那种 0.3 MPa 的反应釜不是家用高压锅能替代的。</p>
+<p>酶制剂买食品级的，别买工业酶。工业酶里可能带载体和防腐成分，不是给人口服的标准。</p>
+<p>做好的糖浆要冷藏，尽快用完。它的水分活度高，糖浓度又没有高到能抑菌的程度，常温放几天就会长东西。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>回到开头那锅加了醋的糖浆。它甜，是因为淀粉确实被断开了一部分，断出来的糊精和麦芽糖都有甜味。但它不是葡萄糖，因为醋酸太弱、温度不够，断的位置也不对。</p>
+<p>想快，就得用糖化酶：酶在 60 ℃ 左右干活，三四个小时能到七八成。想更纯，就得给时间，工业上那 40 到 60 小时不是浪费，是在啃分支点附近最难啃的那几根键。想只靠厨房里现成的东西，那基本只能做到麦芽糖那一步。</p>
+<p>文中的温度区间和 pH 是酶制剂的工艺参数，产率 111% 是按分子量算出来的理论值，实际产量会低一些。这几个数来自公开的酶制剂说明和食品工艺资料，我没有在厨房里复现过，你家那批酶的活力不同，时间和用量要自己微调。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io">末心</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://moxin1044.github.io/posts/c3a1/">https://moxin1044.github.io/posts/c3a1/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://moxin1044.github.io" target="_blank">末心的小博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%B7%80%E7%B2%89/">淀粉</a><a class="post-meta__tags" href="/tags/%E8%91%A1%E8%90%84%E7%B3%96/">葡萄糖</a><a class="post-meta__tags" href="/tags/%E9%85%B6%E8%A7%A3/">酶解</a><a class="post-meta__tags" href="/tags/%E7%B3%96%E8%8B%B7%E9%94%AE/">糖苷键</a><a class="post-meta__tags" href="/tags/%E9%A3%9F%E5%93%81%E5%8C%96%E5%AD%A6/">食品化学</a></div><div class="post-share"><div class="social-share" data-image="/attachments/figGL1_%E4%B8%A4%E7%A7%8D%E7%B3%96%E8%8B%B7%E9%94%AE.png" data-sites="wechat,weibo,qq,facebook,x"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer=""></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/posts/9b2f/" title="社会工程学：人性的漏洞"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSU1_%E5%9B%9B%E8%A6%81%E7%B4%A0%E5%8F%A0%E5%8A%A0.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">社会工程学：人性的漏洞</div></div><div class="info-2"><div class="info-item-1">在网络安全领域，我们习惯于寻找漏洞。 一个开放的端口、一段存在缺陷的代码、一个配置错误的服务，都可能成为入口。我们通过扫描、审计、测试和修复，不断缩小技术系统中那些可以被利用的薄弱环节。 但如果一个系统没有明显的技术漏洞呢？ 服务器经过加固，身份认证已经启用，安全设备持续运行，日志也在被实时监控。此时，一个人收到了一封看似正常的工作邮件，接到了一个自称来自管理部门的电话，或者面对一项要求立即完成的任务。 他没有破解密码，没有绕过防火墙，也没有执行任何看起来明显危险的操作。他只是相信了某个身份，接受了一个解释，并按照自己认为合理的方式完成了工作。 问题可能就从这里开始。 把这类事件归结为安全意识不足是最省事的做法，也是最没有用的一种。它的潜台词是：只要员工足够谨慎、足够专业，就能避免。但现实中的人不是始终保持高度警觉的分析仪器。我们依赖经验理解世界，依赖信任维持协作，也会在时间压力和信息不完整的情况下作出判断。这些能力让日常生活得以正常运转，却不意味着每一次判断都能得到正确的结果。 社会工程学研究的，就是人与信息、信任和行为之间的关系。它提醒我们，安全风险不只存在于代码和配置之中，...</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://q1.qlogo.cn/g?b=qq&amp;nk=1044631097&amp;s=640" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"></div><div class="author-info-name">末心</div><div class="author-info-description">一个关于技术的小站，分享自己的技术思考和经验。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">101</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">134</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">46</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Moxin1044"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Moxin1044" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:moxin1044@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="/atom.xml" target="_blank" title="RSS"><i class="fas fa-rss" style="color: #f26522;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">学而不思则罔，思而不学则殆</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B7%80%E7%B2%89%E6%98%AF%E8%91%A1%E8%90%84%E7%B3%96%E4%B8%B2%E8%B5%B7%E6%9D%A5%E7%9A%84%E9%93%BE%EF%BC%8C%E4%B8%B2%E6%B3%95%E6%9C%89%E4%B8%A4%E7%A7%8D"><span class="toc-number">1.</span> <span class="toc-text">淀粉是葡萄糖串起来的链，串法有两种</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E7%A7%8D%E6%96%AD%E6%B3%95%EF%BC%8C%E5%88%87%E7%9A%84%E4%BD%8D%E7%BD%AE%E4%B8%8D%E4%B8%80%E6%A0%B7"><span class="toc-number">2.</span> <span class="toc-text">三种断法，切的位置不一样</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B3%96%E5%8C%96%E9%85%B6%E4%BB%8E%E5%93%AA%E9%87%8C%E6%9D%A5"><span class="toc-number">3.</span> <span class="toc-text">糖化酶从哪里来</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E6%9D%A1%E8%83%BD%E8%B7%91%E9%80%9A%E7%9A%84%E6%B5%81%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">一条能跑通的流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%8E%E4%B9%88%E7%9F%A5%E9%81%93%E5%81%9A%E6%88%90%E4%BA%86"><span class="toc-number">5.</span> <span class="toc-text">怎么知道做成了</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%87%A0%E4%B8%AA%E5%AE%89%E5%85%A8%E4%B8%8A%E7%9A%84%E8%BE%B9%E7%95%8C"><span class="toc-number">6.</span> <span class="toc-text">几个安全上的边界</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-number">7.</span> <span class="toc-text">结语</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/c3a1/" title="用淀粉自制葡萄糖：糖苷键的三种断法与产率"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figGL1_%E4%B8%A4%E7%A7%8D%E7%B3%96%E8%8B%B7%E9%94%AE.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="用淀粉自制葡萄糖：糖苷键的三种断法与产率"></a><div class="content"><a class="title" href="/posts/c3a1/" title="用淀粉自制葡萄糖：糖苷键的三种断法与产率">用淀粉自制葡萄糖：糖苷键的三种断法与产率</a><time datetime="2026-10-17T06:23:00.000Z" title="发表于 2026-10-17 14:23:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/9b2f/" title="社会工程学：人性的漏洞"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSU1_%E5%9B%9B%E8%A6%81%E7%B4%A0%E5%8F%A0%E5%8A%A0.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="社会工程学：人性的漏洞"></a><div class="content"><a class="title" href="/posts/9b2f/" title="社会工程学：人性的漏洞">社会工程学：人性的漏洞</a><time datetime="2026-10-16T20:25:00.000Z" title="发表于 2026-10-17 04:25:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/5d17/" title="社会工程学：人为什么会忽略安全警告"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSW1_%E7%9F%A5%E9%81%93%E5%88%B0%E5%81%9A%E5%88%B0%E7%9A%84%E6%96%AD%E7%82%B9.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="社会工程学：人为什么会忽略安全警告"></a><div class="content"><a class="title" href="/posts/5d17/" title="社会工程学：人为什么会忽略安全警告">社会工程学：人为什么会忽略安全警告</a><time datetime="2026-10-16T20:08:00.000Z" title="发表于 2026-10-17 04:08:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/2c9a/" title="社会工程学：信任是如何被建立的"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figST1_%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E5%B1%82.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="社会工程学：信任是如何被建立的"></a><div class="content"><a class="title" href="/posts/2c9a/" title="社会工程学：信任是如何被建立的">社会工程学：信任是如何被建立的</a><time datetime="2026-10-16T19:50:00.000Z" title="发表于 2026-10-17 03:50:00">2026-10-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/7d3e/" title="社会工程学：提问的艺术"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/attachments/figSE1_%E6%8F%90%E9%97%AE%E7%9A%84%E4%BA%94%E4%B8%AA%E5%B1%82%E6%AC%A1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="社会工程学：提问的艺术"></a><div class="content"><a class="title" href="/posts/7d3e/" title="社会工程学：提问的艺术">社会工程学：提问的艺术</a><time datetime="2026-10-16T19:37:00.000Z" title="发表于 2026-10-17 03:37:00">2026-10-17</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">©&nbsp;2020 - 2026 By 末心</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.1</a></span></div><div class="footer_custom_text"><p>学如逆水行舟，不进则退。</p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">繁</button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.1"></script><script src="/js/main.js?v=5.5.1"></script><script src="/js/tw_cn.js?v=5.5.1"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const mermaidThemeConfig = `%%{init:{ 'theme':'${theme}'}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/gitcalendar.js"></script><script async="" data-pjax="" src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"></div><hr><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.1"></script></div></div></body></html>
